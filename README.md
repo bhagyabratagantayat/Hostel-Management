@@ -4,6 +4,7 @@ A robust, production-ready full-stack application built to streamline room booki
 
 ## Features (Planned & Under Development)
 - **Multi-Hostel Directory**: Management of 6 independent campuses (boys and girls branches).
+- **Secure Authentication & RBAC**: JWT HttpOnly cookie-based session management with role-based routing (Super Admin, Superintendent, Student).
 - **Floor-Room-Bed Allocation**: Normalized tracking to prevent double-booking.
 - **Superintendent Oversight**: Assignment mapping for wardens to manage single/multiple buildings.
 - **Direct Image Uploads**: Cloudinary-powered profile photo storage.
@@ -13,8 +14,8 @@ A robust, production-ready full-stack application built to streamline room booki
 ---
 
 ## 🛠️ Technology Stack
-- **Frontend**: React (Vite), Axios, Tailwind CSS (Pending confirmation), Responsive Vanilla CSS Core
-- **Backend**: Node.js, Express, Helmet, CORS, Dotenv, MySQL (`mysql2/promise`)
+- **Frontend**: React (Vite), Axios, React Router v6, Responsive Vanilla CSS Core
+- **Backend**: Node.js, Express, Helmet, CORS, Cookie Parser, Dotenv, MySQL (`mysql2/promise` with in-memory Mock DB fallback)
 - **Database**: MySQL (Hosted on Hostinger)
 - **Media Hosting**: Cloudinary
 
@@ -30,26 +31,49 @@ Hostel Management/
 │
 ├── database/
 │   ├── schema.sql           # MySQL database schema definition
-│   └── seed.sql             # MySQL default seed roles and hostels
+│   └── seed.sql             # MySQL default seed roles, hostels, test users
 │
 ├── backend/                 # Express REST API
 │   ├── src/
 │   │   ├── config/          # Environment variables validation, database and Cloudinary setup
-│   │   ├── controllers/     # Route controller actions (Health check, Hostels)
-│   │   ├── routes/          # Express Router definition
+│   │   ├── controllers/     # Route controllers (health, hostels, auth, students)
+│   │   ├── middleware/      # Auth security filters & rate limiters
+│   │   ├── routes/          # Express Router definitions
+│   │   ├── services/        # Query execution and auth services
+│   │   ├── utils/           # Password hashing (bcryptjs) & auth helpers
 │   │   └── app.js           # Server initializer
 │   └── package.json
 │
 └── frontend/                # React (Vite) User Portal
     ├── src/
-    │   ├── components/      # UI components (Navbar, Sidebar, Card, Button, Input, Loading, Error)
+    │   ├── components/      # UI components & ProtectedRoute route guards
+    │   ├── context/         # AuthContext (State manager)
     │   ├── layouts/         # Layout modules (DashboardLayout)
-    │   ├── pages/           # Pages (DashboardPlaceholder)
-    │   ├── services/        # Axios API configurations
-    │   ├── App.jsx          # Root view mount
+    │   ├── pages/           # Pages (DashboardPlaceholder, Login)
+    │   ├── services/        # Axios API configurations (credentials enabled)
+    │   ├── App.jsx          # Root router mount
     │   └── main.jsx         # React application initializer
     └── package.json
 ```
+
+---
+
+## 🔑 Development Test Accounts
+The database seeding script initializes the following pre-configured test users for testing authorization scopes.
+* **Super Admin**: Username `superadmin` / Password `password123`
+* **Superintendent (Warden)**: Username `warden` / Password `password123`
+* **Student**: Username `student` / Password `password123`
+
+> [!WARNING]
+> These credentials are for local development and integration testing only. In a production environment, registration endpoints are closed to the public and passwords must be modified immediately.
+
+---
+
+## 🛡️ Authentication Security Architecture
+- **HttpOnly Cookies**: Authentication JWT tokens are saved securely in browser cookies flagged with `HttpOnly` and `SameSite=Lax`. This blocks JavaScript-based XSS attacks from reading token keys.
+- **Login Brute-Force Rate Limiting**: The login endpoint is guarded with an in-memory rate limiter permitting a maximum of 5 attempts per 15 minutes per IP address.
+- **Input Sanitization**: Request bodies are validated for missing entries and length constraints before hitting database queries.
+- **Generic Responses**: Returns unified "Invalid credentials" errors to prevent username/email enumeration.
 
 ---
 
@@ -58,7 +82,7 @@ Hostel Management/
 ### 1. Database Setup
 1. Open your MySQL client (local or Hostinger phpMyAdmin).
 2. Execute the schema statements in [database/schema.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/schema.sql) to initialize all tables, foreign keys, and indexes.
-3. Execute [database/seed.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/seed.sql) to populate system roles and the six default hostels.
+3. Execute [database/seed.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/seed.sql) to populate roles, hostels, and test accounts.
 
 ### 2. Environment Configuration
 Create a `.env` file in the root workspace directory matching the variables in `.env.example`:
@@ -68,14 +92,14 @@ PORT=5000
 NODE_ENV=development
 
 # MySQL DB
-DB_HOST=your_hostinger_or_local_db_host
+DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_USER=your_username
-DB_PASSWORD=your_password
+DB_USER=root
+DB_PASSWORD=
 DB_NAME=hostel_management
 
 # JWT (Authentication)
-JWT_SECRET=your_jwt_secret_key
+JWT_SECRET=super_secret_local_dev_only_key_123456789
 
 # Cloudinary
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
@@ -83,7 +107,7 @@ CLOUDINARY_API_KEY=your_cloudinary_key
 CLOUDINARY_API_SECRET=your_cloudinary_secret
 ```
 
-### 3. Backend Setup
+### 3. Backend Setup & Test Suite
 1. Open a terminal in the `backend/` directory:
    ```bash
    cd backend
@@ -92,14 +116,16 @@ CLOUDINARY_API_SECRET=your_cloudinary_secret
    ```bash
    npm install
    ```
-3. Start the development server (runs nodemon):
+3. Run the automated authentication integration test suite (12 test scenarios):
+   ```bash
+   node src/testAuth.js
+   ```
+4. Start the backend development server (nodemons):
    ```bash
    npm run dev
    ```
 
-The backend server is accessible at `http://localhost:5000`. You can check:
-* API Health Status: `http://localhost:5000/api/health`
-* Seeded Hostels: `http://localhost:5000/api/hostels`
+The backend server is accessible at `http://localhost:5000`.
 
 ### 4. Frontend Setup
 1. Open a terminal in the `frontend/` directory:
@@ -110,11 +136,7 @@ The backend server is accessible at `http://localhost:5000`. You can check:
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env` if not already done:
-   ```bash
-   cp .env.example .env
-   ```
-4. Start the development hot reload server:
+3. Start the Vite React development server:
    ```bash
    npm run dev
    ```
@@ -123,13 +145,7 @@ The frontend client is accessible at `http://localhost:5173`.
 
 ---
 
-## 🔒 Git Security Protocol
-- Private secrets and passwords must **never** be hard-coded in React or committed to git.
-- Verify that your local `.env` is ignored by checking `git status` to ensure it is not tracked.
-
----
-
 ## 📱 Mobile-First Guidelines
-- All interactive controls (buttons, navigation elements) are touch-friendly with a minimum size of 44x44px.
-- Grid structures adapt from single column on small mobile screens to multiple columns on desktop.
-- Responsive Sidebar defaults to a sliding drawer on mobile and sits fixed on the left on desktop screen widths (>1024px).
+- Responsive sidebar navigates dynamically based on the user's role (Super Admin, Superintendent, Student).
+- Protected pages verify role clearance and render customized layouts or secure Forbidden notices.
+- Large, touch-friendly inputs (minimum 44x44px target) with a password visibility toggle.

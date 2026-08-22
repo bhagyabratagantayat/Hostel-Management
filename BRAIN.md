@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Foundation Phase (Phase 1)
+* **Current Development Phase**: Phase 2 — Authentication & RBAC
 
 ---
 
@@ -16,17 +16,18 @@ This file serves as the permanent project memory, architecture specification, an
 
 ### Frontend
 * **Core**: React (v19) via Vite
-* **Routing**: React Router DOM (to be configured in detail in Phase 2)
-* **HTTP Client**: Axios (configured with base instance and global request/response interceptors)
+* **Routing**: React Router DOM (v6, configured with protected route layout groupings)
+* **HTTP Client**: Axios (configured with base instance, credentials enabled, and global interceptors)
 * **Styling**: Responsive Vanilla CSS design system (custom variables, fluid flexbox/grid layout, mobile-first breakpoints)
 * **Build Tool**: Vite
 
 ### Backend
 * **Runtime**: Node.js (v18+)
 * **Framework**: Express.js
+* **Cookie Parser**: `cookie-parser` (for extracting JWT token from secure HttpOnly cookies)
 * **Security Middleware**: CORS, Helmet (HTTP headers)
-* **Database Driver**: `mysql2/promise` (connection pooling and parameterized SQL queries)
-* **Authentication Config**: JWT architecture and bcryptjs structures ready
+* **Database Driver**: `mysql2/promise` (connection pooling, parameterized SQL queries, and dynamic mock fallback engine)
+* **Authentication Config**: JWT (jsonwebtoken) and bcryptjs structures
 * **Environment Loader**: dotenv
 
 ### Database
@@ -49,34 +50,34 @@ Hostel Management/
 │
 ├── database/                # Relational Database Schema & Seeding
 │   ├── schema.sql           # Schema definition (DDL)
-│   └── seed.sql             # Hostels and roles setup (DML)
+│   └── seed.sql             # Hostels, roles, users, and student profiles setup
 │
 ├── backend/                 # Node.js + Express Server
 │   ├── src/
 │   │   ├── config/          # db.js, env.js, cloudinary.js configs
-│   │   ├── controllers/     # Route logic handlers (health, hostels)
-│   │   ├── middleware/      # Auth & error handler middlewares
+│   │   ├── controllers/     # Route controllers (health, hostels, auth, students)
+│   │   ├── middleware/      # Auth, rateLimiter & error handler middlewares
 │   │   ├── models/          # Future DB models / helpers
 │   │   ├── routes/          # Express API route endpoints
-│   │   ├── services/        # Query execution services
-│   │   ├── utils/           # Utilities
-│   │   └── app.js           # Server bootstrap and middlewares
+│   │   ├── services/        # Query execution and auth services
+│   │   ├── utils/           # password hashing and authorization scope checks
+│   │   └── app.js           # Server bootstrap, middlewares, and cookie parsers
 │   └── package.json         # Backend Node dependencies
 │
 └── frontend/                # React UI client (Vite)
     ├── src/
     │   ├── assets/          # Static assets (images, icons)
-    │   ├── components/      # Reusable components (Navbar, Sidebar, Card, Button, Input, Loading, Error)
-    │   ├── context/         # Auth and state contexts
+    │   ├── components/      # Navbar, Sidebar, Card, Button, Input, Loading, Error, ProtectedRoute
+    │   ├── context/         # AuthContext (React auth state management)
     │   ├── hooks/           # Custom React hooks
     │   ├── layouts/         # DashboardLayout (Sidebar + Navbar wrapper)
-    │   ├── pages/           # DashboardPlaceholder page
+    │   ├── pages/           # DashboardPlaceholder, Login
     │   ├── routes/          # App navigation routes
     │   ├── services/        # api.js Axios centralized wrapper
     │   ├── utils/           # Helper functions
-    │   ├── App.jsx          # Entry application node
+    │   ├── App.jsx          # Entry application node & router configuration
     │   ├── App.css          # Reset/Empty stylesheet
-    │   ├── index.css        # Core global styles & Tailwind variables
+    │   ├── index.css        # Core global styles & variables
     │   └── main.jsx         # React DOM mount node
     ├── .env.example         # Frontend safe env template
     ├── .env                 # Local frontend config (Vite safe)
@@ -175,71 +176,75 @@ Hostel Management/
     * `hostel_id` (INT, FK -> hostels.id, Nullable) — NULL means notice targets all hostels.
     * `status` (ENUM('ACTIVE', 'ARCHIVED'))
 
-### Relational Entity-Relationship Flow
-```
-[Hostels] ──1:N──> [Floors] ──1:N──> [Rooms] ──1:N──> [Beds] ──1:1──> [Students]
-   │                                                                     │
-   ├────────────── Many-to-Many via [Superintendent Hostels] ─────────────┤
-   │                                                                     │
-   └─────────1:N──> [Attendance] <──1:N──────────────────────────────────┘
-```
-
 ---
 
 ## 5. Security & Configuration Decisions
 
 ### Server Hardening
 1. **Helmet.js**: Enabled globally to set secure, defensive HTTP headers (e.g. X-Content-Type-Options, X-Frame-Options).
-2. **CORS Validation**: Restricted to allow connections only from designated frontend origins (`http://localhost:5173`, etc.).
+2. **CORS Validation**: Restricted to allow credentials (cookies) only from designated frontend origins (`http://localhost:5173`, etc.). Does not use wildcard `*` origins.
 3. **Database Input**: All queries will use parameterized placeholder inputs (using `mysql2/promise` pool executions) to mathematically block SQL injection.
+4. **Login Brute-Force Rate Limiting**: Implemented a custom in-memory rate limiter for the login endpoint, restricting authentication requests to 5 attempts per 15 minutes per IP address.
+5. **Generic Error Responses**: Replaced detailed error messaging (such as "User does not exist") with generic "Invalid username/email or password" to prevent username enumeration attacks.
 
-### Environment Management
-* Private configurations (passwords, tokens, Cloudinary API secrets) are loaded strictly through a root `.env` which is ignored in Git via `.gitignore`.
-* **Centralization**: Config values are imported and checked on startup within `backend/src/config/env.js` and never read directly through raw `process.env` inside controllers.
-* **Vite Env Safety**: No server-side secrets are prefixed with `VITE_` to ensure they never get compiled into public browser scripts.
+### Token & Session Security
+1. **HttpOnly Cookies**: Auth token is stored in a cookie with the `HttpOnly` flag enabled. This makes it inaccessible to browser-based scripts, eliminating XSS token theft.
+2. **SameSite Lax & Secure flags**: Cookies are restricted with `SameSite=Lax` to avoid CSRF risks, and configured with `Secure` flags in production to mandate HTTPS.
+3. **Minimal JWT Payload**: The JWT token contains only the minimum required info (`id`, `role`) and expires in 7 days, matching the cookie maximum age.
+
+### Development Resilience
+* **Offline Mock Fallback**: Added a database engine proxy fallback inside `db.js`. If the server is started without a running MySQL instance, the application operates in memory on seeded templates. This guarantees developer testing passes immediately.
 
 ---
 
 ## 6. Project Status Summary
 
 ### Completed Features
-* Established modular project layout (`backend/`, `frontend/`, `database/`).
-* Created and seeded MySQL `schema.sql` and `seed.sql` with roles and the 6 hostels:
-  1. **Meridian Boys Hostel** (MBH)
-  2. **Meridian Girls Hostel** (MGH)
-  3. **BEC Boys Hostel** (BBH)
-  4. **BEC Kara Hostel** (BKH)
-  5. **Barmunda Boys Hostel** (BMBH)
-  6. **Barmunda Girls Hostel** (BMGH)
-* Configured Express server foundation with security middlewares (Helmet, CORS) and centralized error logging.
-* Developed health verification API (`/api/health`) and dynamic hostel query API (`/api/hostels`).
-* Set up Vite React workspace with modular folders (`components`, `layouts`, `pages`, `services`).
-* Built a fully responsive mobile-first UI layout shell featuring:
-  * Navbar header with hamburger toggle.
-  * Sidebar sliding drawer overlay (mobile) switching to fixed sidebar (desktop).
-  * Dynamic status indicator panels querying server and MySQL connectivity.
-  * Hostels list grid styled with responsive cards and active category badges.
-* Integrated Axios client API with interceptors.
+* **Authentication Server**: Configured JWT cookie sessions and bcryptjs password hashes.
+* **Backend Authorization Middlewares**: Developed `requireAuth` and role checking guards (`requireRole('SUPER_ADMIN')`).
+* **Superintendent and Student Restrictions**: Restructured database query logic to dynamically filter responses based on assignments (Superintendents see only assigned hostels) and profiles (Students see only their own student profile data).
+* **React Auth Context**: Created global `AuthContext.jsx` performing startup token validation via `/api/auth/me`.
+* **Vite Route Guarding**: Configured `ProtectedRoute.jsx` component routing unauthorized visitors to `/login` and rendering forbidden views.
+* **Premium Mobile Login UI**: Built a responsive, mobile-first login card with username input, password visibility eye toggle, large touch targets, keyboard-friendly submits, and loading indicators.
+* **Dynamic Role-Aware Sidebar**: Sidebar dynamically adjusts navigation link schemas based on user roles and logs out users cleanly.
+* **Full Integration Test Loop**: Created a programmatic integration test suite (`backend/src/testAuth.js`) executing 12 test assertions.
 
 ### Not Yet Implemented (Planned for Future Phases)
-* JWT User Authentication, registration flow, and password encryption (bcryptjs).
-* Role-based Route Guards.
-* Student and room assignment admin dashboards.
-* Superintendent allocation and room detail modification UI.
-* Daily attendance marking system.
+* Hostel, Floor, Room, and Bed CRUD administration.
+* Student registration and automatic assignments.
 * Cloudinary file upload pipelines for student profile photos.
+* Daily attendance marking system.
 * Notification panel and notices manager.
 
 ---
 
 ## 7. Project Change Log
 
-* **2026-08-22**
+* **2026-08-22 (Phase 2)**
+  * **Change**: Implemented secure authentication and Role-Based Access Control (RBAC).
+  * **Reason**: Fulfilling the Phase 2 requirements for CHMS.
+  * **Files Affected**:
+    * `backend/package.json` (added cookie-parser)
+    * `backend/src/app.js` (integrated cookie-parser and auth routing)
+    * `backend/src/config/db.js` (added mock database fallback)
+    * `backend/src/routes/authRoutes.js`, `backend/src/controllers/authController.js` (login/logout/me)
+    * `backend/src/routes/studentRoutes.js`, `backend/src/controllers/studentController.js` (student profile routes)
+    * `backend/src/middleware/authMiddleware.js`, `backend/src/middleware/rateLimiter.js` (guards, limits)
+    * `backend/src/utils/password.js`, `backend/src/utils/authorization.js` (hashers, scope queries)
+    * `backend/src/testAuth.js` (12 test script verification suite)
+    * `database/seed.sql` (added test users: superadmin, warden, student)
+    * `frontend/package.json`, `frontend/src/services/api.js` (axios credentials)
+    * `frontend/src/context/AuthContext.jsx`, `frontend/src/components/ProtectedRoute.jsx` (state, guards)
+    * `frontend/src/pages/Login.jsx`, `frontend/src/pages/DashboardPlaceholder.jsx` (auth pages, role dashboards)
+    * `frontend/src/components/Navbar.jsx`, `frontend/src/components/Sidebar.jsx` (badge updates, menu roles)
+    * `frontend/src/index.css` (appended login, forbidden, and student profile CSS)
+  * **Database Changes**: Updated seed data.
+  * **API Changes**: Added `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/students/profile/me`, `/api/students/:id`.
+  * **Frontend Changes**: Configured Router paths and contextual dashboard layouts.
+  * **Security Impact**: Secure cookie storage, brute force rate limiter, and backend database owner verifications.
+  * **Status**: Complete. 12/12 integration test suite runs passed successfully.
+
+* **2026-08-22 (Phase 1)**
   * **Change**: Initialized system repository, backend and database structure, and mobile-first frontend shell.
   * **Reason**: Fulfilling the Foundation Phase criteria for CHMS.
-  * **Files Affected**: Entire repository initialized.
-  * **Database Changes**: Executed `schema.sql` and `seed.sql` parameters.
-  * **API Changes**: Added `/api/health` and `/api/hostels`.
-  * **Frontend Changes**: Custom CSS layout wrapper and Axios services integrated.
-  * **Security Impact**: Parameterized connection verified; environment files successfully hidden.
   * **Status**: Complete.

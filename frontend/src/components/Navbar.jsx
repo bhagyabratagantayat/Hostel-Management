@@ -1,6 +1,19 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ onToggleSidebar }) => {
+  const { user } = useAuth();
+  
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const formatRole = (role) => {
+    if (!role) return '';
+    return role.replace('_', ' ');
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-left">
@@ -17,13 +30,15 @@ const Navbar = ({ onToggleSidebar }) => {
       </div>
       
       <div className="navbar-right">
-        <div className="user-badge">
-          <div className="user-avatar">SA</div>
-          <div className="user-info-desktop">
-            <span className="user-name">System Administrator</span>
-            <span className="user-role">Super Admin</span>
+        {user && (
+          <div className="user-badge">
+            <div className="user-avatar">{getInitials(user.username)}</div>
+            <div className="user-info-desktop">
+              <span className="user-name">{user.username}</span>
+              <span className="user-role">{formatRole(user.role)}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   );

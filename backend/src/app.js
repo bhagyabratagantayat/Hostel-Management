@@ -1,12 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const env = require('./config/env');
 const db = require('./config/db');
 
 // Import routes
 const healthRoutes = require('./routes/healthRoutes');
 const hostelRoutes = require('./routes/hostelRoutes');
+const authRoutes = require('./routes/authRoutes');
+const studentRoutes = require('./routes/studentRoutes');
 
 // Initialize express app
 const app = express();
@@ -20,9 +23,10 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing middleware
+// Body parsing & Cookie parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Test DB Connection on startup
 db.testConnection().then((connected) => {
@@ -34,6 +38,8 @@ db.testConnection().then((connected) => {
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/hostels', hostelRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/students', studentRoutes);
 
 // Base route for API documentation / welcome
 app.get('/api', (req, res) => {
@@ -68,11 +74,15 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start listening
-const server = app.listen(env.PORT, () => {
-  console.log(`Server is running in ${env.NODE_ENV} mode on port ${env.PORT}`);
-  console.log(`Health endpoint available at http://localhost:${env.PORT}/api/health`);
-  console.log(`Hostels endpoint available at http://localhost:${env.PORT}/api/hostels`);
-});
+// Start listening if run directly
+if (require.main === module) {
+  app.listen(env.PORT, () => {
+    console.log(`Server is running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+    console.log(`Health endpoint available at http://localhost:${env.PORT}/api/health`);
+    console.log(`Hostels endpoint available at http://localhost:${env.PORT}/api/hostels`);
+    console.log(`Auth endpoints mounted at http://localhost:${env.PORT}/api/auth`);
+    console.log(`Students endpoints mounted at http://localhost:${env.PORT}/api/students`);
+  });
+}
 
 module.exports = app;

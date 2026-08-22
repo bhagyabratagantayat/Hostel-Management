@@ -1,0 +1,85 @@
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
+const db = require('../config/db');
+
+/**
+ * Middleware to authenticate requests via JWT stored in HttpOnly cookies.
+ */
+const requireAuth = async (req, res, next) => {
+  try {
+    const token = req.cookies?.token;
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Please log in.'
+      });
+    }
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, env.JWT.secret);
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired session token. Please log in again.'
+      });
+    }
+
+    // Fetch user and role from database
+    const [users] = await db.pool.query(
+      `SELECT u.id, u.username, u.email, u.status, r.name as role
+       FROM users u
+       JOIN roles r ON u.role_id = r.id
+       WHERE u.id = ? AND u.status = 'ACTIVE'`,
+      [decoded.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'User account is inactive or no longer exists.'
+      });
+    }
+
+    // Attach user information to request object
+    req.user = users[0];
+    next();
+  } catch (error) {
+    console.error('Authentication middleware error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server authentication error.'
+    });
+  }
+};
+
+/**
+ * Middleware to restrict access to specific roles.
+ * @param {...string} allowedRoles - List of authorized roles (e.g. 'SUPER_ADMIN', 'SUPERINTENDENT')
+ */
+const requireRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required.'
+      });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `Forbidden: Access restricted to [${allowedRoles.join(', ')}]`
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = {
+  requireAuth,
+  requireRole
+};

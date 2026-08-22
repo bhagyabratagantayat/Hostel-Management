@@ -1,15 +1,48 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const menuItems = [
-    { label: 'Dashboard', icon: '📊', active: true },
-    { label: 'Hostels', icon: '🏢' },
-    { label: 'Rooms', icon: '🚪' },
-    { label: 'Beds', icon: '🛏️' },
-    { label: 'Students', icon: '🎓' },
-    { label: 'Attendance', icon: '📝' },
-    { label: 'Notices', icon: '📢' },
-  ];
+  const { user, logout } = useAuth();
+
+  // Define navigation schemas per user role
+  const getNavItems = () => {
+    if (!user) return [];
+
+    switch (user.role) {
+      case 'SUPER_ADMIN':
+        return [
+          { label: 'Dashboard', icon: '📊', active: true },
+          { label: 'Hostels', icon: '🏢' },
+          { label: 'Students', icon: '🎓' },
+          { label: 'Rooms & Beds', icon: '🚪' },
+          { label: 'Superintendents', icon: '👤' },
+          { label: 'Attendance', icon: '📝' },
+          { label: 'Notices', icon: '📢' },
+          { label: 'Reports', icon: '📈' },
+          { label: 'Settings', icon: '⚙️' }
+        ];
+      case 'SUPERINTENDENT':
+        return [
+          { label: 'Dashboard', icon: '📊', active: true },
+          { label: 'My Hostels', icon: '🏢' },
+          { label: 'Students', icon: '🎓' },
+          { label: 'Rooms & Beds', icon: '🚪' },
+          { label: 'Attendance', icon: '📝' },
+          { label: 'Notices', icon: '📢' }
+        ];
+      case 'STUDENT':
+        return [
+          { label: 'Dashboard', icon: '📊', active: true },
+          { label: 'My Profile', icon: '👤' },
+          { label: 'My Attendance', icon: '📝' },
+          { label: 'Notices', icon: '📢' }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const navItems = getNavItems();
 
   return (
     <>
@@ -28,7 +61,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         
         <nav className="sidebar-nav">
           <ul className="sidebar-menu-list">
-            {menuItems.map((item, idx) => (
+            {navItems.map((item, idx) => (
               <li key={idx} className="sidebar-menu-item">
                 <a href="#" className={`sidebar-menu-link ${item.active ? 'active' : ''}`}>
                   <span className="sidebar-menu-icon">{item.icon}</span>
@@ -36,10 +69,25 @@ const Sidebar = ({ isOpen, onClose }) => {
                 </a>
               </li>
             ))}
+            
+            {/* Direct Logout action in list */}
+            <li className="sidebar-menu-item sidebar-logout-item">
+              <button onClick={logout} className="sidebar-menu-link sidebar-logout-btn">
+                <span className="sidebar-menu-icon">🚪</span>
+                <span className="sidebar-menu-label">Logout</span>
+              </button>
+            </li>
           </ul>
         </nav>
         
         <div className="sidebar-footer">
+          <div className="sidebar-user-badge">
+            <div className="avatar-mini">{user?.username ? user.username.substring(0, 2).toUpperCase() : 'U'}</div>
+            <div className="badge-meta">
+              <span className="badge-name">{user?.username || 'User'}</span>
+              <span className="badge-role">{user?.role || 'Guest'}</span>
+            </div>
+          </div>
           <span className="version-tag">Foundation v1.0.0</span>
         </div>
       </aside>
