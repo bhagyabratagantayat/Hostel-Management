@@ -6,6 +6,8 @@ import HostelCard from '../components/HostelCard';
 import AttendanceChart from '../components/AttendanceChart';
 import OccupancySummary from '../components/OccupancySummary';
 import Loading from '../components/Loading';
+import RecentNoticesSection from '../components/RecentNoticesSection';
+import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import './SuperintendentDashboard.css';
 
 const buildStats = (overall) => [
@@ -29,13 +31,14 @@ function SuperintendentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [filter, setFilter]   = useState('all');
+  const [selectedNotice, setSelectedNotice] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const resp = await api.getDashboardOverview();
-      setData(resp.data);
+      setData(resp.data || resp);
     } catch (err) {
       setError('Unable to load dashboard data. Please try again.');
     } finally {
@@ -72,6 +75,7 @@ function SuperintendentDashboard() {
         <button onClick={() => navigate('/superintendent/students')}   className="qa-btn">🎓 Students</button>
         <button onClick={() => navigate('/superintendent/hostels')}    className="qa-btn">🏢 Rooms & Beds</button>
         <button onClick={() => navigate('/superintendent/attendance')} className="qa-btn">📝 Mark Attendance</button>
+        <button onClick={() => navigate('/superintendent/notices')}    className="qa-btn">📢 Notice Board</button>
       </nav>
 
       {/* Error */}
@@ -96,6 +100,15 @@ function SuperintendentDashboard() {
           ))}
         </div>
       ))}
+
+      {/* Recent Notices Section */}
+      {!loading && !error && (
+        <RecentNoticesSection
+          notices={data?.recentNotices || []}
+          userRole="SUPERINTENDENT"
+          onViewNotice={(n) => setSelectedNotice(n)}
+        />
+      )}
 
       {/* Charts + hostel cards */}
       {!loading && !error && data && (
@@ -143,6 +156,15 @@ function SuperintendentDashboard() {
             )}
           </div>
         </>
+      )}
+
+      {/* Detail Modal */}
+      {selectedNotice && (
+        <NoticeDetailsModal
+          notice={selectedNotice}
+          userRole="SUPERINTENDENT"
+          onClose={() => setSelectedNotice(null)}
+        />
       )}
     </div>
   );

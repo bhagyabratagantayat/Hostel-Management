@@ -80,20 +80,21 @@ The database seeding script initializes the following pre-configured test users 
 ## 🚀 Installation & Local Setup
 
 ### 1. Database Setup
-1. Open your MySQL client (local or Hostinger phpMyAdmin).
-2. Execute the schema statements in [database/schema.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/schema.sql) to initialize all tables, foreign keys, and indexes.
+1. Open your MySQL client (local or remote phpMyAdmin).
+2. Execute the schema statements in [database/schema.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/schema.sql) to initialize all core tables, foreign keys, and indexes.
 3. Execute [database/seed.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/seed.sql) to populate roles, hostels, and test accounts.
+4. For Phase 7 Notice System update on existing databases, apply [database/migrations/phase7_notices.sql](file:///d:/TEST%20PROJECT/Hostel%20Management/database/migrations/phase7_notices.sql).
 
 ### 2. Environment Configuration
 Create a `.env` file in the root workspace directory matching the variables in `.env.example`:
 ```env
 # Server
-PORT=5000
+PORT=5001
 NODE_ENV=development
 
 # MySQL DB
 DB_HOST=127.0.0.1
-DB_PORT=3306
+DB_PORT=3307
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=hostel_management
@@ -116,16 +117,12 @@ CLOUDINARY_API_SECRET=your_cloudinary_secret
    ```bash
    npm install
    ```
-3. Run the automated authentication integration test suite (12 test scenarios):
-   ```bash
-   node src/testAuth.js
-   ```
-4. Start the backend development server (nodemons):
+3. Start the backend development server:
    ```bash
    npm run dev
    ```
 
-The backend server is accessible at `http://localhost:5000`.
+The backend server is accessible at `http://localhost:5001`.
 
 ### 4. Frontend Setup
 1. Open a terminal in the `frontend/` directory:

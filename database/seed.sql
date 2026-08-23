@@ -60,3 +60,20 @@ ON DUPLICATE KEY UPDATE
     `semester` = VALUES(`semester`),
     `admission_date` = VALUES(`admission_date`),
     `status` = VALUES(`status`);
+
+-- 6. Seed Notices
+INSERT INTO `notices` (`id`, `title`, `description`, `created_by`, `hostel_id`, `priority`, `status`, `published_at`, `expires_at`) VALUES
+(1, 'Hostel Maintenance Schedule', 'Routine plumbing and electrical inspections will take place across all blocks this coming weekend. Please ensure your rooms are accessible.', 1, NULL, 'IMPORTANT', 'PUBLISHED', NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY)),
+(2, 'Water Tank Cleaning Notice - Meridian Boys', 'The overhead water tank for Meridian Boys Hostel will undergo deep cleaning on Sunday between 8:00 AM and 1:00 PM. Water supply will be paused during this period.', 2, 1, 'URGENT', 'PUBLISHED', NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY)),
+(3, 'Library Extension Hours Notice', 'The sub-campus study hall and library reading rooms will remain open until 11:00 PM during the mid-semester examination period.', 1, NULL, 'GENERAL', 'PUBLISHED', NOW(), DATE_ADD(NOW(), INTERVAL 14 DAY)),
+(4, 'Upcoming Hostel Sports Tournament Draft', 'Draft announcement for the annual Inter-Hostel Table Tennis and Carrom Championship.', 2, 1, 'GENERAL', 'DRAFT', NULL, NULL)
+ON DUPLICATE KEY UPDATE
+    `title` = VALUES(`title`),
+    `description` = VALUES(`description`),
+    `created_by` = VALUES(`created_by`),
+    `hostel_id` = VALUES(`hostel_id`),
+    `priority` = VALUES(`priority`),
+    `status` = VALUES(`status`),
+    `published_at` = VALUES(`published_at`),
+    `expires_at` = VALUES(`expires_at`);
+

@@ -39,6 +39,8 @@ db.testConnection().then((connected) => {
   }
 });
 
+const noticeRoutes = require('./routes/noticeRoutes');
+
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/hostels', hostelRoutes);
@@ -49,6 +51,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/beds', bedRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/notices', noticeRoutes);
 
 
 // Base route for API documentation / welcome

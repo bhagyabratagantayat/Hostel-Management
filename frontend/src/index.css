@@ -302,6 +302,18 @@ body {
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
 }
 
+.sidebar-unread-badge {
+  margin-left: auto;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  line-height: 1;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4);
+}
+
 .sidebar-menu-icon {
   font-size: 18px;
 }

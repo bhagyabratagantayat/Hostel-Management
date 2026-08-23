@@ -46,4 +46,14 @@ api.interceptors.response.use(
 // Dashboard overview API method attached to api instance
 api.getDashboardOverview = () => api.get('/dashboard/overview');
 
+// Notice API methods
+api.getNotices = (params = {}) => api.get('/notices', { params });
+api.getUnreadCount = () => api.get('/notices/unread-count');
+api.getNoticeById = (id) => api.get(`/notices/${id}`);
+api.createNotice = (data) => api.post('/notices', data);
+api.updateNotice = (id, data) => api.put(`/notices/${id}`, data);
+api.updateNoticeStatus = (id, status) => api.patch(`/notices/${id}/status`, { status });
+api.markNoticeRead = (id) => api.post(`/notices/${id}/read`);
+api.deleteNotice = (id) => api.delete(`/notices/${id}`);
+
 export default api;

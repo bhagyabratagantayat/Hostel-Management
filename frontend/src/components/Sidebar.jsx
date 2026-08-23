@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread count for active user
+  useEffect(() => {
+    if (user) {
+      api.getUnreadCount()
+        .then(res => {
+          if (res.success) {
+            setUnreadCount(res.unreadCount || 0);
+          }
+        })
+        .catch(err => console.error('Failed to fetch unread notice count:', err));
+    }
+  }, [user, location.pathname]);
 
   // Define navigation schemas per user role
   const getNavItems = () => {
@@ -17,6 +32,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
           { label: 'Students', icon: '🎓', path: '/admin/students' },
           { label: 'Attendance', icon: '📝', path: '/admin/attendance' },
+          { label: 'Notices', icon: '📢', path: '/admin/notices', badge: unreadCount },
         ];
       case 'SUPERINTENDENT':
         return [
@@ -24,10 +40,12 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
           { label: 'Students', icon: '🎓', path: '/superintendent/students' },
           { label: 'Attendance', icon: '📝', path: '/superintendent/attendance' },
+          { label: 'Notices', icon: '📢', path: '/superintendent/notices', badge: unreadCount },
         ];
       case 'STUDENT':
         return [
-          { label: 'Dashboard', icon: '📊', path: '/' },
+          { label: 'Dashboard', icon: '📊', path: '/student/dashboard' },
+          { label: 'Notices', icon: '📢', path: '/student/notices', badge: unreadCount },
           { label: 'My Profile', icon: '👤', path: '/student/profile' },
           { label: 'My Attendance', icon: '📝', path: '/student/attendance' },
         ];
@@ -69,6 +87,11 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <Link to={item.path} className={`sidebar-menu-link ${active ? 'active' : ''}`}>
                     <span className="sidebar-menu-icon">{item.icon}</span>
                     <span className="sidebar-menu-label">{item.label}</span>
+                    {Boolean(item.badge && item.badge > 0) && (
+                      <span className="sidebar-unread-badge" title={`${item.badge} unread notices`}>
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

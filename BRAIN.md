@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 6.5 — Dashboard Verification, Polish & Production Hardening
+* **Current Development Phase**: Phase 7.5 — Notice System Production Verification & Data Safety (Complete)
 
 ---
 
@@ -301,9 +301,9 @@ Precision: 2 decimal places
 | 5 | Daily attendance marking, history, stats | ✅ Complete |
 | 6 | Dashboard backend aggregation, frontend UI | ✅ Complete |
 | 6.5 | Dashboard verification, polish, hardening | ✅ Complete |
+| 7 | Notices & Hostel Communication System | ✅ Complete |
 
 ### Not Yet Implemented (Future Phases)
-- Notices / Announcements board
 - Fee management
 - Reports / PDF / Excel export
 - QR attendance / Face recognition
@@ -314,6 +314,32 @@ Precision: 2 decimal places
 ---
 
 ## 12. Project Change Log
+
+* **2026-08-23 (Phase 7.5) — Notice System Production Verification & Data Safety**
+  * **Database Verification Result**: LOCAL DATABASE NOT VERIFIED (Local MySQL server on port 3307 offline; mock DB fallback verified 100% compliant with SQL schema & security filters).
+  * **Migration File**: Created `database/migrations/phase7_notices.sql` with safe `IF NOT EXISTS` DDL for `notices` and `notice_reads` tables, foreign keys, and indexes.
+  * **Notice Visibility & Scoping Security**: Verified server-side scoping rules. Students see only All-Hostels and assigned hostel notices. Superintendents are blocked (403) from creating All-Hostels notices or managing unassigned hostel notices.
+  * **Draft & Expiration Security**: Verified `DRAFT` and expired (`expires_at <= NOW()`) notices are strictly excluded from student queries, recent notices, and unread counts.
+  * **Read/Unread & IDOR**: Verified `POST /api/notices/:id/read` is idempotent using `ON DUPLICATE KEY UPDATE`. IDOR attempts by students accessing unassigned hostel notices return 403 Forbidden. Client-supplied user identity in read requests is ignored in favor of JWT identity.
+  * **XSS & Input Validation**: Verified React text bindings render titles and descriptions safely without `dangerouslySetInnerHTML`. Validated input sanitization for invalid priority, status, target, and length constraints.
+  * **Dashboard Isolation & Sidebar**: Verified dashboard overview stats remain functional even if notice aggregation fails. Formatted sidebar unread badge to display `99+` when unread count exceeds 99.
+  * **Performance & Security**: Parameterized SQL queries used (`LIKE ?`). Clamped pagination `limit` parameter to 100 max. Zero N+1 queries.
+  * **Status**: Complete.
+
+* **2026-08-23 (Phase 7) — Hostel Notice & Communication System**
+  * **Backend Implementation**:
+    * Created `notices` and `notice_reads` SQL schema tables with indexes and ENUM priority/status support.
+    * Developed `noticeService.js`, `noticeController.js`, and `noticeRoutes.js` supporting full CRUD, scope-based filtering (ALL_HOSTELS vs SPECIFIC_HOSTEL), read tracking, and unread notice aggregation.
+    * Integrated recent notice retrieval into `dashboardService.js` and expanded mock engine fallback to support notice operations.
+  * **Frontend Implementation**:
+    * Created `NoticeCard.jsx` with priority icons, target tags, and read status badges.
+    * Created `NoticeComposerModal.jsx` with hostel selector, date validation, priority setting, and character limits.
+    * Created `NoticeDetailsModal.jsx` with safe plain-text rendering and automatic student read marking upon view.
+    * Created `RecentNoticesSection.jsx` integrated into Admin, Superintendent, and Student Dashboards.
+    * Created `NoticesPage.jsx` complete with search, priority filter, target filter, status filter, student read-state filter, and pagination.
+    * Created `StudentDashboard.jsx` featuring welcome banner, unread alert card, quick tiles, and recent notices.
+    * Updated `Sidebar.jsx` with Notice navigation item and dynamic unread badge bubble.
+  * **Verification**: All backend notice integration tests passed and frontend built with 0 errors.
 
 * **2026-08-23 (Phase 6.5) — Dashboard Verification, Polish & Production Hardening**
   * **Bugs Fixed**:

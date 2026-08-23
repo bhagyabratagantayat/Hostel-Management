@@ -5,6 +5,8 @@ import StatCard from '../components/StatCard';
 import HostelCard from '../components/HostelCard';
 import AttendanceChart from '../components/AttendanceChart';
 import OccupancySummary from '../components/OccupancySummary';
+import RecentNoticesSection from '../components/RecentNoticesSection';
+import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import './AdminDashboard.css';
 
 // Stat card definitions for the overall section
@@ -29,13 +31,14 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [filter, setFilter]   = useState('all');
+  const [selectedNotice, setSelectedNotice] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const resp = await api.getDashboardOverview();
-      setData(resp.data);
+      setData(resp.data || resp);
     } catch (err) {
       setError('Unable to load dashboard data. Please try again.');
     } finally {
@@ -90,6 +93,7 @@ function AdminDashboard() {
         <button onClick={() => navigate('/admin/hostels')}  className="qa-btn">🏢 Manage Hostels</button>
         <button onClick={() => navigate('/admin/students')} className="qa-btn">🎓 Add Student</button>
         <button onClick={() => navigate('/admin/attendance')} className="qa-btn">📝 Attendance</button>
+        <button onClick={() => navigate('/admin/notices')} className="qa-btn">📢 Notice Board</button>
       </nav>
 
       {/* Error state */}
@@ -102,6 +106,15 @@ function AdminDashboard() {
 
       {/* Overall stats */}
       {loading ? renderSkeletonStats() : (!error && data && renderStats())}
+
+      {/* Recent Notices Section */}
+      {!loading && !error && (
+        <RecentNoticesSection
+          notices={data?.recentNotices || []}
+          userRole="SUPER_ADMIN"
+          onViewNotice={(n) => setSelectedNotice(n)}
+        />
+      )}
 
       {/* Charts */}
       {!loading && !error && data && (
@@ -148,6 +161,15 @@ function AdminDashboard() {
             )}
           </div>
         </>
+      )}
+
+      {/* Detail Modal */}
+      {selectedNotice && (
+        <NoticeDetailsModal
+          notice={selectedNotice}
+          userRole="SUPER_ADMIN"
+          onClose={() => setSelectedNotice(null)}
+        />
       )}
     </div>
   );

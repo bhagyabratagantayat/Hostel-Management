@@ -28,6 +28,15 @@ async function getDashboardOverview(user) {
   if (user.role === 'SUPERINTENDENT') {
     const assigned = await getAssignedHostels(user.id);
     allowedHostelIds = assigned.length ? assigned : [];
+  } else if (user.role === 'STUDENT') {
+    const [rows] = await db.pool.query(
+      `SELECT r.hostel_id FROM students s
+       JOIN beds b ON s.bed_id = b.id
+       JOIN rooms r ON b.room_id = r.id
+       WHERE s.user_id = ? OR s.id = ?`,
+      [user.id, user.student_id || user.id]
+    );
+    allowedHostelIds = (rows && rows.length && rows[0].hostel_id) ? [rows[0].hostel_id] : [];
   } else if (user.role !== 'SUPER_ADMIN') {
     const err = new Error('Forbidden');
     err.status = 403;
@@ -50,7 +59,7 @@ async function getDashboardOverview(user) {
   const hostelWhere = buildHostelWhere('r');
 
   // For SUPER_ADMIN: total hostels is all hostels.
-  // For SUPERINTENDENT: total hostels is assigned count.
+  // For SUPERINTENDENT/STUDENT: total hostels is assigned count.
   const hostelCountSql = allowedHostelIds === null
     ? `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE'`
     : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostelIds.map(() => '?').join(',')})`;
@@ -129,25 +138,25 @@ async function getDashboardOverview(user) {
        WHERE attendance_date = ? AND student_id IN (${idPh})`,
       [todayStr, ...activeStudentIds]
     );
-    present = Number(attCounts.present) || 0;
-    absent = Number(attCounts.absent) || 0;
-    notMarked = activeStudentIds.length - (Number(attCounts.markedCount) || 0);
+    present = Number(attCounts?.present) || 0;
+    absent = Number(attCounts?.absent) || 0;
+    notMarked = activeStudentIds.length - (Number(attCounts?.markedCount) || 0);
   }
 
   const totalMarked = present + absent;
   const attendancePercentage = totalMarked > 0 ? parseFloat(((present / totalMarked) * 100).toFixed(2)) : 0;
 
-  const occupiedBeds = Number(bedCounts[0].occupiedBeds) || 0;
-  const availableBeds = Number(bedCounts[0].availableBeds) || 0;
-  const maintenanceBeds = Number(bedCounts[0].maintenanceBeds) || 0;
+  const occupiedBeds = Number(bedCounts?.[0]?.occupiedBeds) || 0;
+  const availableBeds = Number(bedCounts?.[0]?.availableBeds) || 0;
+  const maintenanceBeds = Number(bedCounts?.[0]?.maintenanceBeds) || 0;
   const usableBeds = occupiedBeds + availableBeds;
   const occupancyPercentage = usableBeds > 0 ? parseFloat(((occupiedBeds / usableBeds) * 100).toFixed(2)) : 0;
 
   const overall = {
-    totalHostels: Number(hostelCountRows[0].totalHostels) || 0,
-    totalStudents: Number(studentCountRows[0].totalStudents) || 0,
-    totalRooms: Number(roomCountRows[0].totalRooms) || 0,
-    totalBeds: Number(bedCounts[0].totalBeds) || 0,
+    totalHostels: Number(hostelCountRows?.[0]?.totalHostels) || 0,
+    totalStudents: Number(studentCountRows?.[0]?.totalStudents) || 0,
+    totalRooms: Number(roomCountRows?.[0]?.totalRooms) || 0,
+    totalBeds: Number(bedCounts?.[0]?.totalBeds) || 0,
     occupiedBeds,
     availableBeds,
     maintenanceBeds,
@@ -209,17 +218,17 @@ async function getDashboardOverview(user) {
       ),
     ]);
 
-    const hTotalStudents = Number(stuRows[0].totalStudents) || 0;
-    const hPresent = Number(attRows[0].present) || 0;
-    const hAbsent = Number(attRows[0].absent) || 0;
-    const hMarked = Number(attRows[0].markedCount) || 0;
+    const hTotalStudents = Number(stuRows?.[0]?.totalStudents) || 0;
+    const hPresent = Number(attRows?.[0]?.present) || 0;
+    const hAbsent = Number(attRows?.[0]?.absent) || 0;
+    const hMarked = Number(attRows?.[0]?.markedCount) || 0;
     const hNotMarked = hTotalStudents - hMarked;
     const hTotalMarked = hPresent + hAbsent;
     const hAttPct = hTotalMarked > 0 ? parseFloat(((hPresent / hTotalMarked) * 100).toFixed(2)) : 0;
 
-    const hOccupied = Number(bRows[0].occupiedBeds) || 0;
-    const hAvailable = Number(bRows[0].availableBeds) || 0;
-    const hMaintenance = Number(bRows[0].maintenanceBeds) || 0;
+    const hOccupied = Number(bRows?.[0]?.occupiedBeds) || 0;
+    const hAvailable = Number(bRows?.[0]?.availableBeds) || 0;
+    const hMaintenance = Number(bRows?.[0]?.maintenanceBeds) || 0;
     const hUsable = hOccupied + hAvailable;
     const hOccPct = hUsable > 0 ? parseFloat(((hOccupied / hUsable) * 100).toFixed(2)) : 0;
 
@@ -231,8 +240,8 @@ async function getDashboardOverview(user) {
       absent: hAbsent,
       notMarked: hNotMarked,
       attendancePercentage: hAttPct,
-      totalRooms: Number(bRows[0].totalRooms) || 0,
-      totalBeds: Number(bRows[0].totalBeds) || 0,
+      totalRooms: Number(bRows?.[0]?.totalRooms) || 0,
+      totalBeds: Number(bRows?.[0]?.totalBeds) || 0,
       occupiedBeds: hOccupied,
       availableBeds: hAvailable,
       maintenanceBeds: hMaintenance,
@@ -240,7 +249,16 @@ async function getDashboardOverview(user) {
     };
   }));
 
-  return { overall, hostels };
+  const noticeService = require('./noticeService');
+  let recentNotices = [];
+  try {
+    recentNotices = await noticeService.getRecentNotices(user, 5);
+  } catch (err) {
+    console.warn('Dashboard notice aggregation fallback:', err.message);
+    recentNotices = [];
+  }
+
+  return { overall, hostels, recentNotices };
 }
 
 module.exports = { getDashboardOverview };

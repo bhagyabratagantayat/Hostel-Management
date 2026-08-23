@@ -10,6 +10,8 @@ import HostelDetailsPage from './pages/HostelDetailsPage';
 import StudentsPage from './pages/StudentsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import SuperintendentDashboard from './pages/SuperintendentDashboard';
+import NoticesPage from './pages/NoticesPage';
+import StudentDashboard from './pages/StudentDashboard';
 import Loading from './components/Loading';
 
 /**
@@ -23,7 +25,8 @@ const RoleRedirect = () => {
   switch (user.role) {
     case 'SUPER_ADMIN':     return <Navigate to="/admin/dashboard" replace />;
     case 'SUPERINTENDENT':  return <Navigate to="/superintendent/dashboard" replace />;
-    default:                return <DashboardLayout><DashboardPlaceholder /></DashboardLayout>;
+    case 'STUDENT':         return <Navigate to="/student/dashboard" replace />;
+    default:                return <Navigate to="/student/dashboard" replace />;
   }
 };
 
@@ -65,6 +68,8 @@ function App() {
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
                     <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
+                    <Route path="notices"             element={<NoticesPage />} />
+                    <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="*"                   element={<Navigate to="/admin/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -84,6 +89,8 @@ function App() {
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
                     <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
+                    <Route path="notices"             element={<NoticesPage />} />
+                    <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="*"                   element={<Navigate to="/superintendent/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -98,9 +105,12 @@ function App() {
               <ProtectedRoute allowedRoles={['STUDENT']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="profile"    element={<Navigate to="/" replace />} />
+                    <Route path="dashboard"  element={<StudentDashboard />} />
+                    <Route path="notices"    element={<NoticesPage />} />
+                    <Route path="notices/:noticeId" element={<NoticesPage />} />
+                    <Route path="profile"    element={<DashboardPlaceholder />} />
                     <Route path="attendance" element={<RoutePlaceholder title="My Attendance" />} />
-                    <Route path="*"          element={<Navigate to="/" replace />} />
+                    <Route path="*"          element={<Navigate to="/student/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>

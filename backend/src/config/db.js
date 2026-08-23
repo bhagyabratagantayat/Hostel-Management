@@ -50,6 +50,71 @@ const MOCK_STUDENTS = [
   }
 ];
 
+let MOCK_NOTICES = [
+  {
+    id: 1,
+    title: 'Hostel Maintenance Schedule',
+    description: 'Routine plumbing and electrical inspections will take place across all blocks this coming weekend. Please ensure your rooms are accessible.',
+    created_by: 1,
+    creator_name: 'superadmin',
+    hostel_id: null,
+    hostel_name: null,
+    priority: 'IMPORTANT',
+    status: 'PUBLISHED',
+    published_at: new Date('2026-08-20T10:00:00Z').toISOString(),
+    expires_at: new Date('2026-09-20T10:00:00Z').toISOString(),
+    created_at: new Date('2026-08-20T09:00:00Z').toISOString(),
+    updated_at: new Date('2026-08-20T10:00:00Z').toISOString()
+  },
+  {
+    id: 2,
+    title: 'Water Tank Cleaning Notice - Meridian Boys',
+    description: 'The overhead water tank for Meridian Boys Hostel will undergo deep cleaning on Sunday between 8:00 AM and 1:00 PM. Water supply will be paused during this period.',
+    created_by: 2,
+    creator_name: 'warden',
+    hostel_id: 1,
+    hostel_name: 'Meridian Boys Hostel',
+    priority: 'URGENT',
+    status: 'PUBLISHED',
+    published_at: new Date('2026-08-22T08:00:00Z').toISOString(),
+    expires_at: new Date('2026-08-29T08:00:00Z').toISOString(),
+    created_at: new Date('2026-08-22T07:30:00Z').toISOString(),
+    updated_at: new Date('2026-08-22T08:00:00Z').toISOString()
+  },
+  {
+    id: 3,
+    title: 'Library Extension Hours Notice',
+    description: 'The sub-campus study hall and library reading rooms will remain open until 11:00 PM during the mid-semester examination period.',
+    created_by: 1,
+    creator_name: 'superadmin',
+    hostel_id: null,
+    hostel_name: null,
+    priority: 'GENERAL',
+    status: 'PUBLISHED',
+    published_at: new Date('2026-08-21T12:00:00Z').toISOString(),
+    expires_at: new Date('2026-09-05T12:00:00Z').toISOString(),
+    created_at: new Date('2026-08-21T11:00:00Z').toISOString(),
+    updated_at: new Date('2026-08-21T12:00:00Z').toISOString()
+  },
+  {
+    id: 4,
+    title: 'Upcoming Hostel Sports Tournament Draft',
+    description: 'Draft announcement for the annual Inter-Hostel Table Tennis and Carrom Championship.',
+    created_by: 2,
+    creator_name: 'warden',
+    hostel_id: 1,
+    hostel_name: 'Meridian Boys Hostel',
+    priority: 'GENERAL',
+    status: 'DRAFT',
+    published_at: null,
+    expires_at: null,
+    created_at: new Date('2026-08-23T06:00:00Z').toISOString(),
+    updated_at: new Date('2026-08-23T06:00:00Z').toISOString()
+  }
+];
+
+let MOCK_NOTICE_READS = [];
+
 let isOffline = false;
 
 // Initialize the actual MySQL connection pool
@@ -136,6 +201,156 @@ const mockQuery = async (sql, params = []) => {
   if (queryLower.includes('from hostels') && queryLower.includes('order by id asc')) {
     // Admin query: returns all 6 hostels
     return [MOCK_HOSTELS];
+  }
+
+  // ── MOCK NOTICES OPERATIONS ──────────────────────────────────────────────
+  // 7. INSERT INTO notice_reads
+  if (queryLower.includes('into notice_reads')) {
+    const [notice_id, user_id] = params;
+    const existing = MOCK_NOTICE_READS.find(nr => nr.notice_id === Number(notice_id) && nr.user_id === Number(user_id));
+    if (!existing) {
+      MOCK_NOTICE_READS.push({
+        id: MOCK_NOTICE_READS.length + 1,
+        notice_id: Number(notice_id),
+        user_id: Number(user_id),
+        read_at: new Date().toISOString()
+      });
+    } else {
+      existing.read_at = new Date().toISOString();
+    }
+    return [{ insertId: MOCK_NOTICE_READS.length, affectedRows: 1 }];
+  }
+
+  // 8. INSERT INTO notices
+  if (queryLower.includes('into notices')) {
+    // Params: [title, description, created_by, hostel_id, priority, status, published_at, expires_at]
+    const [title, description, created_by, hostel_id, priority, status, published_at, expires_at] = params;
+    const creator = MOCK_USERS.find(u => u.id === Number(created_by));
+    const hostel = hostel_id ? MOCK_HOSTELS.find(h => h.id === Number(hostel_id)) : null;
+    const newNotice = {
+      id: MOCK_NOTICES.length + 1,
+      title,
+      description,
+      created_by: Number(created_by),
+      creator_name: creator ? creator.username : 'User',
+      hostel_id: hostel_id ? Number(hostel_id) : null,
+      hostel_name: hostel ? hostel.name : null,
+      priority: priority || 'GENERAL',
+      status: status || 'DRAFT',
+      published_at: published_at || (status === 'PUBLISHED' ? new Date().toISOString() : null),
+      expires_at: expires_at || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    MOCK_NOTICES.push(newNotice);
+    return [{ insertId: newNotice.id, affectedRows: 1 }];
+  }
+
+  // 9. UPDATE notices
+  if (queryLower.includes('update notices')) {
+    if (queryLower.includes('set status =')) {
+      // Status update: status, [published_at], id
+      const id = params[params.length - 1];
+      const notice = MOCK_NOTICES.find(n => n.id === Number(id));
+      if (notice) {
+        notice.status = params[0];
+        if (params.length > 2) notice.published_at = params[1];
+        notice.updated_at = new Date().toISOString();
+      }
+      return [{ affectedRows: notice ? 1 : 0 }];
+    }
+    // Full update
+    const id = params[params.length - 1];
+    const notice = MOCK_NOTICES.find(n => n.id === Number(id));
+    if (notice) {
+      notice.title = params[0];
+      notice.description = params[1];
+      notice.hostel_id = params[2] ? Number(params[2]) : null;
+      notice.priority = params[3];
+      notice.status = params[4];
+      notice.published_at = params[5];
+      notice.expires_at = params[6];
+      notice.updated_at = new Date().toISOString();
+
+      const hostel = notice.hostel_id ? MOCK_HOSTELS.find(h => h.id === notice.hostel_id) : null;
+      notice.hostel_name = hostel ? hostel.name : null;
+    }
+    return [{ affectedRows: notice ? 1 : 0 }];
+  }
+
+  // 10. DELETE FROM notices
+  if (queryLower.includes('delete from notices')) {
+    const id = params[0];
+    const index = MOCK_NOTICES.findIndex(n => n.id === Number(id));
+    if (index !== -1) {
+      MOCK_NOTICES.splice(index, 1);
+      return [{ affectedRows: 1 }];
+    }
+    return [{ affectedRows: 0 }];
+  }
+
+  // 11. SELECT FROM notices (single or list or count)
+  if (queryLower.includes('from notices')) {
+    let result = [...MOCK_NOTICES];
+
+    // Single notice ID query: WHERE n.id = ?
+    if (queryLower.includes('where n.id = ?') || queryLower.includes('n.id = ?')) {
+      const targetId = Number(params[params.length - 1] || params[1] || params[0]);
+      result = result.filter(n => n.id === targetId);
+    } else {
+      // Status filter
+      if (queryLower.includes("n.status = 'published'") || queryLower.includes("n.status = ?")) {
+        const reqStatus = queryLower.includes("n.status = ?")
+          ? params.find(p => typeof p === 'string' && ['DRAFT', 'PUBLISHED', 'ARCHIVED'].includes(p.toUpperCase()))
+          : 'PUBLISHED';
+        if (reqStatus) {
+          result = result.filter(n => n.status === (reqStatus.toUpperCase ? reqStatus.toUpperCase() : reqStatus));
+        } else if (queryLower.includes("n.status = 'published'")) {
+          result = result.filter(n => n.status === 'PUBLISHED');
+        }
+      }
+
+      // Expiration filter: expires_at > NOW()
+      if (queryLower.includes('expires_at > now()') || queryLower.includes('n.expires_at > now()')) {
+        result = result.filter(n => !n.expires_at || new Date(n.expires_at) > new Date());
+      }
+
+      // Read filter: nr.id IS NULL (unread)
+      if (queryLower.includes('nr.id is null')) {
+        const userId = Number(params[0]);
+        result = result.filter(n => !MOCK_NOTICE_READS.some(nr => nr.notice_id === n.id && nr.user_id === userId));
+      }
+
+      // Hostel filter for student / superintendent
+      if (queryLower.includes('n.hostel_id is null or n.hostel_id = ?')) {
+        const hostelId = params.find(p => typeof p === 'number');
+        if (hostelId !== undefined) {
+          result = result.filter(n => n.hostel_id === null || n.hostel_id === Number(hostelId));
+        }
+      } else if (queryLower.includes('n.hostel_id is null')) {
+        result = result.filter(n => n.hostel_id === null);
+      }
+    }
+
+    // Enrich with is_read and creator_name
+    const userId = Number(params[0] || 0);
+    result = result.map(n => {
+      const hostel = n.hostel_id ? MOCK_HOSTELS.find(h => h.id === n.hostel_id) : null;
+      const creator = MOCK_USERS.find(u => u.id === n.created_by);
+      const isRead = MOCK_NOTICE_READS.some(nr => nr.notice_id === n.id && nr.user_id === userId);
+      return {
+        ...n,
+        hostel_name: hostel ? hostel.name : null,
+        creator_name: creator ? creator.username : 'Admin',
+        is_read: isRead ? 1 : 0
+      };
+    });
+
+    if (queryLower.includes('count(')) {
+      return [[{ total: result.length, count: result.length, unreadCount: result.length }]];
+    }
+
+    return [result];
   }
 
   // Fallback / default mock response

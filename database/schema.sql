@@ -134,11 +134,25 @@ CREATE TABLE IF NOT EXISTS `notices` (
     `description` TEXT NOT NULL,
     `created_by` INT NOT NULL, -- User ID of the creator
     `hostel_id` INT DEFAULT NULL, -- Null represents a general notice for all hostels
-    `status` ENUM('ACTIVE', 'ARCHIVED') DEFAULT 'ACTIVE',
+    `priority` ENUM('GENERAL', 'IMPORTANT', 'URGENT') DEFAULT 'GENERAL',
+    `status` ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED') DEFAULT 'DRAFT',
+    `published_at` TIMESTAMP DEFAULT NULL,
+    `expires_at` TIMESTAMP DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 11. Notice Reads Table
+CREATE TABLE IF NOT EXISTS `notice_reads` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `notice_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `read_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`notice_id`) REFERENCES `notices` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE KEY `unique_notice_user_read` (`notice_id`, `user_id`)
 ) ENGINE=InnoDB;
 
 -- Create Indexes for performance optimization
@@ -148,3 +162,10 @@ CREATE INDEX idx_user_username ON users(username);
 CREATE INDEX idx_attendance_date ON attendance(attendance_date);
 CREATE INDEX idx_room_number ON rooms(room_number);
 CREATE INDEX idx_beds_status ON beds(status);
+CREATE INDEX idx_notices_status ON notices(status);
+CREATE INDEX idx_notices_hostel_id ON notices(hostel_id);
+CREATE INDEX idx_notices_priority ON notices(priority);
+CREATE INDEX idx_notices_published_at ON notices(published_at);
+CREATE INDEX idx_notices_expires_at ON notices(expires_at);
+CREATE INDEX idx_notice_reads_notice_id ON notice_reads(notice_id);
+CREATE INDEX idx_notice_reads_user_id ON notice_reads(user_id);
