@@ -271,6 +271,28 @@ let MOCK_MEAL_ATTENDANCE = [
   { id: 4, student_id: 1, hostel_id: 1, meal_date: new Date().toISOString().split('T')[0], meal_type: 'DINNER', status: 'TAKING', marked_at: new Date().toISOString() }
 ];
 
+let MOCK_FEE_STRUCTURES = [
+  { id: 1, hostel_id: 1, fee_type: 'HOSTEL_FEE', name: 'Annual Hostel Accommodation Fee 2026-27', description: 'Standard room rent and facilities for academic year 2026-27', amount: 30000.00, frequency: 'YEARLY', academic_year: '2026-27', applicable_course: 'B.Tech', applicable_branch: null, applicable_year: null, is_active: 1, created_by: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 2, hostel_id: 1, fee_type: 'MESS_FEE', name: 'Semester Mess Charges 2026-27', description: 'Four daily meals coverage for semester 5', amount: 15000.00, frequency: 'SEMESTER', academic_year: '2026-27', applicable_course: null, applicable_branch: null, applicable_year: null, is_active: 1, created_by: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 3, hostel_id: null, fee_type: 'SECURITY_DEPOSIT', name: 'One-Time Hostel Security Deposit', description: 'Refundable security deposit at admission', amount: 5000.00, frequency: 'ONE_TIME', academic_year: '2026-27', applicable_course: null, applicable_branch: null, applicable_year: null, is_active: 1, created_by: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+];
+
+let MOCK_STUDENT_FEES = [
+  { id: 1, student_id: 1, hostel_id: 1, fee_structure_id: 1, academic_year: '2026-27', amount: 30000.00, paid_amount: 10000.00, due_date: new Date(Date.now() + 30*86400000).toISOString().split('T')[0], status: 'PARTIAL', waiver_reason: null, waived_by: null, waived_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 2, student_id: 1, hostel_id: 1, fee_structure_id: 2, academic_year: '2026-27', amount: 15000.00, paid_amount: 15000.00, due_date: new Date(Date.now() - 10*86400000).toISOString().split('T')[0], status: 'PAID', waiver_reason: null, waived_by: null, waived_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 3, student_id: 2, hostel_id: 1, fee_structure_id: 1, academic_year: '2026-27', amount: 30000.00, paid_amount: 0.00, due_date: new Date(Date.now() - 5*86400000).toISOString().split('T')[0], status: 'OVERDUE', waiver_reason: null, waived_by: null, waived_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+];
+
+let MOCK_FEE_PAYMENTS = [
+  { id: 1, student_fee_id: 1, student_id: 1, hostel_id: 1, amount: 10000.00, payment_method: 'UPI', receipt_number: 'FEE-2026-000001', transaction_reference: 'UPI1234567890', payment_date: new Date().toISOString().split('T')[0], received_by: 2, notes: 'First installment paid via UPI', created_at: new Date().toISOString() },
+  { id: 2, student_fee_id: 2, student_id: 1, hostel_id: 1, amount: 15000.00, payment_method: 'BANK_TRANSFER', receipt_number: 'FEE-2026-000002', transaction_reference: 'NFT9876543210', payment_date: new Date().toISOString().split('T')[0], received_by: 2, notes: 'Full semester mess fee', created_at: new Date().toISOString() }
+];
+
+let MOCK_FEE_HISTORY = [
+  { id: 1, student_fee_id: 1, changed_by: 1, action: 'ASSIGNED', old_value: null, new_value: '30000.00', reason: 'Fee assigned to student', created_at: new Date().toISOString() },
+  { id: 2, student_fee_id: 1, changed_by: 2, action: 'PAYMENT_RECORDED', old_value: 'Paid: ₹0.00, Status: PENDING', new_value: 'Paid: ₹10000.00, Status: PARTIAL', reason: 'Payment of ₹10000.00 recorded via UPI. Receipt: FEE-2026-000001', created_at: new Date().toISOString() }
+];
+
 let isOffline = false;
 
 // Initialize the actual MySQL connection pool
@@ -1088,6 +1110,323 @@ const mockQuery = async (sql, params = []) => {
         menu_description: menu ? menu.description : ''
       };
     });
+
+    return [result];
+  }
+
+  // ==========================================
+  // PHASE 11: HOSTEL FEES & PAYMENT MANAGEMENT
+  // ==========================================
+
+  // 1. fee_structures queries
+  if (queryLower.includes('into fee_structures')) {
+    const newId = MOCK_FEE_STRUCTURES.length > 0 ? Math.max(...MOCK_FEE_STRUCTURES.map(f => f.id)) + 1 : 1;
+    const newItem = {
+      id: newId,
+      hostel_id: params[0],
+      fee_type: params[1],
+      name: params[2],
+      description: params[3],
+      amount: parseFloat(params[4]),
+      frequency: params[5],
+      academic_year: params[6],
+      applicable_course: params[7],
+      applicable_branch: params[8],
+      applicable_year: params[9],
+      is_active: 1,
+      created_by: params[10],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    MOCK_FEE_STRUCTURES.push(newItem);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update fee_structures')) {
+    const idParam = params[params.length - 1];
+    const fsItem = MOCK_FEE_STRUCTURES.find(f => f.id === Number(idParam));
+    if (fsItem) {
+      if (queryLower.includes('is_active = ?')) {
+        const val = params.find(p => p === 0 || p === 1 || p === true || p === false);
+        fsItem.is_active = val ? 1 : 0;
+      }
+      fsItem.updated_at = new Date().toISOString();
+    }
+    return [{ affectedRows: fsItem ? 1 : 0 }];
+  }
+
+  if (queryLower.includes('from fee_structures')) {
+    let result = MOCK_FEE_STRUCTURES.map(fs => {
+      const h = MOCK_HOSTELS.find(h => h.id === fs.hostel_id);
+      const u = MOCK_USERS.find(u => u.id === fs.created_by);
+      return {
+        ...fs,
+        hostel_name: h ? h.name : (fs.hostel_id === null ? 'All Hostels (Global)' : 'Hostel'),
+        creator_name: u ? u.full_name : 'Admin'
+      };
+    });
+
+    if (queryLower.includes('fs.id = ?') || queryLower.includes('where fs.id = ?')) {
+      const targetId = Number(params[0]);
+      return [[result.find(f => f.id === targetId)].filter(Boolean)];
+    }
+
+    if (queryLower.includes('fs.fee_type = ?')) {
+      const ft = params.find(p => typeof p === 'string' && ['HOSTEL_FEE', 'MESS_FEE', 'MAINTENANCE_FEE', 'SECURITY_DEPOSIT', 'OTHER'].includes(p));
+      if (ft) result = result.filter(f => f.fee_type === ft);
+    }
+
+    if (queryLower.includes('fs.academic_year = ?')) {
+      const ay = params.find(p => typeof p === 'string' && p.match(/^\d{4}-\d{2,4}$/));
+      if (ay) result = result.filter(f => f.academic_year === ay);
+    }
+
+    if (queryLower.includes('fs.is_active = ?')) {
+      const ia = params.find(p => typeof p === 'number');
+      if (ia !== undefined) result = result.filter(f => f.is_active === ia);
+    }
+
+    return [result];
+  }
+
+  // 2. student_fees queries
+  if (queryLower.includes('into student_fees')) {
+    const newId = MOCK_STUDENT_FEES.length > 0 ? Math.max(...MOCK_STUDENT_FEES.map(f => f.id)) + 1 : 1;
+    const newItem = {
+      id: newId,
+      student_id: params[0],
+      hostel_id: params[1],
+      fee_structure_id: params[2],
+      academic_year: params[3],
+      amount: parseFloat(params[4]),
+      paid_amount: 0.00,
+      due_date: params[5],
+      status: params[6] || 'PENDING',
+      waiver_reason: null,
+      waived_by: null,
+      waived_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    MOCK_STUDENT_FEES.push(newItem);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update student_fees')) {
+    const idParam = params[params.length - 1];
+    const sfItem = MOCK_STUDENT_FEES.find(sf => sf.id === Number(idParam));
+    if (sfItem) {
+      if (queryLower.includes('paid_amount = ?')) {
+        sfItem.paid_amount = parseFloat(params[0]);
+        if (queryLower.includes('status = ?')) sfItem.status = params[1];
+      } else if (queryLower.includes("status = 'waived'")) {
+        sfItem.status = 'WAIVED';
+        sfItem.waiver_reason = params[0];
+        sfItem.waived_by = params[1];
+        sfItem.waived_at = new Date().toISOString();
+      }
+      sfItem.updated_at = new Date().toISOString();
+    }
+    return [{ affectedRows: sfItem ? 1 : 0 }];
+  }
+
+  if (queryLower.includes('from student_fees')) {
+    // Summary aggregation queries
+    if (queryLower.includes('sum(sf.amount) as total_assigned') || queryLower.includes('sum(amount) as total_fees')) {
+      let filtered = [...MOCK_STUDENT_FEES];
+      if (queryLower.includes('sf.hostel_id = ?')) {
+        const hId = Number(params[0]);
+        filtered = filtered.filter(f => f.hostel_id === hId);
+      }
+      if (queryLower.includes('student_id = ?')) {
+        const sId = Number(params[0]);
+        filtered = filtered.filter(f => f.student_id === sId);
+      }
+      const activeFees = filtered.filter(f => f.status !== 'WAIVED');
+      const totalAssigned = activeFees.reduce((acc, f) => acc + parseFloat(f.amount), 0);
+      const totalCollected = activeFees.reduce((acc, f) => acc + parseFloat(f.paid_amount), 0);
+      const totalPending = Math.max(0, totalAssigned - totalCollected);
+      return [[{ total_assigned: totalAssigned, total_fees: totalAssigned, total_collected: totalCollected, total_paid: totalCollected, total_pending: totalPending }]];
+    }
+
+    if (queryLower.includes('sum(sf.amount - sf.paid_amount) as total_overdue') || queryLower.includes('sum(amount - paid_amount) as total_overdue')) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      let filtered = MOCK_STUDENT_FEES.filter(f => f.status !== 'WAIVED' && f.status !== 'PAID' && f.due_date < todayStr);
+      if (queryLower.includes('sf.hostel_id = ?')) {
+        const hId = Number(params[params.length - 1]);
+        filtered = filtered.filter(f => f.hostel_id === hId);
+      }
+      if (queryLower.includes('student_id = ?')) {
+        const sId = Number(params[0]);
+        filtered = filtered.filter(f => f.student_id === sId);
+      }
+      const overdueSum = filtered.reduce((acc, f) => acc + (parseFloat(f.amount) - parseFloat(f.paid_amount)), 0);
+      return [[{ total_overdue: Math.max(0, overdueSum) }]];
+    }
+
+    let result = MOCK_STUDENT_FEES.map(sf => {
+      const st = MOCK_STUDENTS.find(s => s.id === sf.student_id) || MOCK_STUDENTS[0];
+      const h = MOCK_HOSTELS.find(h => h.id === sf.hostel_id) || MOCK_HOSTELS[0];
+      const fs = MOCK_FEE_STRUCTURES.find(f => f.id === sf.fee_structure_id);
+      const wb = MOCK_USERS.find(u => u.id === sf.waived_by);
+      return {
+        ...sf,
+        remaining_amount: Math.max(0, parseFloat(sf.amount) - parseFloat(sf.paid_amount)),
+        student_name: st ? st.full_name : 'John Doe',
+        student_code: st ? st.student_id : 'STD2026001',
+        room_number: st ? st.room_number : '101',
+        branch: st ? st.branch : 'CSE',
+        course: st ? st.course : 'B.Tech',
+        hostel_name: h ? h.name : 'Meridian Boys Hostel',
+        fee_name: fs ? fs.name : 'Hostel Fee',
+        fee_type: fs ? fs.fee_type : 'HOSTEL_FEE',
+        frequency: fs ? fs.frequency : 'YEARLY',
+        waived_by_name: wb ? wb.full_name : null
+      };
+    });
+
+    if (queryLower.includes('sf.id = ?') || (queryLower.includes('where sf.id = ?') || (queryLower.includes('where id = ?')))) {
+      const targetId = Number(params[0]);
+      const found = result.find(sf => sf.id === targetId);
+      return [[found].filter(Boolean)];
+    }
+
+    if (queryLower.includes('where sf.student_id = ?') || queryLower.includes('where student_id = ?')) {
+      const sId = Number(params[0]);
+      result = result.filter(sf => sf.student_id === sId);
+    }
+
+    if (queryLower.includes('fee_structure_id = ?')) {
+      const fsId = Number(params[1] !== undefined ? params[1] : params[0]);
+      result = result.filter(sf => sf.fee_structure_id === fsId);
+    }
+
+    if (queryLower.includes('academic_year = ?')) {
+      const ay = params.find(p => typeof p === 'string' && p.match(/^\d{4}-\d{2,4}$/));
+      if (ay) result = result.filter(sf => sf.academic_year === ay);
+    }
+
+    if (queryLower.includes('id = ?') && !queryLower.includes('student_id') && !queryLower.includes('hostel_id') && !queryLower.includes('fee_structure_id')) {
+      const targetId = Number(params[0]);
+      return [[result.find(sf => sf.id === targetId)].filter(Boolean)];
+    }
+
+    if (queryLower.includes('hostel_id = ?')) {
+      const hId = Number(params[params.length - 1]);
+      result = result.filter(sf => sf.hostel_id === hId);
+    }
+
+    if (queryLower.includes('status = ?')) {
+      const st = params.find(p => typeof p === 'string' && ['PENDING', 'PARTIAL', 'PAID', 'OVERDUE', 'WAIVED'].includes(p));
+      if (st) result = result.filter(sf => sf.status === st);
+    }
+
+    if (queryLower.includes('status != "waived"') || queryLower.includes("status != 'waived'")) {
+      result = result.filter(sf => sf.status !== 'WAIVED');
+    }
+
+    if (queryLower.includes('count(*) as total')) {
+      return [[{ total: result.length }]];
+    }
+
+    return [result];
+  }
+
+  // 3. fee_payments queries
+  if (queryLower.includes('into fee_payments')) {
+    const newId = MOCK_FEE_PAYMENTS.length > 0 ? Math.max(...MOCK_FEE_PAYMENTS.map(p => p.id)) + 1 : 1;
+    const newItem = {
+      id: newId,
+      student_fee_id: params[0],
+      student_id: params[1],
+      hostel_id: params[2],
+      amount: parseFloat(params[3]),
+      payment_method: params[4],
+      receipt_number: params[5],
+      transaction_reference: params[6],
+      payment_date: params[7],
+      received_by: params[8],
+      notes: params[9],
+      created_at: new Date().toISOString()
+    };
+    MOCK_FEE_PAYMENTS.push(newItem);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('from fee_payments')) {
+    let result = MOCK_FEE_PAYMENTS.map(fp => {
+      const st = MOCK_STUDENTS.find(s => s.id === fp.student_id) || MOCK_STUDENTS[0];
+      const h = MOCK_HOSTELS.find(h => h.id === fp.hostel_id) || MOCK_HOSTELS[0];
+      const sf = MOCK_STUDENT_FEES.find(s => s.id === fp.student_fee_id);
+      const fs = sf ? MOCK_FEE_STRUCTURES.find(f => f.id === sf.fee_structure_id) : null;
+      const u = MOCK_USERS.find(u => u.id === fp.received_by);
+      return {
+        ...fp,
+        student_name: st ? st.full_name : 'John Doe',
+        student_code: st ? st.student_id : 'STD2026001',
+        room_number: st ? st.room_number : '101',
+        hostel_name: h ? h.name : 'Meridian Boys Hostel',
+        academic_year: sf ? sf.academic_year : '2026-27',
+        total_fee_amount: sf ? parseFloat(sf.amount) : 30000.00,
+        current_total_paid: sf ? parseFloat(sf.paid_amount) : 10000.00,
+        fee_name: fs ? fs.name : 'Hostel Fee',
+        fee_type: fs ? fs.fee_type : 'HOSTEL_FEE',
+        received_by_name: u ? u.full_name : 'Warden / Staff'
+      };
+    });
+
+    if (queryLower.includes('fp.id = ?') || queryLower.includes('where fp.id = ?')) {
+      const targetId = Number(params[0]);
+      return [[result.find(p => p.id === targetId)].filter(Boolean)];
+    }
+
+    if (queryLower.includes('fp.student_fee_id = ?')) {
+      const sfId = Number(params[0]);
+      result = result.filter(p => p.student_fee_id === sfId);
+    }
+
+    if (queryLower.includes('transaction_reference = ?')) {
+      const ref = params[0];
+      result = result.filter(p => p.transaction_reference === ref);
+    }
+
+    if (queryLower.includes('count(*) as cnt') || queryLower.includes('count(*) as total')) {
+      return [[{ cnt: result.length, total: result.length }]];
+    }
+
+    return [result];
+  }
+
+  // 4. fee_history queries
+  if (queryLower.includes('into fee_history')) {
+    const newId = MOCK_FEE_HISTORY.length > 0 ? Math.max(...MOCK_FEE_HISTORY.map(h => h.id)) + 1 : 1;
+    const newItem = {
+      id: newId,
+      student_fee_id: params[0],
+      changed_by: params[1],
+      action: params[2],
+      old_value: params[3],
+      new_value: params[4],
+      reason: params[5],
+      created_at: new Date().toISOString()
+    };
+    MOCK_FEE_HISTORY.push(newItem);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('from fee_history')) {
+    let result = MOCK_FEE_HISTORY.map(fh => {
+      const u = MOCK_USERS.find(u => u.id === fh.changed_by);
+      return {
+        ...fh,
+        changed_by_name: u ? u.full_name : 'System Admin'
+      };
+    });
+
+    if (queryLower.includes('fh.student_fee_id = ?') || queryLower.includes('student_fee_id = ?')) {
+      const sfId = Number(params[0]);
+      result = result.filter(h => h.student_fee_id === sfId);
+    }
 
     return [result];
   }

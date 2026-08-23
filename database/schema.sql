@@ -318,4 +318,99 @@ CREATE TABLE IF NOT EXISTS `meal_attendance` (
     INDEX `idx_meal_att_student_date` (`student_id`, `meal_date`)
 ) ENGINE=InnoDB;
 
+-- ==========================================
+-- PHASE 11: HOSTEL FEES & PAYMENT MANAGEMENT
+-- ==========================================
+
+-- 19. Fee Structures Table
+CREATE TABLE IF NOT EXISTS `fee_structures` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `hostel_id` INT DEFAULT NULL,
+    `fee_type` ENUM('HOSTEL_FEE', 'MESS_FEE', 'MAINTENANCE_FEE', 'SECURITY_DEPOSIT', 'OTHER') NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `description` TEXT DEFAULT NULL,
+    `amount` DECIMAL(10,2) NOT NULL,
+    `frequency` ENUM('ONE_TIME', 'MONTHLY', 'QUARTERLY', 'SEMESTER', 'YEARLY') NOT NULL DEFAULT 'YEARLY',
+    `academic_year` VARCHAR(20) NOT NULL,
+    `applicable_course` VARCHAR(50) DEFAULT NULL,
+    `applicable_branch` VARCHAR(50) DEFAULT NULL,
+    `applicable_year` INT DEFAULT NULL,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_by` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    INDEX `idx_fs_hostel_academic` (`hostel_id`, `academic_year`),
+    INDEX `idx_fs_fee_type` (`fee_type`),
+    INDEX `idx_fs_is_active` (`is_active`)
+) ENGINE=InnoDB;
+
+-- 20. Student Assigned Fees Table
+CREATE TABLE IF NOT EXISTS `student_fees` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` INT NOT NULL,
+    `hostel_id` INT NOT NULL,
+    `fee_structure_id` INT DEFAULT NULL,
+    `academic_year` VARCHAR(20) NOT NULL,
+    `amount` DECIMAL(10,2) NOT NULL,
+    `paid_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    `due_date` DATE NOT NULL,
+    `status` ENUM('PENDING', 'PARTIAL', 'PAID', 'OVERDUE', 'WAIVED') NOT NULL DEFAULT 'PENDING',
+    `waiver_reason` TEXT DEFAULT NULL,
+    `waived_by` INT DEFAULT NULL,
+    `waived_at` TIMESTAMP NULL DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`fee_structure_id`) REFERENCES `fee_structures` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`waived_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    INDEX `idx_sf_student_academic` (`student_id`, `academic_year`),
+    INDEX `idx_sf_hostel_status` (`hostel_id`, `status`),
+    INDEX `idx_sf_structure` (`fee_structure_id`),
+    INDEX `idx_sf_due_date` (`due_date`)
+) ENGINE=InnoDB;
+
+-- 21. Fee Payment Records Table
+CREATE TABLE IF NOT EXISTS `fee_payments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_fee_id` INT NOT NULL,
+    `student_id` INT NOT NULL,
+    `hostel_id` INT NOT NULL,
+    `amount` DECIMAL(10,2) NOT NULL,
+    `payment_method` ENUM('CASH', 'BANK_TRANSFER', 'UPI', 'CARD', 'OTHER') NOT NULL,
+    `receipt_number` VARCHAR(50) NOT NULL UNIQUE,
+    `transaction_reference` VARCHAR(100) DEFAULT NULL,
+    `payment_date` DATE NOT NULL,
+    `received_by` INT NOT NULL,
+    `notes` TEXT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_fee_id`) REFERENCES `student_fees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`received_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    INDEX `idx_fp_student_date` (`student_id`, `payment_date`),
+    INDEX `idx_fp_hostel_date` (`hostel_id`, `payment_date`),
+    INDEX `idx_fp_student_fee` (`student_fee_id`),
+    INDEX `idx_fp_receipt` (`receipt_number`),
+    INDEX `idx_fp_txn_ref` (`transaction_reference`)
+) ENGINE=InnoDB;
+
+-- 22. Fee Audit History Table
+CREATE TABLE IF NOT EXISTS `fee_history` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_fee_id` INT NOT NULL,
+    `changed_by` INT NOT NULL,
+    `action` ENUM('ASSIGNED', 'PAYMENT_RECORDED', 'WAIVED', 'UPDATED', 'CORRECTED') NOT NULL,
+    `old_value` VARCHAR(255) DEFAULT NULL,
+    `new_value` VARCHAR(255) DEFAULT NULL,
+    `reason` TEXT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_fee_id`) REFERENCES `student_fees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`changed_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    INDEX `idx_fh_fee_date` (`student_fee_id`, `created_at`)
+) ENGINE=InnoDB;
+
+
 

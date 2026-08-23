@@ -92,5 +92,23 @@ api.setMealParticipation = (data) => api.post('/mess/participation', data);
 api.getMessSummary = (params = {}) => api.get('/mess/summary', { params });
 api.getMessAnalytics = (params = {}) => api.get('/mess/analytics', { params });
 
+// Fee & Payment Management API methods
+api.getFeeStructures = (params = {}) => api.get('/fees/structures', { params });
+api.createFeeStructure = (data) => api.post('/fees/structures', data);
+api.updateFeeStructure = (id, data) => api.put(`/fees/structures/${id}`, data);
+api.toggleFeeStructureStatus = (id, is_active) => api.patch(`/fees/structures/${id}/status`, { is_active });
+
+api.getStudentFees = (params = {}) => api.get('/fees', { params });
+api.getMyFees = (params = {}) => api.get('/fees/me', { params });
+api.getStudentFeeById = (id) => api.get(`/fees/${id}`);
+api.assignStudentFee = (data) => api.post('/fees/assign', data);
+api.waiveStudentFee = (id, waiver_reason) => api.patch(`/fees/${id}/waive`, { waiver_reason });
+
+api.getPayments = (params = {}) => api.get('/fees/payments', { params });
+api.recordPayment = (data) => api.post('/fees/payments', data);
+api.getPaymentReceipt = (paymentId) => api.get(`/fees/receipts/${paymentId}`);
+
+api.getFeeSummary = (params = {}) => api.get('/fees/summary', { params });
+
 export default api;
 

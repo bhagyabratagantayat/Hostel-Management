@@ -250,6 +250,8 @@ async function getDashboardOverview(user) {
   }));
 
   const noticeService = require('./noticeService');
+  const FeeService = require('./feeService');
+
   let recentNotices = [];
   try {
     recentNotices = await noticeService.getRecentNotices(user, 5);
@@ -258,7 +260,22 @@ async function getDashboardOverview(user) {
     recentNotices = [];
   }
 
-  return { overall, hostels, recentNotices };
+  let feeSummary = null;
+  try {
+    if (user.role === 'STUDENT') {
+      const [st] = await db.pool.query('SELECT id FROM students WHERE user_id = ?', [user.id]);
+      if (st.length > 0) {
+        feeSummary = await FeeService.getStudentFeeSummary(st[0].id);
+      }
+    } else {
+      const targetHostel = (allowedHostelIds && allowedHostelIds.length === 1) ? allowedHostelIds[0] : null;
+      feeSummary = await FeeService.getFeeSummary(targetHostel);
+    }
+  } catch (err) {
+    console.warn('Dashboard fee summary aggregation fallback:', err.message);
+  }
+
+  return { overall, hostels, recentNotices, feeSummary };
 }
 
 module.exports = { getDashboardOverview };

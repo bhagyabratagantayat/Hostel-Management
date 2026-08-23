@@ -14,6 +14,7 @@ import NoticesPage from './pages/NoticesPage';
 import ComplaintsPage from './pages/ComplaintsPage';
 import VisitorsPage from './pages/VisitorsPage';
 import MessPage from './pages/MessPage';
+import FeeManagementPage from './pages/FeeManagementPage';
 import StudentDashboard from './pages/StudentDashboard';
 import Loading from './components/Loading';
 
@@ -76,6 +77,7 @@ function App() {
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
+                    <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="*"                   element={<Navigate to="/admin/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -100,6 +102,7 @@ function App() {
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
+                    <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="*"                   element={<Navigate to="/superintendent/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -120,6 +123,7 @@ function App() {
                     <Route path="complaints" element={<ComplaintsPage />} />
                     <Route path="visitors"   element={<VisitorsPage />} />
                     <Route path="mess"       element={<MessPage userRole="STUDENT" />} />
+                    <Route path="fees"       element={<FeeManagementPage />} />
                     <Route path="profile"    element={<DashboardPlaceholder />} />
                     <Route path="attendance" element={<RoutePlaceholder title="My Attendance" />} />
                     <Route path="*"          element={<Navigate to="/student/dashboard" replace />} />
