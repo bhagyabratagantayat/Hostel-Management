@@ -6,7 +6,25 @@ const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 // Get current student's own profile
 router.get('/profile/me', requireAuth, requireRole('STUDENT'), studentController.getMyProfile);
 
-// Get specific student by ID (requires SUPER_ADMIN or SUPERINTENDENT, or ownership validation handled inside the controller)
+// List all students (Super Admin or Superintendent only)
+router.get('/', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.getAllStudents);
+
+// Get specific student by ID (requires SUPER_ADMIN, SUPERINTENDENT or Student Owner)
 router.get('/:id', requireAuth, studentController.getStudentById);
+
+// Get student summary (requires SUPER_ADMIN, SUPERINTENDENT or Student Owner)
+router.get('/:id/summary', requireAuth, studentController.getStudentById);
+
+// Create student account and assignment (Super Admin or Superintendent only)
+router.post('/', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.createStudent);
+
+// Update student record (Super Admin or Superintendent only)
+router.put('/:id', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.updateStudent);
+
+// Transfer student to another bed (Super Admin or Superintendent only)
+router.post('/:id/transfer', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.transferStudent);
+
+// Update/Deactivate student status (Super Admin or Superintendent only)
+router.patch('/:id/status', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.deactivateStudent);
 
 module.exports = router;

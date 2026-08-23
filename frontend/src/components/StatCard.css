@@ -1,0 +1,37 @@
+/* StatCard.css */
+
+:root {
+  --stat-bg: rgba(255, 255, 255, 0.15);
+  --stat-border: rgba(255, 255, 255, 0.2);
+  --stat-color: #f5f5f5;
+  --shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-card {
+  background: var(--stat-bg);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid var(--stat-border);
+  padding: 1.2rem 1.5rem;
+  text-align: center;
+  color: var(--stat-color);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255,255,255,0.25);
+}
+
+.stat-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}

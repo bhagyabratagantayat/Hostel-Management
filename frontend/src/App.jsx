@@ -5,7 +5,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardPlaceholder from './pages/DashboardPlaceholder';
 import Login from './pages/Login';
-
+import HostelsPage from './pages/HostelsPage';
+import HostelDetailsPage from './pages/HostelDetailsPage';
+import StudentsPage from './pages/StudentsPage';
+import AdminDashboard from './pages/AdminDashboard';
+import SuperintendentDashboard from './pages/SuperintendentDashboard';
 // Inline simple placeholder to demonstrate protected route scopes
 const RoutePlaceholder = ({ title, roleRequired }) => (
   <div className="placeholder-page">
@@ -46,8 +50,10 @@ function App() {
               <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="hostels" element={<RoutePlaceholder title="Admin: Manage Hostels" roleRequired="SUPER_ADMIN" />} />
-                    <Route path="students" element={<RoutePlaceholder title="Admin: Manage Student Registrations" roleRequired="SUPER_ADMIN" />} />
+                    <Route path="hostels" element={<HostelsPage />} />
+                    <Route path="hostels/:hostelId" element={<HostelDetailsPage />} />
+                    <Route path="students" element={<StudentsPage />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -62,7 +68,10 @@ function App() {
               <ProtectedRoute allowedRoles={['SUPERINTENDENT']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="students" element={<RoutePlaceholder title="Warden: Hostel Student List" roleRequired="SUPERINTENDENT" />} />
+                    <Route path="hostels" element={<HostelsPage />} />
+                    <Route path="hostels/:hostelId" element={<HostelDetailsPage />} />
+                    <Route path="students" element={<StudentsPage />} />
+                    <Route path="dashboard" element={<SuperintendentDashboard />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </DashboardLayout>

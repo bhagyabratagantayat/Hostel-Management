@@ -147,3 +147,4 @@ CREATE INDEX idx_student_email ON students(email);
 CREATE INDEX idx_user_username ON users(username);
 CREATE INDEX idx_attendance_date ON attendance(attendance_date);
 CREATE INDEX idx_room_number ON rooms(room_number);
+CREATE INDEX idx_beds_status ON beds(status);

@@ -133,10 +133,36 @@ const hasBedAccess = async (user, bedId) => {
   return false; // Students cannot access bed administration
 };
 
+/**
+ * Checks if the user has access to a specific floor.
+ * @param {object} user - Authenticated user object { id, role }
+ * @param {number} floorId - Floor ID to check
+ * @returns {Promise<boolean>} True if authorized
+ */
+const hasFloorAccess = async (user, floorId) => {
+  if (!user || !user.role) return false;
+  if (user.role === 'SUPER_ADMIN') return true;
+  
+  if (user.role === 'SUPERINTENDENT') {
+    const assigned = await getAssignedHostels(user.id);
+    if (assigned.length === 0) return false;
+    
+    const [rows] = await db.pool.query(
+      'SELECT hostel_id FROM floors WHERE id = ?',
+      [floorId]
+    );
+    if (rows.length === 0) return false;
+    return assigned.includes(rows[0].hostel_id);
+  }
+  
+  return false; // Students cannot access floor administration
+};
+
 module.exports = {
   getAssignedHostels,
   hasHostelAccess,
   hasStudentAccess,
   hasRoomAccess,
-  hasBedAccess
+  hasBedAccess,
+  hasFloorAccess
 };

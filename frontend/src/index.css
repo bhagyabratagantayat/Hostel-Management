@@ -1129,6 +1129,54 @@ body {
   transition: background-color var(--transition-fast);
 }
 
+.error-retry-btn {
+  background-color: var(--danger-color);
+  color: var(--text-white);
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
 .error-retry-btn:hover {
   background-color: #dc2626;
 }
+
+/* Student Management Page Styles */
+.student-table th {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.student-row-hover:hover {
+  background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+.student-table td {
+  font-size: 14px;
+}
+
+.filters-card {
+  background-color: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+.student-photo-frame {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  transition: border-color var(--transition-fast);
+}
+
+.student-row-hover:hover .student-photo-frame {
+  border-color: var(--primary-color);
+}
+

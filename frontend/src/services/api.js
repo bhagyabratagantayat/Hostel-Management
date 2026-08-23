@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Get API base URL from Vite environment variables (safe for browser)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -42,5 +42,8 @@ api.interceptors.response.use(
     return Promise.reject(customError);
   }
 );
+
+// Dashboard overview API method attached to api instance
+api.getDashboardOverview = () => api.get('/dashboard/overview');
 
 export default api;

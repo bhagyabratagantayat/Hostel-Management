@@ -1,55 +1,115 @@
-const db = require('../config/db');
+const hostelService = require('../services/hostelService');
 
 /**
- * Retrieves hostels list, filtered dynamically by the requesting user's role and assignments.
+ * Retrieves all hostels, filtered by user's role and assignments.
  */
 const getAllHostels = async (req, res, next) => {
   try {
-    const { id: userId, role } = req.user;
+    const hostels = await hostelService.getAllHostels(req.user);
+    return res.status(200).json({
+      success: true,
+      count: hostels.length,
+      data: hostels
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    let query = '';
-    let queryParams = [];
+/**
+ * Retrieves a single hostel by ID.
+ */
+const getHostelById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const hostel = await hostelService.getHostelById(id, req.user);
+    return res.status(200).json({
+      success: true,
+      data: hostel
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (role === 'SUPER_ADMIN') {
-      // Admins can see all active hostels
-      query = 'SELECT id, name, code, gender, location, status FROM hostels WHERE status = "ACTIVE" ORDER BY id ASC';
-    } 
-    else if (role === 'SUPERINTENDENT') {
-      // Superintendents can only see hostels they are assigned to
-      query = `
-        SELECT h.id, h.name, h.code, h.gender, h.location, h.status 
-        FROM hostels h
-        JOIN superintendent_hostels sh ON h.id = sh.hostel_id
-        WHERE sh.user_id = ? AND h.status = "ACTIVE"
-        ORDER BY h.id ASC
-      `;
-      queryParams = [userId];
-    } 
-    else if (role === 'STUDENT') {
-      // Students can only see their own assigned hostel
-      query = `
-        SELECT h.id, h.name, h.code, h.gender, h.location, h.status 
-        FROM hostels h
-        JOIN rooms r ON h.id = r.hostel_id
-        JOIN beds b ON r.id = b.room_id
-        JOIN students s ON b.id = s.bed_id
-        WHERE s.user_id = ? AND h.status = "ACTIVE"
-      `;
-      queryParams = [userId];
-    } 
-    else {
+/**
+ * Creates a new hostel (Super Admin only).
+ */
+const createHostel = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({
         success: false,
-        message: 'Forbidden: Unknown user role.'
+        message: 'Forbidden: Only Super Admins can create hostels.'
       });
     }
 
-    const [rows] = await db.pool.query(query, queryParams);
+    const hostel = await hostelService.createHostel(req.body);
+    return res.status(201).json({
+      success: true,
+      data: hostel
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
+/**
+ * Updates a hostel (Super Admin only).
+ */
+const updateHostel = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only Super Admins can update hostels.'
+      });
+    }
+
+    const { id } = req.params;
+    const hostel = await hostelService.updateHostel(id, req.body);
     return res.status(200).json({
       success: true,
-      count: rows.length,
-      data: rows
+      data: hostel
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Safely deletes a hostel (Super Admin only).
+ */
+const deleteHostel = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only Super Admins can delete hostels.'
+      });
+    }
+
+    const { id } = req.params;
+    await hostelService.deleteHostel(id);
+    return res.status(200).json({
+      success: true,
+      message: 'Hostel deleted successfully.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Retrieves summary statistics for a hostel.
+ */
+const getHostelSummary = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const summary = await hostelService.getHostelSummary(id, req.user);
+    return res.status(200).json({
+      success: true,
+      data: summary
     });
   } catch (error) {
     next(error);
@@ -57,5 +117,10 @@ const getAllHostels = async (req, res, next) => {
 };
 
 module.exports = {
-  getAllHostels
+  getAllHostels,
+  getHostelById,
+  createHostel,
+  updateHostel,
+  deleteHostel,
+  getHostelSummary
 };

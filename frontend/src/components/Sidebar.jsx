@@ -1,8 +1,10 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
 
   // Define navigation schemas per user role
   const getNavItems = () => {
@@ -11,31 +13,21 @@ const Sidebar = ({ isOpen, onClose }) => {
     switch (user.role) {
       case 'SUPER_ADMIN':
         return [
-          { label: 'Dashboard', icon: '📊', active: true },
-          { label: 'Hostels', icon: '🏢' },
-          { label: 'Students', icon: '🎓' },
-          { label: 'Rooms & Beds', icon: '🚪' },
-          { label: 'Superintendents', icon: '👤' },
-          { label: 'Attendance', icon: '📝' },
-          { label: 'Notices', icon: '📢' },
-          { label: 'Reports', icon: '📈' },
-          { label: 'Settings', icon: '⚙️' }
+          { label: 'Dashboard', icon: '📊', path: '/' },
+          { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
+          { label: 'Students', icon: '🎓', path: '/admin/students' }
         ];
       case 'SUPERINTENDENT':
         return [
-          { label: 'Dashboard', icon: '📊', active: true },
-          { label: 'My Hostels', icon: '🏢' },
-          { label: 'Students', icon: '🎓' },
-          { label: 'Rooms & Beds', icon: '🚪' },
-          { label: 'Attendance', icon: '📝' },
-          { label: 'Notices', icon: '📢' }
+          { label: 'Dashboard', icon: '📊', path: '/' },
+          { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
+          { label: 'Students', icon: '🎓', path: '/superintendent/students' }
         ];
       case 'STUDENT':
         return [
-          { label: 'Dashboard', icon: '📊', active: true },
-          { label: 'My Profile', icon: '👤' },
-          { label: 'My Attendance', icon: '📝' },
-          { label: 'Notices', icon: '📢' }
+          { label: 'Dashboard', icon: '📊', path: '/' },
+          { label: 'My Profile', icon: '👤', path: '/student/profile' },
+          { label: 'My Attendance', icon: '📝', path: '/student/attendance' }
         ];
       default:
         return [];
@@ -43,6 +35,13 @@ const Sidebar = ({ isOpen, onClose }) => {
   };
 
   const navItems = getNavItems();
+
+  const isItemActive = (item) => {
+    if (item.path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(item.path);
+  };
 
   return (
     <>
@@ -61,14 +60,17 @@ const Sidebar = ({ isOpen, onClose }) => {
         
         <nav className="sidebar-nav">
           <ul className="sidebar-menu-list">
-            {navItems.map((item, idx) => (
-              <li key={idx} className="sidebar-menu-item">
-                <a href="#" className={`sidebar-menu-link ${item.active ? 'active' : ''}`}>
-                  <span className="sidebar-menu-icon">{item.icon}</span>
-                  <span className="sidebar-menu-label">{item.label}</span>
-                </a>
-              </li>
-            ))}
+            {navItems.map((item, idx) => {
+              const active = isItemActive(item);
+              return (
+                <li key={idx} className="sidebar-menu-item" onClick={onClose}>
+                  <Link to={item.path} className={`sidebar-menu-link ${active ? 'active' : ''}`}>
+                    <span className="sidebar-menu-icon">{item.icon}</span>
+                    <span className="sidebar-menu-label">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
             
             {/* Direct Logout action in list */}
             <li className="sidebar-menu-item sidebar-logout-item">

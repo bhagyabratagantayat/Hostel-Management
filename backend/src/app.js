@@ -10,6 +10,10 @@ const healthRoutes = require('./routes/healthRoutes');
 const hostelRoutes = require('./routes/hostelRoutes');
 const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const floorRoutes = require('./routes/floorRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+const bedRoutes = require('./routes/bedRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
 
 // Initialize express app
 const app = express();
@@ -19,7 +23,7 @@ app.use(helmet());
 app.use(cors({
   origin: env.NODE_ENV === 'production' 
     ? false // Set your production domain here when ready
-    : ['http://localhost:5173', 'http://localhost:3000'], // Vite default and common local ports
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'], // Vite default and common local ports
   credentials: true
 }));
 
@@ -40,6 +44,12 @@ app.use('/api/health', healthRoutes);
 app.use('/api/hostels', hostelRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/floors', floorRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/beds', bedRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+
 
 // Base route for API documentation / welcome
 app.get('/api', (req, res) => {
@@ -55,7 +65,7 @@ app.use((err, req, res, next) => {
   console.error('\x1b[31m%s\x1b[0m', 'Express global error handler caught error:');
   console.error(err.stack || err);
 
-  const statusCode = err.statusCode || 500;
+  const statusCode = err.status || err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
   res.status(statusCode).json({
