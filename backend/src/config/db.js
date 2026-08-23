@@ -18,11 +18,13 @@ const MOCK_HOSTELS = [
 ];
 
 const MOCK_USERS = [
-  { id: 1, role_id: 1, role: 'SUPER_ADMIN', username: 'superadmin', email: 'admin@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE' },
-  { id: 2, role_id: 2, role: 'SUPERINTENDENT', username: 'warden', email: 'warden@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE' },
-  { id: 3, role_id: 3, role: 'STUDENT', username: 'student', email: 'student@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE' },
-  { id: 4, role_id: 3, role: 'STUDENT', username: 'student2', email: 'student2@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE' }
+  { id: 1, role_id: 1, role: 'SUPER_ADMIN', username: 'superadmin', email: 'admin@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE', must_change_password: 0, last_login_at: null },
+  { id: 2, role_id: 2, role: 'SUPERINTENDENT', username: 'warden', email: 'warden@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE', must_change_password: 0, last_login_at: null },
+  { id: 3, role_id: 3, role: 'STUDENT', username: 'student', email: 'student@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE', must_change_password: 0, last_login_at: null },
+  { id: 4, role_id: 3, role: 'STUDENT', username: 'student2', email: 'student2@hostel.com', password_hash: '$2a$10$4Jxpj3KHrl97nGMI.WCJY.t.cIrps9.jO01O0kYZNZ6X1RoTtCyWe', status: 'ACTIVE', must_change_password: 0, last_login_at: null }
 ];
+
+let MOCK_SECURITY_AUDIT_LOG = [];
 
 const MOCK_SUPER_HOSTELS = [
   { id: 1, user_id: 2, hostel_id: 1 },
@@ -321,7 +323,14 @@ const mockQuery = async (sql, params = []) => {
     // console.log('MOCK_VISITS QUERY:', sql, params);
   }
 
-  // 1. SELECT users u JOIN roles r (check active user profile)
+  // 1. SELECT COUNT(*) from users
+  if (queryLower.includes('from users') && queryLower.includes('count(*)')) {
+    const excludeId = params[0] ? Number(params[0]) : null;
+    const remainingAdmins = MOCK_USERS.filter(u => u.role === 'SUPER_ADMIN' && u.status === 'ACTIVE' && u.id !== excludeId);
+    return [[{ cnt: remainingAdmins.length, total: MOCK_USERS.length }]];
+  }
+
+  // 1b. SELECT users u JOIN roles r (check active user profile)
   if (queryLower.includes('from users') && (queryLower.includes('u.id = ?') || queryLower.includes('id = ?'))) {
     const id = params[0];
     const user = MOCK_USERS.find(u => u.id === Number(id));
@@ -1536,11 +1545,139 @@ const mockQuery = async (sql, params = []) => {
       result = result.filter(a => a.status === 'ACTIVE');
     }
 
-    if (queryLower.includes('count(*) as total')) {
-      return [[{ total: result.length }]];
-    }
-
     return [result];
+  }
+
+  // ── PHASE 14 SECURITY & USER MANAGEMENT MOCK HANDLERS ─────────────────────
+  if (queryLower.includes('into security_audit_log')) {
+    const newId = MOCK_SECURITY_AUDIT_LOG.length + 1;
+    const newItem = {
+      id: newId,
+      user_id: params[0] ? Number(params[0]) : null,
+      actor_id: params[1] ? Number(params[1]) : null,
+      action: params[2],
+      ip_address: params[3],
+      user_agent: params[4],
+      metadata: params[5],
+      created_at: new Date().toISOString()
+    };
+    MOCK_SECURITY_AUDIT_LOG.push(newItem);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('from security_audit_log')) {
+    if (queryLower.includes('count(*) as total')) {
+      return [[{ total: MOCK_SECURITY_AUDIT_LOG.length }]];
+    }
+    const logs = MOCK_SECURITY_AUDIT_LOG.map(sal => {
+      const u = MOCK_USERS.find(x => x.id === sal.user_id);
+      const a = MOCK_USERS.find(x => x.id === sal.actor_id);
+      return {
+        ...sal,
+        target_username: u ? u.username : null,
+        target_email: u ? u.email : null,
+        actor_username: a ? a.username : null,
+        actor_email: a ? a.email : null
+      };
+    }).reverse();
+    return [logs];
+  }
+
+  if (queryLower.includes('from roles')) {
+    if (params[0]) {
+      const r = MOCK_ROLES.find(x => x.name === params[0] || x.id === Number(params[0]));
+      return r ? [[r]] : [[]];
+    }
+    return [MOCK_ROLES];
+  }
+
+  if (queryLower.includes('into users')) {
+    const newId = MOCK_USERS.length > 0 ? Math.max(...MOCK_USERS.map(u => u.id)) + 1 : 1;
+    const roleId = Number(params[0]);
+    const roleObj = MOCK_ROLES.find(r => r.id === roleId) || { name: 'STUDENT' };
+    const newUser = {
+      id: newId,
+      role_id: roleId,
+      role: roleObj.name,
+      username: params[1],
+      email: params[2],
+      password_hash: params[3],
+      status: 'ACTIVE',
+      must_change_password: 1,
+      last_login_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    MOCK_USERS.push(newUser);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update users')) {
+    if (queryLower.includes('last_login_at = now()')) {
+      const userId = Number(params[0]);
+      const user = MOCK_USERS.find(u => u.id === userId);
+      if (user) user.last_login_at = new Date().toISOString();
+    } else if (queryLower.includes('password_hash = ?')) {
+      const userId = Number(params[params.length - 1]);
+      const user = MOCK_USERS.find(u => u.id === userId);
+      if (user) {
+        user.password_hash = params[0];
+        if (queryLower.includes('must_change_password = 0')) user.must_change_password = 0;
+        if (queryLower.includes('must_change_password = 1')) user.must_change_password = 1;
+      }
+    } else if (queryLower.includes('status = ?')) {
+      const statusVal = params[0];
+      const userId = Number(params[1]);
+      const user = MOCK_USERS.find(u => u.id === userId);
+      if (user) user.status = statusVal;
+    } else if (queryLower.includes('role_id = ?')) {
+      const roleIdVal = Number(params[0]);
+      const userId = Number(params[1]);
+      const user = MOCK_USERS.find(u => u.id === userId);
+      const roleObj = MOCK_ROLES.find(r => r.id === roleIdVal);
+      if (user) {
+        user.role_id = roleIdVal;
+        if (roleObj) user.role = roleObj.name;
+      }
+    } else if (queryLower.includes('email = ?')) {
+      const emailVal = params[0];
+      const userId = Number(params[params.length - 1]);
+      const user = MOCK_USERS.find(u => u.id === userId);
+      if (user) user.email = emailVal;
+    }
+    return [{ affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('delete from superintendent_hostels')) {
+    const userId = Number(params[0]);
+    MOCK_SUPER_HOSTELS = MOCK_SUPER_HOSTELS.filter(sh => sh.user_id !== userId);
+    return [{ affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('into superintendent_hostels')) {
+    const newId = MOCK_SUPER_HOSTELS.length > 0 ? Math.max(...MOCK_SUPER_HOSTELS.map(sh => sh.id)) + 1 : 1;
+    MOCK_SUPER_HOSTELS.push({
+      id: newId,
+      user_id: Number(params[0]),
+      hostel_id: Number(params[1])
+    });
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update students set user_id = ?')) {
+    const userId = Number(params[0]);
+    const studentId = Number(params[1]);
+    const student = MOCK_STUDENTS.find(s => s.id === studentId);
+    if (student) student.user_id = userId;
+    return [{ affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update students set phone_number = ?')) {
+    const phoneVal = params[0];
+    const userId = Number(params[1]);
+    const student = MOCK_STUDENTS.find(s => s.user_id === userId);
+    if (student) student.phone = phoneVal;
+    return [{ affectedRows: 1 }];
   }
 
   // 5. Mock Report Aggregations Handling

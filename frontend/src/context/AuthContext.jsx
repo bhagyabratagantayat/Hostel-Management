@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
+import ForcePasswordChangeModal from '../components/ForcePasswordChangeModal';
 
 const AuthContext = createContext(null);
 
@@ -8,27 +9,25 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication status on mount
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const response = await api.get('/auth/me');
-        if (response.success && response.user) {
-          setUser(response.user);
-          setIsAuthenticated(true);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        // Silent fail is normal here (unauthenticated check on startup)
+  const checkAuthStatus = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      if (response.success && response.user) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+      } else {
         setUser(null);
         setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     checkAuthStatus();
   }, []);
 
@@ -66,8 +65,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, refreshUser: checkAuthStatus }}>
       {children}
+      {isAuthenticated && Boolean(user?.must_change_password) && (
+        <ForcePasswordChangeModal
+          user={user}
+          onPasswordChanged={checkAuthStatus}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

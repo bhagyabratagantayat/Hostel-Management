@@ -29,6 +29,8 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'SUPER_ADMIN':
         return [
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
+          { label: 'User Directory', icon: '👥', path: '/admin/users' },
+          { label: 'Security Audit', icon: '🛡️', path: '/admin/security-audit' },
           { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
           { label: 'Students', icon: '🎓', path: '/admin/students' },
           { label: 'Allocations & Transfers', icon: '🛏️', path: '/admin/allocations' },
@@ -39,6 +41,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Complaints', icon: '🛠️', path: '/admin/complaints' },
           { label: 'Attendance', icon: '📝', path: '/admin/attendance' },
           { label: 'Notices', icon: '📢', path: '/admin/notices', badge: unreadCount },
+          { label: 'My Profile', icon: '👤', path: '/profile' },
         ];
       case 'SUPERINTENDENT':
         return [
@@ -53,6 +56,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Complaints', icon: '🛠️', path: '/superintendent/complaints' },
           { label: 'Attendance', icon: '📝', path: '/superintendent/attendance' },
           { label: 'Notices', icon: '📢', path: '/superintendent/notices', badge: unreadCount },
+          { label: 'My Profile', icon: '👤', path: '/profile' },
         ];
       case 'STUDENT':
         return [
@@ -63,7 +67,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Visitors', icon: '👥', path: '/student/visitors' },
           { label: 'My Complaints', icon: '🛠️', path: '/student/complaints' },
           { label: 'Notices', icon: '📢', path: '/student/notices', badge: unreadCount },
-          { label: 'My Profile', icon: '👤', path: '/student/profile' },
+          { label: 'My Profile', icon: '👤', path: '/profile' },
           { label: 'My Attendance', icon: '📝', path: '/student/attendance' },
         ];
       default:

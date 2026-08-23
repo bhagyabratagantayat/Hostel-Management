@@ -395,20 +395,28 @@ Precision: 2 decimal places
   * **Routing**:
     * Added `attendance` placeholder routes for admin and superintendent
     * `RoleRedirect` at root sends users to role-specific dashboard
+* **2026-08-23 (Phase 14) — User Management, Authentication & Security Hardening**
+  * **Objective**: Hardened the identity, authentication, user account management, and security audit layer.
+  * **Database Architecture**: Added `must_change_password` and `last_login_at` to `users`. Created `security_audit_log` table storing audit events.
+  * **Security & Authentication**:
+    * Password complexity enforcement (8+ chars, 1 uppercase, 1 lowercase, 1 digit).
+    * Forced initial password change workflow (`must_change_password`).
+    * Real-time `status = 'ACTIVE'` session verification in `authMiddleware.js`.
+    * Privacy scrubbing in `securityService.js` to strip passwords/tokens from audit logs.
+    * Self-deactivation and last Super Admin demotion protection in `userService.js`.
+  * **User Administration**:
+    * Created REST endpoints `/api/users`, `/api/profile`, and `/api/security/audit`.
+    * Superintendent hostel scoping controls (`superintendent_hostels`).
+  * **Frontend UI Components**: Built `UserManagementPage.jsx`, `SecurityAuditPage.jsx`, `ProfilePage.jsx`, and `ForcePasswordChangeModal.jsx`.
+  * **Verification**: Authored `backend/src/test_phase14_security.js`. All 12/12 automated security tests passed.
+  * **Status**: Complete.
+
 * **2026-08-23 (Phase 13) — Student Allocation, Room/Bed Transfer & Checkout Management System**
-  * **Objective**: Implemented the student accommodation lifecycle (Allocation → Transfer → Checkout) with immutable historical integrity, database-level uniqueness constraints, transaction safety, and role-scoped authorization.
-  * **Database Architecture & Migration**:
-    * Created `student_allocations` table in `schema.sql` and `database/migrations/phase13_allocations.sql`.
-    * Virtual columns (`active_student_key`, `active_bed_key`) with `UNIQUE` index constraints guarantee strictly **one active allocation per student** and **one active occupant per bed** at the MySQL engine level.
-    * Backfilled existing assignments from `students.bed_id`.
-  * **Backend Service & Concurrency**:
-    * Developed `allocationService.js`, `allocationController.js`, and `allocationRoutes.js`.
-    * Implemented atomic transactions (`BEGIN`, `COMMIT`, `ROLLBACK`) with row-level locking (`SELECT ... FOR UPDATE`) for room allocation, bed transfer, and checkout workflows.
-    * Implemented diagnostic consistency tool (`GET /api/allocations/consistency`) to detect orphaned occupied beds, duplicate active records, or bed reference mismatches.
-  * **Frontend UI Components**:
-    * Created `AllocationModal.jsx`, `TransferModal.jsx` (with current vs new side-by-side confirmation), `CheckoutModal.jsx` (with valid checkout reason enums and custom reason support), `AllocationDetailsModal.jsx` (displaying complete student stay history timeline), `AllocationsPage.jsx` (`.css`), and `StudentAccommodationPage.jsx`.
-    * Connected navigation links in `Sidebar.jsx` and routes in `App.jsx`.
-  * **Verification**: Authored `backend/src/test_phase13_allocations.js`. All 12/12 automated integration tests passed. Frontend build (`npm run build`) succeeded with 0 errors.
+  * **Objective**: Implemented student accommodation lifecycle (Allocation → Transfer → Checkout) with immutable historical integrity, database-level uniqueness constraints, and transaction safety.
+  * **Database Architecture**: Created `student_allocations` table with virtual columns (`active_student_key`, `active_bed_key`) and `UNIQUE` indexes guaranteeing strictly 1 active allocation per student and bed.
+  * **Backend Service**: Developed `allocationService.js`, `allocationController.js`, and `allocationRoutes.js` with atomic transactions (`BEGIN`, `COMMIT`, `ROLLBACK`) and diagnostic consistency tool (`/api/allocations/consistency`).
+  * **Frontend UI Components**: Created `AllocationModal.jsx`, `TransferModal.jsx`, `CheckoutModal.jsx`, `AllocationDetailsModal.jsx`, `AllocationsPage.jsx`, and `StudentAccommodationPage.jsx`.
+  * **Verification**: Authored `backend/src/test_phase13_allocations.js`. All 12/12 automated integration tests passed.
   * **Status**: Complete.
 
 * **2026-08-23 (Phase 12) — Reports & Analytics Center**

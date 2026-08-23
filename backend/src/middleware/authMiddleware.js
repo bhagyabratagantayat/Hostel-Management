@@ -29,22 +29,33 @@ const requireAuth = async (req, res, next) => {
 
     // Fetch user and role from database
     const [users] = await db.pool.query(
-      `SELECT u.id, u.username, u.email, u.status, r.name as role
+      `SELECT u.id, u.username, u.email, u.status, u.must_change_password, r.name as role
        FROM users u
        JOIN roles r ON u.role_id = r.id
-       WHERE u.id = ? AND u.status = 'ACTIVE'`,
+       WHERE u.id = ?`,
       [decoded.id]
     );
 
-    if (users.length === 0) {
+    if (users.length === 0 || users[0].status !== 'ACTIVE') {
       return res.status(401).json({
         success: false,
         message: 'User account is inactive or no longer exists.'
       });
     }
 
-    // Attach user information to request object
-    req.user = users[0];
+    const user = users[0];
+    req.user = user;
+
+    // First login password change enforcement
+    const allowedAuthPaths = ['/api/auth/change-password', '/api/auth/me', '/api/auth/logout'];
+    if (user.must_change_password && !allowedAuthPaths.some(p => req.originalUrl.startsWith(p))) {
+      return res.status(403).json({
+        success: false,
+        must_change_password: true,
+        message: 'Password change required before accessing the application.'
+      });
+    }
+
     next();
   } catch (error) {
     console.error('Authentication middleware error:', error);

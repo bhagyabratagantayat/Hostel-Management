@@ -16,7 +16,6 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Input sanitization / check length limits
     if (loginIdentifier.length > 100 || password.length > 100) {
       return res.status(400).json({
         success: false,
@@ -24,14 +23,17 @@ const login = async (req, res, next) => {
       });
     }
 
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const user_agent = req.headers['user-agent'];
+
     // 2. Validate Credentials
-    const result = await authService.validateUser(loginIdentifier, password);
+    const result = await authService.validateUser(loginIdentifier, password, { ip_address, user_agent });
 
     // Generic error responses to avoid account enumeration
     if (!result) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid username/email or password.'
+        message: 'Invalid username or password.'
       });
     }
 
@@ -62,11 +64,45 @@ const login = async (req, res, next) => {
         id: result.id,
         username: result.username,
         email: result.email,
-        role: result.role
+        role: result.role,
+        must_change_password: Boolean(result.must_change_password)
       }
     });
 
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Handle password change requests.
+ */
+const changePassword = async (req, res, next) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required.'
+      });
+    }
+
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const user_agent = req.headers['user-agent'];
+
+    const result = await authService.changePassword(req.user.id, current_password, new_password, { ip_address, user_agent });
+
+    return res.status(200).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message
+      });
+    }
     next(error);
   }
 };
@@ -96,15 +132,10 @@ const logout = async (req, res, next) => {
  */
 const getMe = async (req, res, next) => {
   try {
-    // req.user is set by the requireAuth middleware
+    const profile = await authService.getUserProfile(req.user.id);
     return res.status(200).json({
       success: true,
-      user: {
-        id: req.user.id,
-        username: req.user.username,
-        email: req.user.email,
-        role: req.user.role
-      }
+      user: profile
     });
   } catch (error) {
     next(error);
@@ -113,6 +144,7 @@ const getMe = async (req, res, next) => {
 
 module.exports = {
   login,
+  changePassword,
   logout,
   getMe
 };

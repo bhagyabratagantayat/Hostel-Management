@@ -131,5 +131,17 @@ api.transferStudent = (id, data) => api.post(`/allocations/${id}/transfer`, data
 api.checkoutStudent = (id, data) => api.post(`/allocations/${id}/checkout`, data);
 api.getAllocationConsistency = () => api.get('/allocations/consistency');
 
+// User Management & Security Hardening API methods
+api.getUsers = (params = {}) => api.get('/users', { params });
+api.getUserById = (id) => api.get(`/users/${id}`);
+api.createUser = (data) => api.post('/users', data);
+api.updateUserStatus = (id, status) => api.patch(`/users/${id}/status`, { status });
+api.updateUserRole = (id, role) => api.patch(`/users/${id}/role`, { role });
+api.adminResetPassword = (id, new_password) => api.post(`/users/${id}/reset-password`, { new_password });
+api.updateSuperintendentHostels = (id, hostel_ids) => api.put(`/users/${id}/hostels`, { hostel_ids });
+api.changePassword = (data) => api.post('/auth/change-password', data);
+api.updateSelfProfile = (data) => api.patch('/profile', data);
+api.getAuditLogs = (params = {}) => api.get('/security/audit', { params });
+
 export default api;
 

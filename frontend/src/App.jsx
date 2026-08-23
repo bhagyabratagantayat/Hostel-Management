@@ -19,6 +19,9 @@ import ReportsPage from './pages/ReportsPage';
 import AllocationsPage from './pages/AllocationsPage';
 import StudentAccommodationPage from './pages/StudentAccommodationPage';
 import StudentDashboard from './pages/StudentDashboard';
+import UserManagementPage from './pages/UserManagementPage';
+import SecurityAuditPage from './pages/SecurityAuditPage';
+import ProfilePage from './pages/ProfilePage';
 import Loading from './components/Loading';
 
 /**
@@ -63,6 +66,18 @@ function App() {
             }
           />
 
+          {/* Shared Profile Route */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
           {/* ── SUPER ADMIN ────────────────────────────────────────────── */}
           <Route
             path="/admin/*"
@@ -71,6 +86,8 @@ function App() {
                 <DashboardLayout>
                   <Routes>
                     <Route path="dashboard"           element={<AdminDashboard />} />
+                    <Route path="users"               element={<UserManagementPage />} />
+                    <Route path="security-audit"      element={<SecurityAuditPage />} />
                     <Route path="hostels"             element={<HostelsPage />} />
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
@@ -132,7 +149,7 @@ function App() {
                     <Route path="visitors"      element={<VisitorsPage />} />
                     <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
                     <Route path="fees"          element={<FeeManagementPage />} />
-                    <Route path="profile"       element={<DashboardPlaceholder />} />
+                    <Route path="profile"       element={<Navigate to="/profile" replace />} />
                     <Route path="attendance"    element={<RoutePlaceholder title="My Attendance" />} />
                     <Route path="*"             element={<Navigate to="/student/dashboard" replace />} />
                   </Routes>

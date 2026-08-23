@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS `users` (
     `email` VARCHAR(100) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
     `status` ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') DEFAULT 'ACTIVE',
+    `must_change_password` TINYINT(1) NOT NULL DEFAULT 0,
+    `last_login_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -444,5 +446,20 @@ CREATE TABLE IF NOT EXISTS `student_allocations` (
     INDEX `idx_allocations_dates` (`allocated_from`, `allocated_until`)
 ) ENGINE=InnoDB;
 
-
-
+-- 24. Security Audit Log Table
+CREATE TABLE IF NOT EXISTS `security_audit_log` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NULL,
+    `actor_id` INT NULL,
+    `action` VARCHAR(50) NOT NULL,
+    `ip_address` VARCHAR(45) NULL,
+    `user_agent` VARCHAR(255) NULL,
+    `metadata` JSON NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    INDEX `idx_audit_action` (`action`),
+    INDEX `idx_audit_user` (`user_id`),
+    INDEX `idx_audit_actor` (`actor_id`),
+    INDEX `idx_audit_created` (`created_at`)
+) ENGINE=InnoDB;
