@@ -412,5 +412,37 @@ CREATE TABLE IF NOT EXISTS `fee_history` (
     INDEX `idx_fh_fee_date` (`student_fee_id`, `created_at`)
 ) ENGINE=InnoDB;
 
+-- 23. Student Allocations & Room Transfer History Table
+CREATE TABLE IF NOT EXISTS `student_allocations` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` INT NOT NULL,
+    `hostel_id` INT NOT NULL,
+    `room_id` INT NOT NULL,
+    `bed_id` INT NOT NULL,
+    `allocated_from` DATE NOT NULL,
+    `allocated_until` DATE DEFAULT NULL,
+    `status` ENUM('ACTIVE', 'TRANSFERRED', 'CHECKED_OUT', 'CANCELLED') NOT NULL DEFAULT 'ACTIVE',
+    `allocated_by` INT NOT NULL,
+    `checkout_reason` ENUM('COURSE_COMPLETED', 'TRANSFERRED', 'LEFT_COLLEGE', 'HOSTEL_CHANGE', 'DISCIPLINARY', 'PERSONAL', 'OTHER') DEFAULT NULL,
+    `transfer_reason` TEXT DEFAULT NULL,
+    `custom_reason` VARCHAR(255) DEFAULT NULL,
+    `active_student_key` INT GENERATED ALWAYS AS (IF(status = 'ACTIVE', student_id, NULL)) STORED,
+    `active_bed_key` INT GENERATED ALWAYS AS (IF(status = 'ACTIVE', bed_id, NULL)) STORED,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`bed_id`) REFERENCES `beds` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`allocated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    UNIQUE KEY `unique_active_student_allocation` (`active_student_key`),
+    UNIQUE KEY `unique_active_bed_allocation` (`active_bed_key`),
+    INDEX `idx_allocations_student` (`student_id`, `status`),
+    INDEX `idx_allocations_hostel` (`hostel_id`, `status`),
+    INDEX `idx_allocations_room` (`room_id`, `status`),
+    INDEX `idx_allocations_bed` (`bed_id`, `status`),
+    INDEX `idx_allocations_dates` (`allocated_from`, `allocated_until`)
+) ENGINE=InnoDB;
+
 
 

@@ -293,6 +293,11 @@ let MOCK_FEE_HISTORY = [
   { id: 2, student_fee_id: 1, changed_by: 2, action: 'PAYMENT_RECORDED', old_value: 'Paid: ₹0.00, Status: PENDING', new_value: 'Paid: ₹10000.00, Status: PARTIAL', reason: 'Payment of ₹10000.00 recorded via UPI. Receipt: FEE-2026-000001', created_at: new Date().toISOString() }
 ];
 
+let MOCK_STUDENT_ALLOCATIONS = [
+  { id: 1, student_id: 1, hostel_id: 1, room_id: 1, bed_id: 1, allocated_from: '2026-08-01', allocated_until: null, status: 'ACTIVE', allocated_by: 1, checkout_reason: null, transfer_reason: null, custom_reason: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 2, student_id: 2, hostel_id: 1, room_id: 1, bed_id: 2, allocated_from: '2026-08-01', allocated_until: null, status: 'ACTIVE', allocated_by: 1, checkout_reason: null, transfer_reason: null, custom_reason: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+];
+
 let isOffline = false;
 
 // Initialize the actual MySQL connection pool
@@ -1426,6 +1431,113 @@ const mockQuery = async (sql, params = []) => {
     if (queryLower.includes('fh.student_fee_id = ?') || queryLower.includes('student_fee_id = ?')) {
       const sfId = Number(params[0]);
       result = result.filter(h => h.student_fee_id === sfId);
+    }
+
+    return [result];
+  }
+
+  // student_allocations mock handling
+  if (queryLower.includes('into student_allocations')) {
+    const newId = MOCK_STUDENT_ALLOCATIONS.length > 0 ? Math.max(...MOCK_STUDENT_ALLOCATIONS.map(a => a.id)) + 1 : 1;
+    const newItem = {
+      id: newId,
+      student_id: Number(params[0]),
+      hostel_id: Number(params[1]),
+      room_id: Number(params[2]),
+      bed_id: Number(params[3]),
+      allocated_from: params[4],
+      allocated_until: null,
+      status: 'ACTIVE',
+      allocated_by: Number(params[5]),
+      checkout_reason: null,
+      transfer_reason: params[6] || null,
+      custom_reason: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    MOCK_STUDENT_ALLOCATIONS.push(newItem);
+    return [{ insertId: newId, affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update student_allocations')) {
+    if (queryLower.includes('status = \'transferred\'') || queryLower.includes('status = \'checked_out\'')) {
+      const allocId = Number(params[params.length - 1]);
+      const alloc = MOCK_STUDENT_ALLOCATIONS.find(a => a.id === allocId);
+      if (alloc) {
+        if (queryLower.includes('status = \'transferred\'')) {
+          alloc.status = 'TRANSFERRED';
+          alloc.allocated_until = params[0];
+          alloc.transfer_reason = params[1];
+        } else {
+          alloc.status = 'CHECKED_OUT';
+          alloc.allocated_until = params[0];
+          alloc.checkout_reason = params[1];
+          alloc.custom_reason = params[2];
+        }
+      }
+    }
+    return [{ affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('update students set bed_id')) {
+    if (queryLower.includes('bed_id = null')) {
+      const studentId = Number(params[0]);
+      const student = MOCK_STUDENTS.find(s => s.id === studentId);
+      if (student) student.bed_id = null;
+    } else {
+      const studentId = Number(params[1]);
+      const student = MOCK_STUDENTS.find(s => s.id === studentId);
+      if (student) student.bed_id = Number(params[0]);
+    }
+    return [{ affectedRows: 1 }];
+  }
+
+  if (queryLower.includes('from beds')) {
+    const bedId = Number(params[0]);
+    return [[{ id: bedId, status: 'AVAILABLE', room_id: 1, hostel_id: 1, bed_number: 'A-1', room_number: '101', hostel_name: 'Meridian Boys Hostel' }]];
+  }
+
+  if (queryLower.includes('from student_allocations')) {
+    let result = MOCK_STUDENT_ALLOCATIONS.map(sa => {
+      const st = MOCK_STUDENTS.find(s => s.id === sa.student_id) || MOCK_STUDENTS[0];
+      const h = MOCK_HOSTELS.find(h => h.id === sa.hostel_id) || MOCK_HOSTELS[0];
+      const u = MOCK_USERS.find(u => u.id === sa.allocated_by);
+      return {
+        ...sa,
+        student_name: st ? st.full_name : 'John Doe',
+        student_code: st ? st.student_id : 'STD2026001',
+        roll_number: st ? st.roll_number : 'CSE-2026-089',
+        student_status: st ? st.status : 'ACTIVE',
+        branch: st ? st.branch : 'Computer Science',
+        course: st ? st.course : 'B.Tech',
+        photo_url: st ? st.photo_url : null,
+        phone: st ? st.phone : '9876543210',
+        email: st ? st.email : 'student@hostel.com',
+        hostel_name: h ? h.name : 'Meridian Boys Hostel',
+        hostel_code: h ? h.code : 'MBH',
+        room_number: sa.room_id === 1 ? '101' : (sa.room_id === 2 ? '102' : '201'),
+        bed_number: sa.bed_id === 1 ? 'A-1' : (sa.bed_id === 2 ? 'A-2' : 'A-3'),
+        allocated_by_username: u ? u.username : 'superadmin'
+      };
+    });
+
+    if (queryLower.includes('sa.id = ?') || queryLower.includes('where sa.id = ?')) {
+      const targetId = Number(params[0]);
+      const found = result.find(a => a.id === targetId);
+      return [found ? [found] : []];
+    }
+
+    if (queryLower.includes('student_id = ?')) {
+      const sId = Number(params[0]);
+      result = result.filter(a => a.student_id === sId);
+    }
+
+    if (queryLower.includes('status = \'active\'')) {
+      result = result.filter(a => a.status === 'ACTIVE');
+    }
+
+    if (queryLower.includes('count(*) as total')) {
+      return [[{ total: result.length }]];
     }
 
     return [result];

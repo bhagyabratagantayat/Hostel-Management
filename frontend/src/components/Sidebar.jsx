@@ -31,6 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
           { label: 'Students', icon: '🎓', path: '/admin/students' },
+          { label: 'Allocations & Transfers', icon: '🛏️', path: '/admin/allocations' },
           { label: 'Reports Center', icon: '📈', path: '/admin/reports' },
           { label: 'Fees & Payments', icon: '💳', path: '/admin/fees' },
           { label: 'Mess & Food', icon: '🍲', path: '/admin/mess' },
@@ -44,6 +45,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
           { label: 'Students', icon: '🎓', path: '/superintendent/students' },
+          { label: 'Allocations & Transfers', icon: '🛏️', path: '/superintendent/allocations' },
           { label: 'Reports Center', icon: '📈', path: '/superintendent/reports' },
           { label: 'Fees & Payments', icon: '💳', path: '/superintendent/fees' },
           { label: 'Mess & Food', icon: '🍲', path: '/superintendent/mess' },
@@ -55,6 +57,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'STUDENT':
         return [
           { label: 'Dashboard', icon: '📊', path: '/student/dashboard' },
+          { label: 'My Accommodation', icon: '🛏️', path: '/student/accommodation' },
           { label: 'Fees & Dues', icon: '💳', path: '/student/fees' },
           { label: 'Mess & Food', icon: '🍲', path: '/student/mess' },
           { label: 'Visitors', icon: '👥', path: '/student/visitors' },

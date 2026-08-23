@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 12 — Reports & Analytics Center (Complete)
+* **Current Development Phase**: Phase 13 — Student Allocation, Room/Bed Transfer & Checkout Management (Complete)
 
 ---
 
@@ -395,6 +395,22 @@ Precision: 2 decimal places
   * **Routing**:
     * Added `attendance` placeholder routes for admin and superintendent
     * `RoleRedirect` at root sends users to role-specific dashboard
+* **2026-08-23 (Phase 13) — Student Allocation, Room/Bed Transfer & Checkout Management System**
+  * **Objective**: Implemented the student accommodation lifecycle (Allocation → Transfer → Checkout) with immutable historical integrity, database-level uniqueness constraints, transaction safety, and role-scoped authorization.
+  * **Database Architecture & Migration**:
+    * Created `student_allocations` table in `schema.sql` and `database/migrations/phase13_allocations.sql`.
+    * Virtual columns (`active_student_key`, `active_bed_key`) with `UNIQUE` index constraints guarantee strictly **one active allocation per student** and **one active occupant per bed** at the MySQL engine level.
+    * Backfilled existing assignments from `students.bed_id`.
+  * **Backend Service & Concurrency**:
+    * Developed `allocationService.js`, `allocationController.js`, and `allocationRoutes.js`.
+    * Implemented atomic transactions (`BEGIN`, `COMMIT`, `ROLLBACK`) with row-level locking (`SELECT ... FOR UPDATE`) for room allocation, bed transfer, and checkout workflows.
+    * Implemented diagnostic consistency tool (`GET /api/allocations/consistency`) to detect orphaned occupied beds, duplicate active records, or bed reference mismatches.
+  * **Frontend UI Components**:
+    * Created `AllocationModal.jsx`, `TransferModal.jsx` (with current vs new side-by-side confirmation), `CheckoutModal.jsx` (with valid checkout reason enums and custom reason support), `AllocationDetailsModal.jsx` (displaying complete student stay history timeline), `AllocationsPage.jsx` (`.css`), and `StudentAccommodationPage.jsx`.
+    * Connected navigation links in `Sidebar.jsx` and routes in `App.jsx`.
+  * **Verification**: Authored `backend/src/test_phase13_allocations.js`. All 12/12 automated integration tests passed. Frontend build (`npm run build`) succeeded with 0 errors.
+  * **Status**: Complete.
+
 * **2026-08-23 (Phase 12) — Reports & Analytics Center**
   * **Objective**: Designed and implemented a centralized, read-only Reports & Analytics Center combining data across Students, Hostels, Rooms, Beds, Attendance, Complaints, Visitors, Mess, and Fees.
   * **Architecture & Services**:

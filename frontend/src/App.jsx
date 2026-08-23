@@ -16,6 +16,8 @@ import VisitorsPage from './pages/VisitorsPage';
 import MessPage from './pages/MessPage';
 import FeeManagementPage from './pages/FeeManagementPage';
 import ReportsPage from './pages/ReportsPage';
+import AllocationsPage from './pages/AllocationsPage';
+import StudentAccommodationPage from './pages/StudentAccommodationPage';
 import StudentDashboard from './pages/StudentDashboard';
 import Loading from './components/Loading';
 
@@ -72,6 +74,7 @@ function App() {
                     <Route path="hostels"             element={<HostelsPage />} />
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
+                    <Route path="allocations"         element={<AllocationsPage />} />
                     <Route path="reports"             element={<ReportsPage />} />
                     <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
                     <Route path="notices"             element={<NoticesPage />} />
@@ -98,6 +101,7 @@ function App() {
                     <Route path="hostels"             element={<HostelsPage />} />
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
+                    <Route path="allocations"         element={<AllocationsPage />} />
                     <Route path="reports"             element={<ReportsPage />} />
                     <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
                     <Route path="notices"             element={<NoticesPage />} />
@@ -120,16 +124,17 @@ function App() {
               <ProtectedRoute allowedRoles={['STUDENT']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="dashboard"  element={<StudentDashboard />} />
-                    <Route path="notices"    element={<NoticesPage />} />
+                    <Route path="dashboard"     element={<StudentDashboard />} />
+                    <Route path="accommodation" element={<StudentAccommodationPage />} />
+                    <Route path="notices"       element={<NoticesPage />} />
                     <Route path="notices/:noticeId" element={<NoticesPage />} />
-                    <Route path="complaints" element={<ComplaintsPage />} />
-                    <Route path="visitors"   element={<VisitorsPage />} />
-                    <Route path="mess"       element={<MessPage userRole="STUDENT" />} />
-                    <Route path="fees"       element={<FeeManagementPage />} />
-                    <Route path="profile"    element={<DashboardPlaceholder />} />
-                    <Route path="attendance" element={<RoutePlaceholder title="My Attendance" />} />
-                    <Route path="*"          element={<Navigate to="/student/dashboard" replace />} />
+                    <Route path="complaints"    element={<ComplaintsPage />} />
+                    <Route path="visitors"      element={<VisitorsPage />} />
+                    <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
+                    <Route path="fees"          element={<FeeManagementPage />} />
+                    <Route path="profile"       element={<DashboardPlaceholder />} />
+                    <Route path="attendance"    element={<RoutePlaceholder title="My Attendance" />} />
+                    <Route path="*"             element={<Navigate to="/student/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>

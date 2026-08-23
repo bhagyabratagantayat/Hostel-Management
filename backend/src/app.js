@@ -45,6 +45,7 @@ const visitorRoutes = require('./routes/visitorRoutes');
 const messRoutes = require('./routes/messRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const allocationRoutes = require('./routes/allocationRoutes');
 
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
@@ -62,6 +63,7 @@ app.use('/api/visitors', visitorRoutes);
 app.use('/api/mess', messRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/allocations', allocationRoutes);
 
 
 // Base route for API documentation / welcome

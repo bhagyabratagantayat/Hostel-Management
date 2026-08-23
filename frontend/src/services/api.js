@@ -120,5 +120,16 @@ api.getVisitorReport = (params = {}) => api.get('/reports/visitors', { params })
 api.getMessReport = (params = {}) => api.get('/reports/mess', { params });
 api.getFeeReport = (params = {}) => api.get('/reports/fees', { params });
 
+// Student Allocations, Transfers & Checkout API methods
+api.getAllocations = (params = {}) => api.get('/allocations', { params });
+api.getAllocationById = (id) => api.get(`/allocations/${id}`);
+api.getMyAllocation = () => api.get('/allocations/me');
+api.getStudentAllocationHistory = (studentId) => api.get(`/allocations/student/${studentId}/history`);
+api.getAvailableBeds = (hostel_id, room_id) => api.get('/allocations/available-beds', { params: { hostel_id, room_id } });
+api.allocateStudent = (data) => api.post('/allocations', data);
+api.transferStudent = (id, data) => api.post(`/allocations/${id}/transfer`, data);
+api.checkoutStudent = (id, data) => api.post(`/allocations/${id}/checkout`, data);
+api.getAllocationConsistency = () => api.get('/allocations/consistency');
+
 export default api;
 

@@ -11,6 +11,7 @@ A robust, production-ready full-stack application built to streamline room booki
 - **Roll-Call & Attendance**: Daily attendance check records.
 - **Announcement Board**: Multi-hostel notices broadcast.
 - **Reports & Analytics Center**: Centralized cross-functional reporting (Overview, Students, Attendance, Occupancy, Complaints, Visitors, Mess, Fees) with server-side role scoping and date range validation.
+- **Student Allocation & Transfer Lifecycle**: Transaction-safe room allocations, bed transfers (with side-by-side current vs target confirmation), hostel checkouts (with valid reason enums), immutable historical tracking, and DB-level uniqueness constraints.
 
 ---
 
