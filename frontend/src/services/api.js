@@ -110,5 +110,15 @@ api.getPaymentReceipt = (paymentId) => api.get(`/fees/receipts/${paymentId}`);
 
 api.getFeeSummary = (params = {}) => api.get('/fees/summary', { params });
 
+// Reports & Analytics Center API methods
+api.getOverviewReport = (params = {}) => api.get('/reports/overview', { params });
+api.getStudentReport = (params = {}) => api.get('/reports/students', { params });
+api.getAttendanceReport = (params = {}) => api.get('/reports/attendance', { params });
+api.getOccupancyReport = (params = {}) => api.get('/reports/occupancy', { params });
+api.getComplaintReport = (params = {}) => api.get('/reports/complaints', { params });
+api.getVisitorReport = (params = {}) => api.get('/reports/visitors', { params });
+api.getMessReport = (params = {}) => api.get('/reports/mess', { params });
+api.getFeeReport = (params = {}) => api.get('/reports/fees', { params });
+
 export default api;
 

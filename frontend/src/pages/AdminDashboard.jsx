@@ -97,6 +97,7 @@ function AdminDashboard() {
       <nav className="quick-actions" aria-label="Quick actions">
         <button onClick={() => navigate('/admin/hostels')}  className="qa-btn">🏢 Manage Hostels</button>
         <button onClick={() => navigate('/admin/students')} className="qa-btn">🎓 Add Student</button>
+        <button onClick={() => navigate('/admin/reports')} className="qa-btn">📈 View Reports</button>
         <button onClick={() => navigate('/admin/attendance')} className="qa-btn">📝 Attendance</button>
         <button onClick={() => navigate('/admin/notices')} className="qa-btn">📢 Notice Board</button>
       </nav>

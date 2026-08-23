@@ -1431,6 +1431,121 @@ const mockQuery = async (sql, params = []) => {
     return [result];
   }
 
+  // 5. Mock Report Aggregations Handling
+  if (queryLower.includes('from students') && queryLower.includes('group by')) {
+    if (queryLower.includes('s.branch')) {
+      return [[
+        { branch: 'Computer Science', count: MOCK_STUDENTS.filter(s => s.branch === 'Computer Science' || !s.branch).length || 10 },
+        { branch: 'Electrical Eng', count: MOCK_STUDENTS.filter(s => s.branch === 'Electrical Eng').length || 5 },
+        { branch: 'Mechanical Eng', count: MOCK_STUDENTS.filter(s => s.branch === 'Mechanical Eng').length || 4 }
+      ]];
+    }
+    if (queryLower.includes('s.course')) {
+      return [[
+        { course: 'B.Tech', count: MOCK_STUDENTS.filter(s => s.course === 'B.Tech' || !s.course).length || 15 },
+        { course: 'M.Tech', count: MOCK_STUDENTS.filter(s => s.course === 'M.Tech').length || 4 }
+      ]];
+    }
+    if (queryLower.includes('s.year')) {
+      return [[
+        { year: '1', count: 6 },
+        { year: '2', count: 5 },
+        { year: '3', count: 5 },
+        { year: '4', count: 3 }
+      ]];
+    }
+  }
+
+  if (queryLower.includes('from hostels') && queryLower.includes('group by h.id')) {
+    return [MOCK_HOSTELS.map(h => ({
+      hostel_id: h.id,
+      hostel_name: h.name,
+      student_count: MOCK_STUDENTS.filter(s => s.hostel_id === h.id).length || 3,
+      totalBeds: 50,
+      occupied: 35,
+      available: 12,
+      maintenance: 3
+    }))];
+  }
+
+  if (queryLower.includes('from attendance') && queryLower.includes('group by attendance_date')) {
+    const today = new Date().toISOString().split('T')[0];
+    return [[
+      { attendance_date: today, present: 18, absent: 2, attendancePercentage: 90.0 }
+    ]];
+  }
+
+  if (queryLower.includes('from complaints') && queryLower.includes('group by')) {
+    if (queryLower.includes('category')) {
+      return [[
+        { category: 'PLUMBING', count: MOCK_COMPLAINTS.filter(c => c.category === 'PLUMBING').length || 3 },
+        { category: 'ELECTRICITY', count: MOCK_COMPLAINTS.filter(c => c.category === 'ELECTRICITY').length || 2 },
+        { category: 'CLEANLINESS', count: MOCK_COMPLAINTS.filter(c => c.category === 'CLEANLINESS').length || 1 }
+      ]];
+    }
+    if (queryLower.includes('priority')) {
+      return [[
+        { priority: 'MEDIUM', count: 4 },
+        { priority: 'HIGH', count: 2 },
+        { priority: 'URGENT', count: 1 }
+      ]];
+    }
+    if (queryLower.includes('date(created_at)')) {
+      const today = new Date().toISOString().split('T')[0];
+      return [[{ complaint_date: today, count: 2 }]];
+    }
+  }
+
+  if (queryLower.includes('from visits') && queryLower.includes('group by')) {
+    if (queryLower.includes('relation')) {
+      return [[
+        { relation: 'Parent', count: 4 },
+        { relation: 'Friend', count: 2 },
+        { relation: 'Relative', count: 1 }
+      ]];
+    }
+    if (queryLower.includes('visit_date')) {
+      const today = new Date().toISOString().split('T')[0];
+      return [[{ visit_date: today, count: 3 }]];
+    }
+  }
+
+  if (queryLower.includes('from meal_attendance') && queryLower.includes('group by ma.meal_type')) {
+    return [[
+      { meal_type: 'BREAKFAST', takingCount: 15, notTakingCount: 3, totalResponses: 18 },
+      { meal_type: 'LUNCH', takingCount: 17, notTakingCount: 1, totalResponses: 18 },
+      { meal_type: 'SNACKS', takingCount: 12, notTakingCount: 6, totalResponses: 18 },
+      { meal_type: 'DINNER', takingCount: 16, notTakingCount: 2, totalResponses: 18 }
+    ]];
+  }
+
+  if (queryLower.includes('from student_fees') && queryLower.includes('group by fee_type')) {
+    return [[
+      { fee_type: 'HOSTEL_FEE', expected: 150000.00, collected: 100000.00 },
+      { fee_type: 'MESS_FEE', expected: 60000.00, collected: 45000.00 }
+    ]];
+  }
+
+  if (queryLower.includes('from fee_payments') && queryLower.includes('group by fp.payment_date')) {
+    const today = new Date().toISOString().split('T')[0];
+    return [[
+      { payment_date: today, total_collected: 25000.00, transaction_count: 2 }
+    ]];
+  }
+
+  if (queryLower.includes('select coalesce(sum(amount)') || (queryLower.includes('from student_fees') && queryLower.includes('sum(paid_amount)'))) {
+    const totalExp = MOCK_STUDENT_FEES.reduce((acc, f) => acc + (f.status !== 'WAIVED' ? Number(f.amount) : 0), 0) || 210000.00;
+    const totalCol = MOCK_STUDENT_FEES.reduce((acc, f) => acc + (f.status !== 'WAIVED' ? Number(f.paid_amount) : 0), 0) || 145000.00;
+    const totalWaived = MOCK_STUDENT_FEES.reduce((acc, f) => acc + (f.status === 'WAIVED' ? Number(f.amount) : 0), 0) || 0;
+    return [[{
+      totalExpected: totalExp,
+      totalCollected: totalCol,
+      totalPending: totalExp - totalCol,
+      totalOverdue: 20000.00,
+      totalWaived: totalWaived
+    }]];
+  }
+
   // Fallback / default mock response
   return [[]];
 };

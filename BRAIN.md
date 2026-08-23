@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 11 — Hostel Fees & Payment Management (Complete)
+* **Current Development Phase**: Phase 12 — Reports & Analytics Center (Complete)
 
 ---
 
@@ -395,6 +395,29 @@ Precision: 2 decimal places
   * **Routing**:
     * Added `attendance` placeholder routes for admin and superintendent
     * `RoleRedirect` at root sends users to role-specific dashboard
+* **2026-08-23 (Phase 12) — Reports & Analytics Center**
+  * **Objective**: Designed and implemented a centralized, read-only Reports & Analytics Center combining data across Students, Hostels, Rooms, Beds, Attendance, Complaints, Visitors, Mess, and Fees.
+  * **Architecture & Services**:
+    * Created `reportService.js`, `reportController.js`, and `reportRoutes.js`.
+    * No Phase 12 database tables added. All reporting calculations read directly from existing tables.
+    * Server-side authorization and hostel scoping (Super Admin = cross-hostel, Superintendent = assigned hostels only, Student = blocked from admin report APIs).
+    * Server-side date range validation (`YYYY-MM-DD`, `date_from <= date_to`, max 365 days range).
+    * `DECIMAL`-safe SQL aggregation calculations for financial fee collections.
+  * **API Endpoints**:
+    * `GET /api/reports/overview`: Consolidated high-level KPIs.
+    * `GET /api/reports/students`: Branch, Course, Year, and Hostel student distribution.
+    * `GET /api/reports/attendance`: Daily attendance trends and hostel comparisons.
+    * `GET /api/reports/occupancy`: Total beds, occupied/available/maintenance breakdowns, and hostel-wise occupancy rates.
+    * `GET /api/reports/complaints`: Resolution rates, category/priority breakdowns, and daily inflow trends.
+    * `GET /api/reports/visitors`: Visit status breakdowns, visitor relations, and daily visitor volume trends.
+    * `GET /api/reports/mess`: Meal participation rates by meal type (Breakfast, Lunch, Snacks, Dinner).
+    * `GET /api/reports/fees`: Expected, collected, pending, overdue, waived totals, collection rates, and daily revenue trends.
+  * **Frontend UI Components**:
+    * Built `ReportFilterBar.jsx`, `ReportStatCard.jsx`, `ReportChart.jsx` (SVG bar charts and trendlines), and `ReportsPage.jsx` (`.css`).
+    * Mobile-first responsive layout with category tabs and card fallbacks.
+  * **Verification**: Authored `backend/src/test_phase12_reports.js`. All 19/19 audit tests passed. Frontend build (`npm run build`) succeeded with 0 errors.
+  * **Status**: Complete.
+
 * **2026-08-23 (Phase 11) — Hostel Fees & Payment Management System**
   * **Objective**: Implemented the complete financial tracking, fee structure management, student fee assignment, transaction-safe payment recording with receipt generation, fee waivers, and financial analytics.
   * **Database Architecture**: Added four new tables (`fee_structures`, `student_fees`, `fee_payments`, `fee_history`) in `schema.sql` and `migrations/phase11_fees.sql`.

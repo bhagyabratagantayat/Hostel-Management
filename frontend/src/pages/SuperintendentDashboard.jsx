@@ -78,6 +78,7 @@ function SuperintendentDashboard() {
       <nav className="quick-actions" aria-label="Quick actions">
         <button onClick={() => navigate('/superintendent/students')}   className="qa-btn">🎓 Students</button>
         <button onClick={() => navigate('/superintendent/hostels')}    className="qa-btn">🏢 Rooms & Beds</button>
+        <button onClick={() => navigate('/superintendent/reports')}    className="qa-btn">📈 View Reports</button>
         <button onClick={() => navigate('/superintendent/attendance')} className="qa-btn">📝 Mark Attendance</button>
         <button onClick={() => navigate('/superintendent/notices')}    className="qa-btn">📢 Notice Board</button>
       </nav>

@@ -15,6 +15,7 @@ import ComplaintsPage from './pages/ComplaintsPage';
 import VisitorsPage from './pages/VisitorsPage';
 import MessPage from './pages/MessPage';
 import FeeManagementPage from './pages/FeeManagementPage';
+import ReportsPage from './pages/ReportsPage';
 import StudentDashboard from './pages/StudentDashboard';
 import Loading from './components/Loading';
 
@@ -71,6 +72,7 @@ function App() {
                     <Route path="hostels"             element={<HostelsPage />} />
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
+                    <Route path="reports"             element={<ReportsPage />} />
                     <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
                     <Route path="notices"             element={<NoticesPage />} />
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
@@ -96,6 +98,7 @@ function App() {
                     <Route path="hostels"             element={<HostelsPage />} />
                     <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
                     <Route path="students"            element={<StudentsPage />} />
+                    <Route path="reports"             element={<ReportsPage />} />
                     <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
                     <Route path="notices"             element={<NoticesPage />} />
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
