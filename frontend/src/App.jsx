@@ -22,6 +22,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import UserManagementPage from './pages/UserManagementPage';
 import SecurityAuditPage from './pages/SecurityAuditPage';
 import ProfilePage from './pages/ProfilePage';
+import ActivityPage from './pages/ActivityPage';
 import Loading from './components/Loading';
 
 /**
@@ -100,6 +101,7 @@ function App() {
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
                     <Route path="fees"                element={<FeeManagementPage />} />
+                    <Route path="activity"            element={<ActivityPage />} />
                     <Route path="*"                   element={<Navigate to="/admin/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -127,6 +129,7 @@ function App() {
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
                     <Route path="fees"                element={<FeeManagementPage />} />
+                    <Route path="activity"            element={<ActivityPage />} />
                     <Route path="*"                   element={<Navigate to="/superintendent/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>

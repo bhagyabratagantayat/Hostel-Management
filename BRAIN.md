@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 13 — Student Allocation, Room/Bed Transfer & Checkout Management (Complete)
+* **Current Development Phase**: Phase 15 — System Activity & Audit Center (Complete)
 
 ---
 
@@ -395,6 +395,16 @@ Precision: 2 decimal places
   * **Routing**:
     * Added `attendance` placeholder routes for admin and superintendent
     * `RoleRedirect` at root sends users to role-specific dashboard
+* **2026-08-23 (Phase 15) — System Activity & Audit Center**
+  * **Objective**: Designed and implemented a centralized operational activity and audit logging system (`activity_log`) distinct from Phase 14's `security_audit_log`. Captured operational history across all core business modules (Authentication, Users, Students, Hostels, Attendance, Notices, Complaints, Visitors, Mess, Fees, Allocations).
+  * **Database Architecture**: Created `activity_log` table with indexes on `(module, created_at)`, `(actor_id, created_at)`, `(hostel_id, created_at)`, `(student_id, created_at)`, and `(entity_type, entity_id)`.
+  * **Backend Audit Layer**: Developed `activityService.js`, `activityController.js`, and `activityRoutes.js`. Integrated `activityService.logActivity` across business services (`authService`, `userService`, `studentService`, `noticeService`, `complaintService`, `visitorService`, `messService`, `feeService`, `allocationService`).
+  * **Transactional & Privacy Safety**: Connected logging to active database transaction connections where applicable (`logActivity(..., connection)`). Automated metadata sanitization (`sanitizeMetadata`) to scrub passwords, tokens, API keys, and mask PII fields (Aadhaar, SSN, Passport).
+  * **Role-Based Access & Scoping**: Enforced strict RBAC (Super Admin = cross-hostel view, Superintendent = assigned hostels view only, Student = blocked from activity audit APIs).
+  * **Frontend UI Components**: Built `ActivityFilterBar.jsx`, `ActivityDetailsModal.jsx`, `ActivityTimeline.jsx`, `ActivityPage.jsx`, and `RecentActivity.jsx` widget. Embedded widget into `AdminDashboard` and `SuperintendentDashboard`. Added "Activity Log" link to `Sidebar.jsx`.
+  * **Verification**: Authored automated test script `test_phase15_activity.js` validating statistics, paginated list querying, module filtering, detail fetching, and role-scoped hostel isolation.
+  * **Status**: Complete.
+
 * **2026-08-23 (Phase 14) — User Management, Authentication & Security Hardening**
   * **Objective**: Hardened the identity, authentication, user account management, and security audit layer.
   * **Database Architecture**: Added `must_change_password` and `last_login_at` to `users`. Created `security_audit_log` table storing audit events.

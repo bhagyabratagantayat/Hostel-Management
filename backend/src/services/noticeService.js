@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getAssignedHostels } = require('../utils/authorization');
+const activityService = require('./activityService');
 
 /**
  * Get student's assigned hostel ID via active room/bed assignment.
@@ -335,7 +336,20 @@ async function createNotice(data, user) {
     expiresDate
   ]);
 
-  return getNoticeById(result.insertId, user);
+  const createdNotice = await getNoticeById(result.insertId, user);
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action: status === 'PUBLISHED' ? 'NOTICE_PUBLISHED' : 'NOTICE_CREATED',
+    module: 'NOTICES',
+    entityType: 'NOTICE',
+    entityId: result.insertId,
+    hostelId: finalHostelId,
+    description: `Created notice '${title.trim()}' (${status})`,
+    metadata: { priority, status, target }
+  });
+
+  return createdNotice;
 }
 
 /**
@@ -437,6 +451,18 @@ async function updateNoticeStatus(id, newStatus, user) {
   const sql = `UPDATE notices SET status = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
   await db.pool.query(sql, [newStatus, published_at, id]);
 
+  const actionType = newStatus === 'PUBLISHED' ? 'NOTICE_PUBLISHED' : (newStatus === 'ARCHIVED' ? 'NOTICE_ARCHIVED' : 'NOTICE_UPDATED');
+  await activityService.logActivity({
+    actorId: user.id,
+    action: actionType,
+    module: 'NOTICES',
+    entityType: 'NOTICE',
+    entityId: id,
+    hostelId: existingNotice.hostel_id,
+    description: `Updated notice '${existingNotice.title}' status to '${newStatus}'`,
+    metadata: { previous_status: existingNotice.status, new_status: newStatus }
+  });
+
   return getNoticeById(id, user);
 }
 
@@ -461,6 +487,9 @@ async function deleteNotice(id, user) {
     err.status = 403;
     throw err;
   }
+
+  const existingNotice = await getNoticeById(id, user);
+
   const sql = `DELETE FROM notices WHERE id = ?`;
   const [result] = await db.pool.query(sql, [id]);
   if (result.affectedRows === 0) {
@@ -468,6 +497,16 @@ async function deleteNotice(id, user) {
     err.status = 404;
     throw err;
   }
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action: 'NOTICE_DELETED',
+    module: 'NOTICES',
+    entityType: 'NOTICE',
+    entityId: id,
+    hostelId: existingNotice ? existingNotice.hostel_id : null,
+    description: `Deleted notice '${existingNotice ? existingNotice.title : id}'`
+  });
 }
 
 /**

@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const authorization = require('../utils/authorization');
+const activityService = require('./activityService');
 
 const VALID_CHECKOUT_REASONS = [
   'COURSE_COMPLETED', 'TRANSFERRED', 'LEFT_COLLEGE', 
@@ -353,6 +354,18 @@ const allocateStudent = async (data, staffUser) => {
       [bed_id, student_id]
     );
 
+    await activityService.logActivity({
+      actorId: staffUser.id,
+      action: 'STUDENT_ALLOCATED',
+      module: 'ALLOCATION',
+      entityType: 'ALLOCATION',
+      entityId: insertRes.insertId,
+      hostelId: hostel_id,
+      studentId: student_id,
+      description: `Allocated student #${student_id} to Hostel #${hostel_id}, Room #${room_id}, Bed #${bed_id}`,
+      metadata: { hostel_id, room_id, bed_id, allocated_from: allocFromDate }
+    }, connection);
+
     await connection.commit();
     return { success: true, allocation_id: insertRes.insertId };
   } catch (err) {
@@ -491,6 +504,18 @@ const transferStudent = async (allocationId, transferData, staffUser) => {
       [new_bed_id, currentAlloc.student_id]
     );
 
+    await activityService.logActivity({
+      actorId: staffUser.id,
+      action: 'STUDENT_TRANSFERRED',
+      module: 'ALLOCATION',
+      entityType: 'ALLOCATION',
+      entityId: newInsert.insertId,
+      hostelId: new_hostel_id,
+      studentId: currentAlloc.student_id,
+      description: `Transferred student #${currentAlloc.student_id} from Hostel #${currentAlloc.hostel_id}/Bed #${currentAlloc.bed_id} to Hostel #${new_hostel_id}/Bed #${new_bed_id}`,
+      metadata: { from_hostel_id: currentAlloc.hostel_id, from_bed_id: currentAlloc.bed_id, to_hostel_id: new_hostel_id, to_bed_id: new_bed_id }
+    }, connection);
+
     await connection.commit();
     return { success: true, new_allocation_id: newInsert.insertId };
   } catch (err) {
@@ -573,6 +598,18 @@ const checkoutStudent = async (allocationId, checkoutData, staffUser) => {
       "UPDATE students SET bed_id = NULL WHERE id = ?",
       [currentAlloc.student_id]
     );
+
+    await activityService.logActivity({
+      actorId: staffUser.id,
+      action: 'STUDENT_CHECKED_OUT',
+      module: 'ALLOCATION',
+      entityType: 'ALLOCATION',
+      entityId: allocationId,
+      hostelId: currentAlloc.hostel_id,
+      studentId: currentAlloc.student_id,
+      description: `Checked out student #${currentAlloc.student_id} from Hostel #${currentAlloc.hostel_id} (Reason: ${checkout_reason})`,
+      metadata: { checkout_reason, checkout_date: cDate }
+    }, connection);
 
     await connection.commit();
     return { success: true };

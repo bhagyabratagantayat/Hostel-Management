@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const passwordUtil = require('../utils/password');
 const securityService = require('./securityService');
+const activityService = require('./activityService');
 
 /**
  * Returns paginated user list with filters (SUPER_ADMIN only).
@@ -190,6 +191,16 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
       metadata: { username, email, role }
     });
 
+    await activityService.logActivity({
+      actorId: actor.id,
+      action: 'USER_CREATED',
+      module: 'USERS',
+      entityType: 'USER',
+      entityId: newUserId,
+      description: `Created new user account '${username}' with role '${role}'`,
+      metadata: { username, email, role }
+    }, conn);
+
     return { id: newUserId, username, email, role, must_change_password: true };
   } catch (error) {
     await conn.rollback();
@@ -253,6 +264,16 @@ const updateUserStatus = async (targetId, newStatus, actor, reqContext = {}) => 
     actor_id: actor.id,
     ip_address,
     user_agent,
+    metadata: { previous_status: targetUser.status, new_status: newStatus }
+  });
+
+  await activityService.logActivity({
+    actorId: actor.id,
+    action: newStatus === 'ACTIVE' ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
+    module: 'USERS',
+    entityType: 'USER',
+    entityId: targetId,
+    description: `${newStatus === 'ACTIVE' ? 'Activated' : 'Deactivated'} user account #${targetId}`,
     metadata: { previous_status: targetUser.status, new_status: newStatus }
   });
 
@@ -326,6 +347,16 @@ const updateUserRole = async (targetId, newRole, actor, reqContext = {}) => {
       metadata: { previous_role: oldRole, new_role: newRole }
     });
 
+    await activityService.logActivity({
+      actorId: actor.id,
+      action: 'ROLE_CHANGED',
+      module: 'USERS',
+      entityType: 'USER',
+      entityId: targetId,
+      description: `Changed role for user #${targetId} from '${oldRole}' to '${newRole}'`,
+      metadata: { previous_role: oldRole, new_role: newRole }
+    }, conn);
+
     return { success: true, id: targetId, role: newRole };
   } catch (error) {
     await conn.rollback();
@@ -348,13 +379,14 @@ const adminResetPassword = async (targetId, newPassword, actor, reqContext = {})
     throw err;
   }
 
-  const [users] = await db.pool.query('SELECT id FROM users WHERE id = ?', [targetId]);
+  const [users] = await db.pool.query('SELECT id, username FROM users WHERE id = ?', [targetId]);
   if (users.length === 0) {
     const err = new Error('User not found.');
     err.status = 404;
     throw err;
   }
 
+  const targetUsername = users[0].username;
   const hash = await passwordUtil.hashPassword(newPassword);
   await db.pool.query(
     'UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = NOW() WHERE id = ?',
@@ -367,6 +399,15 @@ const adminResetPassword = async (targetId, newPassword, actor, reqContext = {})
     actor_id: actor.id,
     ip_address,
     user_agent
+  });
+
+  await activityService.logActivity({
+    actorId: actor.id,
+    action: 'PASSWORD_RESET',
+    module: 'AUTHENTICATION',
+    entityType: 'USER',
+    entityId: targetId,
+    description: `Reset password for user '${targetUsername}'`
   });
 
   return { success: true, message: 'Password reset successfully. User must change password on next login.' };
@@ -418,6 +459,17 @@ const updateSuperintendentHostels = async (targetId, hostelIds, actor, reqContex
       actor_id: actor.id,
       ip_address,
       user_agent,
+      metadata: { assigned_hostel_ids: hostelIds }
+    });
+
+    const isAssigned = Array.isArray(hostelIds) && hostelIds.length > 0;
+    await activityService.logActivity({
+      actorId: actor.id,
+      action: isAssigned ? 'HOSTEL_ASSIGNED' : 'HOSTEL_UNASSIGNED',
+      module: 'USERS',
+      entityType: 'USER',
+      entityId: targetId,
+      description: isAssigned ? `Assigned superintendent #${targetId} to hostels [${hostelIds.join(', ')}]` : `Removed all hostel assignments from superintendent #${targetId}`,
       metadata: { assigned_hostel_ids: hostelIds }
     });
 

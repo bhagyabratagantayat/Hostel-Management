@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const activityService = require('./activityService');
 
 /**
  * Helper to generate a unique, format-safe receipt number.
@@ -242,6 +243,18 @@ class FeeService {
       [studentFeeId, createdBy, String(numAmount), 'Fee assigned to student']
     );
 
+    await activityService.logActivity({
+      actorId: createdBy,
+      action: 'FEE_ASSIGNED',
+      module: 'FEES',
+      entityType: 'FEE',
+      entityId: studentFeeId,
+      hostelId: student.hostel_id,
+      studentId: student.id,
+      description: `Assigned fee of ₹${numAmount.toFixed(2)} to student #${student.id}`,
+      metadata: { amount: numAmount, academic_year: academicYear, due_date: dueDate }
+    });
+
     return this.getStudentFeeById(studentFeeId);
   }
 
@@ -405,6 +418,18 @@ class FeeService {
         ]
       );
 
+      await activityService.logActivity({
+        actorId: receivedBy,
+        action: 'PAYMENT_RECORDED',
+        module: 'FEES',
+        entityType: 'PAYMENT',
+        entityId: pResult.insertId,
+        hostelId: sf.hostel_id,
+        studentId: sf.student_id,
+        description: `Recorded payment of ₹${numAmount.toFixed(2)} (${paymentMethod}) for student #${sf.student_id}. Receipt: ${receiptNumber}`,
+        metadata: { amount: numAmount, payment_method: paymentMethod, receipt_number: receiptNumber }
+      }, connection);
+
       await connection.commit();
       connection.release();
 
@@ -447,6 +472,18 @@ class FeeService {
          VALUES (?, ?, 'WAIVED', ?, 'WAIVED', ?)`,
         [sf.id, waivedBy, sf.status, waiverReason.trim()]
       );
+
+      await activityService.logActivity({
+        actorId: waivedBy,
+        action: 'FEE_WAIVED',
+        module: 'FEES',
+        entityType: 'FEE',
+        entityId: sf.id,
+        hostelId: sf.hostel_id,
+        studentId: sf.student_id,
+        description: `Waived fee #${sf.id} for student #${sf.student_id}`,
+        metadata: { reason: waiverReason.trim() }
+      }, connection);
 
       await connection.commit();
       connection.release();

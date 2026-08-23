@@ -1,4 +1,5 @@
 const { pool } = require('../config/db');
+const activityService = require('./activityService');
 
 /**
  * Cutoff time checker for student meal participation.
@@ -168,7 +169,20 @@ class MessService {
       createdBy
     ]);
 
-    return this.getMenuItemById(result.insertId);
+    const created = await this.getMenuItemById(result.insertId);
+
+    await activityService.logActivity({
+      actorId: createdBy,
+      action: 'MENU_CREATED',
+      module: 'MESS',
+      entityType: 'MENU',
+      entityId: result.insertId,
+      hostelId: hostelId || null,
+      description: `Created ${mealType} mess menu '${mealName.trim()}' for ${menuDate}`,
+      metadata: { menu_date: menuDate, meal_type: mealType }
+    });
+
+    return created;
   }
 
   /**
@@ -199,12 +213,24 @@ class MessService {
       WHERE id = ?
     `;
 
+    const availVal = isAvailable !== undefined ? (isAvailable ? 1 : 0) : null;
     await pool.query(updateSql, [
       mealName !== undefined ? mealName.trim() : null,
       description !== undefined ? description.trim() : null,
-      isAvailable !== undefined ? (isAvailable ? 1 : 0) : null,
+      availVal,
       id
     ]);
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'MENU_UPDATED',
+      module: 'MESS',
+      entityType: 'MENU',
+      entityId: id,
+      hostelId: existing.hostel_id,
+      description: `Updated ${existing.meal_type} mess menu #${id}`,
+      metadata: { meal_type: existing.meal_type, is_available: availVal }
+    });
 
     return this.getMenuItemById(id);
   }

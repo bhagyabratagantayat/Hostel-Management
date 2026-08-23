@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getAssignedHostels } = require('../utils/authorization');
+const activityService = require('./activityService');
 
 const VALID_CATEGORIES = [
   'ROOM', 'ELECTRICITY', 'WATER', 'PLUMBING', 'CLEANLINESS',
@@ -410,6 +411,18 @@ async function createComplaint(data, user) {
     `;
     await connection.query(historySql, [complaintId, user.id]);
 
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'COMPLAINT_CREATED',
+      module: 'COMPLAINTS',
+      entityType: 'COMPLAINT',
+      entityId: complaintId,
+      hostelId: studentAssignment.hostel_id,
+      studentId: studentAssignment.student_id,
+      description: `Submitted new complaint #${complaintId} (${finalCategory}): '${title.trim()}'`,
+      metadata: { category: finalCategory, priority: finalPriority }
+    }, connection);
+
     await connection.commit();
     connection.release();
 
@@ -496,6 +509,18 @@ async function updateComplaintStatus(id, data, user) {
       VALUES (?, ?, ?, ?, ?)
     `;
     await connection.query(historySql, [id, user.id, currentStatus, targetStatus, historyComment.trim()]);
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'COMPLAINT_STATUS_CHANGED',
+      module: 'COMPLAINTS',
+      entityType: 'COMPLAINT',
+      entityId: id,
+      hostelId: existing.hostel_id,
+      studentId: existing.student_id,
+      description: `Updated status for complaint #${id} from '${currentStatus}' to '${targetStatus}'`,
+      metadata: { previous_status: currentStatus, new_status: targetStatus, resolution }
+    }, connection);
 
     await connection.commit();
     connection.release();

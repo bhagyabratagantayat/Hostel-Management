@@ -11,6 +11,7 @@ import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection'
 import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
+import { RecentActivity } from '../components/dashboard/RecentActivity';
 import './AdminDashboard.css';
 
 // Stat card definitions for the overall section
@@ -149,6 +150,11 @@ function AdminDashboard() {
 
           {/* Mess Section */}
           <RecentMessSection userRole="SUPER_ADMIN" />
+
+          {/* System Recent Activity Audit Widget */}
+          <div className="mb-6">
+            <RecentActivity onNavigateAll={() => navigate('/admin/activity')} />
+          </div>
 
           {/* Hostel cards with filter */}
           <div className="hostels-section">

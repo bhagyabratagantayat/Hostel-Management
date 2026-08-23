@@ -3,6 +3,7 @@ const passwordUtil = require('../utils/password');
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const securityService = require('./securityService');
+const activityService = require('./activityService');
 
 /**
  * Validates login credentials.
@@ -30,6 +31,13 @@ const validateUser = async (loginIdentifier, password, reqContext = {}) => {
       user_agent,
       metadata: { identifier: loginIdentifier, reason: 'USER_NOT_FOUND' }
     });
+    await activityService.logActivity({
+      action: 'LOGIN_FAILED',
+      module: 'AUTHENTICATION',
+      entityType: 'USER',
+      description: `Failed login attempt for unrecognized identifier '${loginIdentifier}'`,
+      metadata: { identifier: loginIdentifier, reason: 'USER_NOT_FOUND' }
+    });
     return null;
   }
 
@@ -45,6 +53,15 @@ const validateUser = async (loginIdentifier, password, reqContext = {}) => {
       user_agent,
       metadata: { identifier: loginIdentifier, reason: 'INVALID_PASSWORD' }
     });
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'LOGIN_FAILED',
+      module: 'AUTHENTICATION',
+      entityType: 'USER',
+      entityId: user.id,
+      description: `Failed login attempt for user '${user.username}' (Invalid Password)`,
+      metadata: { identifier: loginIdentifier, reason: 'INVALID_PASSWORD' }
+    });
     return null;
   }
 
@@ -55,6 +72,15 @@ const validateUser = async (loginIdentifier, password, reqContext = {}) => {
       user_id: user.id,
       ip_address,
       user_agent,
+      metadata: { identifier: loginIdentifier, reason: 'ACCOUNT_INACTIVE', status: user.status }
+    });
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'LOGIN_FAILED',
+      module: 'AUTHENTICATION',
+      entityType: 'USER',
+      entityId: user.id,
+      description: `Failed login attempt for account '${user.username}' (Account Inactive)`,
       metadata: { identifier: loginIdentifier, reason: 'ACCOUNT_INACTIVE', status: user.status }
     });
     return { error: 'ACCOUNT_INACTIVE' };
@@ -69,6 +95,16 @@ const validateUser = async (loginIdentifier, password, reqContext = {}) => {
     user_id: user.id,
     ip_address,
     user_agent
+  });
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action: 'LOGIN_SUCCESS',
+    module: 'AUTHENTICATION',
+    entityType: 'USER',
+    entityId: user.id,
+    description: `User '${user.username}' successfully logged in`,
+    metadata: { role: user.role }
   });
 
   const { password_hash, ...safeUser } = user;
@@ -93,7 +129,7 @@ const changePassword = async (userId, currentPassword, newPassword, reqContext =
     throw err;
   }
 
-  const [users] = await db.pool.query('SELECT id, password_hash FROM users WHERE id = ?', [userId]);
+  const [users] = await db.pool.query('SELECT id, username, password_hash FROM users WHERE id = ?', [userId]);
   if (users.length === 0) {
     const err = new Error('User not found.');
     err.status = 404;
@@ -124,6 +160,15 @@ const changePassword = async (userId, currentPassword, newPassword, reqContext =
     actor_id: userId,
     ip_address,
     user_agent
+  });
+
+  await activityService.logActivity({
+    actorId: userId,
+    action: 'PASSWORD_CHANGED',
+    module: 'AUTHENTICATION',
+    entityType: 'USER',
+    entityId: userId,
+    description: `User '${user.username}' successfully updated their account password`
   });
 
   return { success: true, message: 'Password updated successfully.' };

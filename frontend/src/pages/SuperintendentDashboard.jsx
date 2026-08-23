@@ -11,6 +11,7 @@ import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection'
 import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
+import { RecentActivity } from '../components/dashboard/RecentActivity';
 import './SuperintendentDashboard.css';
 
 const buildStats = (overall) => [
@@ -142,6 +143,11 @@ function SuperintendentDashboard() {
 
           {/* Mess Section */}
           <RecentMessSection userRole="SUPERINTENDENT" />
+
+          {/* System Recent Activity Audit Widget */}
+          <div className="mb-6">
+            <RecentActivity onNavigateAll={() => navigate('/superintendent/activity')} />
+          </div>
 
           <div className="hostels-section">
             <div className="hostels-section__header">

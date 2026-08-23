@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { hasHostelAccess, hasStudentAccess } = require('../utils/authorization');
+const activityService = require('./activityService');
 
 /**
  * Bulk mark attendance for a given date.
@@ -64,6 +65,19 @@ async function bulkMark(date, records, user) {
                  ON DUPLICATE KEY UPDATE status = VALUES(status), marked_by = VALUES(marked_by), marked_at = CURRENT_TIMESTAMP`;
 
     await connection.query(sql, flatValues);
+
+    const firstStudent = students[0];
+    const hostelId = firstStudent ? firstStudent.hostel_id : null;
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'ATTENDANCE_MARKED',
+      module: 'ATTENDANCE',
+      entityType: 'ATTENDANCE',
+      hostelId: hostelId,
+      description: `Marked daily attendance for ${records.length} student(s) on ${date}`,
+      metadata: { count: records.length, date }
+    }, connection);
+
     await connection.commit();
   } catch (err) {
     await connection.rollback();

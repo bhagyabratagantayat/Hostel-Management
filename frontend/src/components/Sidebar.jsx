@@ -30,6 +30,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'User Directory', icon: '👥', path: '/admin/users' },
+          { label: 'Activity Log', icon: '📋', path: '/admin/activity' },
           { label: 'Security Audit', icon: '🛡️', path: '/admin/security-audit' },
           { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
           { label: 'Students', icon: '🎓', path: '/admin/students' },
@@ -49,6 +50,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
           { label: 'Students', icon: '🎓', path: '/superintendent/students' },
           { label: 'Allocations & Transfers', icon: '🛏️', path: '/superintendent/allocations' },
+          { label: 'Activity Log', icon: '📋', path: '/superintendent/activity' },
           { label: 'Reports Center', icon: '📈', path: '/superintendent/reports' },
           { label: 'Fees & Payments', icon: '💳', path: '/superintendent/fees' },
           { label: 'Mess & Food', icon: '🍲', path: '/superintendent/mess' },

@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const activityService = require('./activityService');
 
 const VALID_VISITOR_TYPES = ['PARENT', 'GUARDIAN', 'RELATIVE', 'FRIEND', 'OFFICIAL', 'OTHER'];
 const VALID_STATUSES = ['REQUESTED', 'APPROVED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', 'REJECTED'];
@@ -490,6 +491,18 @@ async function createVisit(data, user) {
     const comment = user.role === 'STUDENT' ? 'Visitor request submitted by student.' : 'Visitor registered and approved by hostel staff.';
     await connection.query(historySql, [visitId, user.id, initialStatus, comment]);
 
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'VISITOR_CREATED',
+      module: 'VISITORS',
+      entityType: 'VISITOR',
+      entityId: visitId,
+      hostelId: hostelId,
+      studentId: targetStudentId,
+      description: `Registered visitor '${visitor_name.trim()}' (${vType}) for student #${targetStudentId}`,
+      metadata: { visitor_name: visitor_name.trim(), visitor_type: vType, status: initialStatus }
+    }, connection);
+
     await connection.commit();
     connection.release();
 
@@ -532,6 +545,17 @@ async function approveVisit(visitId, user, comment = '') {
       `INSERT INTO visitor_history (visit_id, changed_by, old_status, new_status, comment) VALUES (?, ?, 'REQUESTED', 'APPROVED', ?)`,
       [visitId, user.id, comment || 'Visit approved by hostel administration.']
     );
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'VISITOR_APPROVED',
+      module: 'VISITORS',
+      entityType: 'VISITOR',
+      entityId: visitId,
+      hostelId: visit.hostel_id,
+      studentId: visit.student_id,
+      description: `Approved visitor request #${visitId} for '${visit.visitor_name}'`
+    }, connection);
 
     await connection.commit();
     connection.release();
@@ -656,6 +680,17 @@ async function checkInVisit(visitId, user, comment = '') {
       [visitId, user.id, comment || 'Visitor checked in at main gate.']
     );
 
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'VISITOR_CHECKED_IN',
+      module: 'VISITORS',
+      entityType: 'VISITOR',
+      entityId: visitId,
+      hostelId: visit.hostel_id,
+      studentId: visit.student_id,
+      description: `Checked in visitor '${visit.visitor_name}' for visit #${visitId}`
+    }, connection);
+
     await connection.commit();
     connection.release();
 
@@ -698,6 +733,17 @@ async function checkOutVisit(visitId, user, comment = '') {
       `INSERT INTO visitor_history (visit_id, changed_by, old_status, new_status, comment) VALUES (?, ?, 'CHECKED_IN', 'CHECKED_OUT', ?)`,
       [visitId, user.id, comment || 'Visitor checked out at main gate.']
     );
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'VISITOR_CHECKED_OUT',
+      module: 'VISITORS',
+      entityType: 'VISITOR',
+      entityId: visitId,
+      hostelId: visit.hostel_id,
+      studentId: visit.student_id,
+      description: `Checked out visitor '${visit.visitor_name}' for visit #${visitId}`
+    }, connection);
 
     await connection.commit();
     connection.release();
