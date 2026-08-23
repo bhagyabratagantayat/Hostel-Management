@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardPlaceholder from './pages/DashboardPlaceholder';
@@ -10,16 +10,28 @@ import HostelDetailsPage from './pages/HostelDetailsPage';
 import StudentsPage from './pages/StudentsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import SuperintendentDashboard from './pages/SuperintendentDashboard';
-// Inline simple placeholder to demonstrate protected route scopes
-const RoutePlaceholder = ({ title, roleRequired }) => (
+import Loading from './components/Loading';
+
+/**
+ * RoleRedirect — sends authenticated users to their role-specific dashboard.
+ * Unauthenticated users go to /login (handled by ProtectedRoute).
+ */
+const RoleRedirect = () => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div className="fullscreen-loading"><Loading message="Loading..." /></div>;
+  if (!user) return <Navigate to="/login" replace />;
+  switch (user.role) {
+    case 'SUPER_ADMIN':     return <Navigate to="/admin/dashboard" replace />;
+    case 'SUPERINTENDENT':  return <Navigate to="/superintendent/dashboard" replace />;
+    default:                return <DashboardLayout><DashboardPlaceholder /></DashboardLayout>;
+  }
+};
+
+// Inline placeholder for not-yet-implemented routes
+const RoutePlaceholder = ({ title }) => (
   <div className="placeholder-page">
     <h1 className="page-heading">{title}</h1>
-    <p className="page-subheading">
-      This page is secure and currently requires the <strong>{roleRequired}</strong> role to access.
-    </p>
-    <div className="placeholder-mock-content">
-      <p>Operations and actions for this screen are scheduled for implementation in a later phase.</p>
-    </div>
+    <p className="page-subheading">This feature will be available in a future phase.</p>
   </div>
 );
 
@@ -28,74 +40,74 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Login Route */}
+          {/* Public */}
           <Route path="/login" element={<Login />} />
 
-          {/* Core Authenticated Dashboard Route */}
+          {/* Root — redirect by role */}
           <Route
             path="/"
             element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <DashboardPlaceholder />
-                </DashboardLayout>
+                <RoleRedirect />
               </ProtectedRoute>
             }
           />
 
-          {/* Secure Admin Scopes */}
+          {/* ── SUPER ADMIN ────────────────────────────────────────────── */}
           <Route
             path="/admin/*"
             element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="hostels" element={<HostelsPage />} />
-                    <Route path="hostels/:hostelId" element={<HostelDetailsPage />} />
-                    <Route path="students" element={<StudentsPage />} />
-                    <Route path="dashboard" element={<AdminDashboard />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="dashboard"           element={<AdminDashboard />} />
+                    <Route path="hostels"             element={<HostelsPage />} />
+                    <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
+                    <Route path="students"            element={<StudentsPage />} />
+                    <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
+                    <Route path="*"                   element={<Navigate to="/admin/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>
             }
           />
 
-          {/* Secure Superintendent Scopes */}
+          {/* ── SUPERINTENDENT ─────────────────────────────────────────── */}
           <Route
             path="/superintendent/*"
             element={
               <ProtectedRoute allowedRoles={['SUPERINTENDENT']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="hostels" element={<HostelsPage />} />
-                    <Route path="hostels/:hostelId" element={<HostelDetailsPage />} />
-                    <Route path="students" element={<StudentsPage />} />
-                    <Route path="dashboard" element={<SuperintendentDashboard />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="dashboard"           element={<SuperintendentDashboard />} />
+                    <Route path="hostels"             element={<HostelsPage />} />
+                    <Route path="hostels/:hostelId"   element={<HostelDetailsPage />} />
+                    <Route path="students"            element={<StudentsPage />} />
+                    <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
+                    <Route path="*"                   element={<Navigate to="/superintendent/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>
             }
           />
 
-          {/* Secure Student Scopes */}
+          {/* ── STUDENT ────────────────────────────────────────────────── */}
           <Route
             path="/student/*"
             element={
               <ProtectedRoute allowedRoles={['STUDENT']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="profile" element={<Navigate to="/" replace />} />
-                    <Route path="attendance" element={<RoutePlaceholder title="Student: Attendance Log" roleRequired="STUDENT" />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="profile"    element={<Navigate to="/" replace />} />
+                    <Route path="attendance" element={<RoutePlaceholder title="My Attendance" />} />
+                    <Route path="*"          element={<Navigate to="/" replace />} />
                   </Routes>
                 </DashboardLayout>
               </ProtectedRoute>
             }
           />
 
-          {/* Fallback Catch-All Route */}
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

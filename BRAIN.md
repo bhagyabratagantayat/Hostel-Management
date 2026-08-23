@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 2 — Authentication & RBAC
+* **Current Development Phase**: Phase 6.5 — Dashboard Verification, Polish & Production Hardening
 
 ---
 
@@ -26,225 +26,352 @@ This file serves as the permanent project memory, architecture specification, an
 * **Framework**: Express.js
 * **Cookie Parser**: `cookie-parser` (for extracting JWT token from secure HttpOnly cookies)
 * **Security Middleware**: CORS, Helmet (HTTP headers)
-* **Database Driver**: `mysql2/promise` (connection pooling, parameterized SQL queries, and dynamic mock fallback engine)
+* **Database Driver**: `mysql2/promise` (connection pooling, parameterized SQL queries)
 * **Authentication Config**: JWT (jsonwebtoken) and bcryptjs structures
 * **Environment Loader**: dotenv
+* **File Upload**: Cloudinary SDK (v2) for student profile photos
 
 ### Database
-* **Engine**: MySQL (Hosted on Hostinger)
+* **Engine**: MySQL
+* **Port**: 3307 (local dev)
 * **Architecture**: Fully normalized relational design with foreign key constraints, unique validation, and indexing on search fields.
 
 ### File & Image Storage
-* **Provider**: Cloudinary (for storing student profile pictures safely outside MySQL)
+* **Provider**: Cloudinary
+* **Cloud Name**: qqv22ppu
+* **Usage**: Student profile photo upload, update, and deletion
 
 ---
 
-## 3. Project Directory Structure
+## 3. Environment Configuration
+
+### Backend (.env — never committed)
+```
+PORT=5001
+NODE_ENV=development
+DB_HOST=127.0.0.1
+DB_PORT=3307
+DB_USER=root
+DB_PASSWORD=<secret>
+DB_NAME=hostel_management
+JWT_SECRET=<secret>
+CLOUDINARY_CLOUD_NAME=qqv22ppu
+CLOUDINARY_API_KEY=<key>
+CLOUDINARY_API_SECRET=<secret>
+CLOUDINARY_URL=cloudinary://<key>:<secret>@qqv22ppu
+```
+
+### Frontend (.env — never committed)
+```
+VITE_API_BASE_URL=http://localhost:5001/api
+```
+
+### .env.example files
+Both backend and frontend have `.env.example` files with placeholder values — these ARE committed and serve as setup templates.
+
+### .gitignore
+```
+.env
+.env.*
+!.env.example
+```
+This pattern protects all env variants while keeping `.env.example` trackable.
+
+---
+
+## 4. Project Directory Structure
 ```
 Hostel Management/
-├── BRAIN.md                # This file (Project Memory & Specs)
-├── README.md                # Project Setup & Installation Guide
-├── .gitignore               # Multi-environment Git Ignore patterns
-├── .env.example             # Clean environment variable template
-├── .env                     # Local environment settings (Ignored by Git)
+├── BRAIN.md                # Project Memory & Specs
+├── README.md               # Project Setup & Installation Guide
+├── .gitignore              # Multi-environment Git Ignore patterns
+├── .env                    # Local root environment (ignored)
 │
-├── database/                # Relational Database Schema & Seeding
-│   ├── schema.sql           # Schema definition (DDL)
-│   └── seed.sql             # Hostels, roles, users, and student profiles setup
+├── database/
+│   ├── schema.sql          # DDL — all tables with constraints
+│   └── seed.sql            # Six hostels, test users, roles
 │
-├── backend/                 # Node.js + Express Server
-│   ├── src/
-│   │   ├── config/          # db.js, env.js, cloudinary.js configs
-│   │   ├── controllers/     # Route controllers (health, hostels, auth, students)
-│   │   ├── middleware/      # Auth, rateLimiter & error handler middlewares
-│   │   ├── models/          # Future DB models / helpers
-│   │   ├── routes/          # Express API route endpoints
-│   │   ├── services/        # Query execution and auth services
-│   │   ├── utils/           # password hashing and authorization scope checks
-│   │   └── app.js           # Server bootstrap, middlewares, and cookie parsers
-│   └── package.json         # Backend Node dependencies
+├── backend/
+│   └── src/
+│       ├── config/         # db.js, env.js, cloudinary.js
+│       ├── controllers/    # hostelController, studentController, attendanceController,
+│       │                   # bedController, floorController, roomController, authController
+│       ├── middleware/     # authMiddleware.js, rateLimiter.js, errorHandler.js
+│       ├── routes/         # authRoutes, hostelRoutes, studentRoutes, floorRoutes,
+│       │                   # roomRoutes, bedRoutes, attendanceRoutes, dashboardRoutes
+│       ├── services/       # hostelService, studentService, attendanceService,
+│       │                   # floorService, roomService, bedService, dashboardService
+│       ├── utils/          # password.js, authorization.js
+│       └── app.js          # Server bootstrap
 │
-└── frontend/                # React UI client (Vite)
-    ├── src/
-    │   ├── assets/          # Static assets (images, icons)
-    │   ├── components/      # Navbar, Sidebar, Card, Button, Input, Loading, Error, ProtectedRoute
-    │   ├── context/         # AuthContext (React auth state management)
-    │   ├── hooks/           # Custom React hooks
-    │   ├── layouts/         # DashboardLayout (Sidebar + Navbar wrapper)
-    │   ├── pages/           # DashboardPlaceholder, Login
-    │   ├── routes/          # App navigation routes
-    │   ├── services/        # api.js Axios centralized wrapper
-    │   ├── utils/           # Helper functions
-    │   ├── App.jsx          # Entry application node & router configuration
-    │   ├── App.css          # Reset/Empty stylesheet
-    │   ├── index.css        # Core global styles & variables
-    │   └── main.jsx         # React DOM mount node
-    ├── .env.example         # Frontend safe env template
-    ├── .env                 # Local frontend config (Vite safe)
-    └── package.json         # Frontend React dependencies
+└── frontend/
+    └── src/
+        ├── components/     # StatCard, HostelCard, AttendanceChart, OccupancySummary,
+        │                   # Navbar, Sidebar, Card, Button, Input, Loading, ProtectedRoute
+        ├── context/        # AuthContext.jsx
+        ├── layouts/        # DashboardLayout.jsx
+        ├── pages/          # AdminDashboard, SuperintendentDashboard, DashboardPlaceholder,
+        │                   # Login, HostelsPage, HostelDetailsPage, StudentsPage
+        ├── services/       # api.js (Axios singleton, base URL from VITE_API_BASE_URL)
+        └── App.jsx         # Router with RoleRedirect at root
 ```
 
 ---
 
-## 4. Database Architecture & Schema
+## 5. Database Architecture & Schema
 
-### Tables & Fields
+### Tables
 
-1. **`roles`**: Defines system authorization levels.
-   * `id` (INT, PK, Auto-increment)
-   * `name` (VARCHAR(50), UNIQUE) — e.g., `SUPER_ADMIN`, `SUPERINTENDENT`, `STUDENT`
-
-2. **`users`**: Main authentication table.
-   * `id` (INT, PK, Auto-increment)
-   * `role_id` (INT, FK -> roles.id)
-   * `username` (VARCHAR(100), UNIQUE)
-   * `email` (VARCHAR(100), UNIQUE)
-   * `password_hash` (VARCHAR(255))
-   * `status` (ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED'))
-
-3. **`hostels`**: The six host hostels.
-   * `id` (INT, PK, Auto-increment)
-   * `name` (VARCHAR(100), UNIQUE)
-   * `code` (VARCHAR(10), UNIQUE) — e.g. `MBH`
-   * `gender` (ENUM('MALE', 'FEMALE', 'COED'))
-   * `location` (VARCHAR(255))
-   * `status` (ENUM('ACTIVE', 'INACTIVE'))
-
-4. **`floors`**: Logical floor groupings inside a hostel.
-   * `id` (INT, PK, Auto-increment)
-   * `hostel_id` (INT, FK -> hostels.id)
-   * `floor_name` (VARCHAR(50))
-   * `floor_number` (INT)
-   * `status` (ENUM('ACTIVE', 'INACTIVE'))
-   * *Constraint*: Unique combination of `hostel_id` and `floor_number`.
-
-5. **`rooms`**: Rooms inside floors.
-   * `id` (INT, PK, Auto-increment)
-   * `hostel_id` (INT, FK -> hostels.id)
-   * `floor_id` (INT, FK -> floors.id)
-   * `room_number` (VARCHAR(20))
-   * `capacity` (INT)
-   * `status` (ENUM('ACTIVE', 'INACTIVE', 'MAINTENANCE'))
-   * *Constraint*: Unique combination of `hostel_id` and `room_number`.
-
-6. **`beds`**: Individual assignable bed items.
-   * `id` (INT, PK, Auto-increment)
-   * `room_id` (INT, FK -> rooms.id)
-   * `bed_number` (VARCHAR(20))
-   * `status` (ENUM('AVAILABLE', 'OCCUPIED', 'MAINTENANCE'))
-   * *Constraint*: Unique combination of `room_id` and `bed_number`.
-
-7. **`students`**: Detailed profile metadata for hostellers.
-   * `id` (INT, PK, Auto-increment)
-   * `user_id` (INT, FK -> users.id, UNIQUE)
-   * `student_id` (VARCHAR(50), UNIQUE)
-   * `roll_number` (VARCHAR(50), UNIQUE)
-   * `full_name` (VARCHAR(150))
-   * `photo_url` (VARCHAR(255)) — Cloudinary image path
-   * `cloudinary_public_id` (VARCHAR(100)) — Cloudinary image handle
-   * `phone` (VARCHAR(20))
-   * `email` (VARCHAR(100), UNIQUE)
-   * `branch` (VARCHAR(100))
-   * `course` (VARCHAR(100))
-   * `year` (INT)
-   * `semester` (INT)
-   * `bed_id` (INT, FK -> beds.id, UNIQUE) — Enforces maximum of one student per bed
-   * `admission_date` (DATE)
-   * `status` (ENUM('ACTIVE', 'INACTIVE', 'GRADUATED'))
-
-8. **`superintendent_hostels`**: Link table mapping superintendents to hostels they oversee.
-   * `id` (INT, PK, Auto-increment)
-   * `user_id` (INT, FK -> users.id)
-   * `hostel_id` (INT, FK -> hostels.id)
-   * *Constraint*: Unique combination of `user_id` and `hostel_id`.
-
-9. **`attendance`**: Daily roll-call status.
-   * `id` (INT, PK, Auto-increment)
-   * `student_id` (INT, FK -> students.id)
-   * `hostel_id` (INT, FK -> hostels.id)
-   * `attendance_date` (DATE)
-   * `status` (ENUM('PRESENT', 'ABSENT'))
-   * `marked_by` (INT, FK -> users.id)
-   * `marked_at` (TIMESTAMP)
-   * *Constraint*: Unique combination of `student_id` and `attendance_date` (prevents double entry).
-
-10. **`notices`**: Announcements board.
-    * `id` (INT, PK, Auto-increment)
-    * `title` (VARCHAR(150))
-    * `description` (TEXT)
-    * `created_by` (INT, FK -> users.id)
-    * `hostel_id` (INT, FK -> hostels.id, Nullable) — NULL means notice targets all hostels.
-    * `status` (ENUM('ACTIVE', 'ARCHIVED'))
+1. **`roles`** — System authorization levels (`SUPER_ADMIN`, `SUPERINTENDENT`, `STUDENT`)
+2. **`users`** — Main authentication table (id, role_id, username, email, password_hash, status)
+3. **`hostels`** — Six hostels (Meridian Boys/Girls, BEC Boys/Kara, Barmunda Boys/Girls)
+4. **`floors`** — Floors inside hostels (hostel_id FK, floor_name, floor_number, status)
+5. **`rooms`** — Rooms inside floors (hostel_id FK, floor_id FK, room_number, capacity, status)
+6. **`beds`** — Individual beds (room_id FK, bed_number, status: AVAILABLE/OCCUPIED/MAINTENANCE)
+7. **`students`** — Student profiles (user_id FK UNIQUE, bed_id FK UNIQUE, full_name, roll_number, photo_url, cloudinary_public_id, branch, course, year, semester, status)
+8. **`superintendent_hostels`** — Many-to-many: superintendents to hostels
+9. **`attendance`** — Daily roll-call (student_id FK, hostel_id FK, attendance_date, status: PRESENT/ABSENT, marked_by FK, UNIQUE on student_id+attendance_date)
+10. **`notices`** — Announcement board (future phase)
 
 ---
 
-## 5. Security & Configuration Decisions
+## 6. API Reference
 
-### Server Hardening
-1. **Helmet.js**: Enabled globally to set secure, defensive HTTP headers (e.g. X-Content-Type-Options, X-Frame-Options).
-2. **CORS Validation**: Restricted to allow credentials (cookies) only from designated frontend origins (`http://localhost:5173`, etc.). Does not use wildcard `*` origins.
-3. **Database Input**: All queries will use parameterized placeholder inputs (using `mysql2/promise` pool executions) to mathematically block SQL injection.
-4. **Login Brute-Force Rate Limiting**: Implemented a custom in-memory rate limiter for the login endpoint, restricting authentication requests to 5 attempts per 15 minutes per IP address.
-5. **Generic Error Responses**: Replaced detailed error messaging (such as "User does not exist") with generic "Invalid username/email or password" to prevent username enumeration attacks.
+### Auth
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/login` | Public | Login (returns HttpOnly JWT cookie) |
+| POST | `/api/auth/logout` | Auth | Logout (clears cookie) |
+| GET | `/api/auth/me` | Auth | Current user profile |
 
-### Token & Session Security
-1. **HttpOnly Cookies**: Auth token is stored in a cookie with the `HttpOnly` flag enabled. This makes it inaccessible to browser-based scripts, eliminating XSS token theft.
-2. **SameSite Lax & Secure flags**: Cookies are restricted with `SameSite=Lax` to avoid CSRF risks, and configured with `Secure` flags in production to mandate HTTPS.
-3. **Minimal JWT Payload**: The JWT token contains only the minimum required info (`id`, `role`) and expires in 7 days, matching the cookie maximum age.
+### Hostels
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/hostels` | Auth | List hostels (scoped by role) |
+| GET | `/api/hostels/:id` | Auth | Hostel details |
+| POST | `/api/hostels` | SUPER_ADMIN | Create hostel |
+| PUT | `/api/hostels/:id` | SUPER_ADMIN | Update hostel |
+| GET | `/api/hostels/:id/floors` | Auth | Hostel floors |
+| POST | `/api/hostels/:id/floors` | Admin | Add floor |
+| GET | `/api/hostels/:id/rooms` | Auth | Hostel rooms |
+| GET | `/api/hostels/:id/beds` | Auth | Hostel beds |
 
-### Development Resilience
-* **Offline Mock Fallback**: Added a database engine proxy fallback inside `db.js`. If the server is started without a running MySQL instance, the application operates in memory on seeded templates. This guarantees developer testing passes immediately.
+### Students
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/students` | Auth | List students (scoped by role) |
+| GET | `/api/students/:id` | Auth | Student details |
+| POST | `/api/students` | Admin | Create student (with Cloudinary photo) |
+| PUT | `/api/students/:id` | Admin | Update student |
+| DELETE | `/api/students/:id` | SUPER_ADMIN | Delete student |
+| GET | `/api/students/profile/me` | STUDENT | Own profile |
+
+### Attendance
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/attendance` | Auth | List/filter attendance |
+| POST | `/api/attendance/mark` | Admin | Mark attendance |
+| PUT | `/api/attendance/:id` | Admin | Edit attendance |
+
+### Dashboard
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/dashboard/overview` | Auth | Aggregated stats (role-scoped) |
 
 ---
 
-## 6. Project Status Summary
+## 7. Dashboard API — Data Contract
 
-### Completed Features
-* **Authentication Server**: Configured JWT cookie sessions and bcryptjs password hashes.
-* **Backend Authorization Middlewares**: Developed `requireAuth` and role checking guards (`requireRole('SUPER_ADMIN')`).
-* **Superintendent and Student Restrictions**: Restructured database query logic to dynamically filter responses based on assignments (Superintendents see only assigned hostels) and profiles (Students see only their own student profile data).
-* **React Auth Context**: Created global `AuthContext.jsx` performing startup token validation via `/api/auth/me`.
-* **Vite Route Guarding**: Configured `ProtectedRoute.jsx` component routing unauthorized visitors to `/login` and rendering forbidden views.
-* **Premium Mobile Login UI**: Built a responsive, mobile-first login card with username input, password visibility eye toggle, large touch targets, keyboard-friendly submits, and loading indicators.
-* **Dynamic Role-Aware Sidebar**: Sidebar dynamically adjusts navigation link schemas based on user roles and logs out users cleanly.
-* **Full Integration Test Loop**: Created a programmatic integration test suite (`backend/src/testAuth.js`) executing 12 test assertions.
+### `GET /api/dashboard/overview`
 
-### Not Yet Implemented (Planned for Future Phases)
-* Hostel, Floor, Room, and Bed CRUD administration.
-* Student registration and automatic assignments.
-* Cloudinary file upload pipelines for student profile photos.
-* Daily attendance marking system.
-* Notification panel and notices manager.
+**Access:**
+- `SUPER_ADMIN` → all 6 hostels, college-wide stats
+- `SUPERINTENDENT` → assigned hostels only
+- `STUDENT` → 403 Forbidden
+- Unauthenticated → 401 Unauthorized
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "overall": {
+      "totalHostels": 6,
+      "totalStudents": 120,
+      "totalRooms": 45,
+      "totalBeds": 180,
+      "occupiedBeds": 120,
+      "availableBeds": 50,
+      "maintenanceBeds": 10,
+      "present": 100,
+      "absent": 15,
+      "notMarked": 5,
+      "attendancePercentage": 86.96,
+      "occupancyPercentage": 70.59
+    },
+    "hostels": [
+      {
+        "hostelId": 1,
+        "name": "Meridian Boys Hostel",
+        "totalStudents": 20,
+        "present": 18,
+        "absent": 2,
+        "notMarked": 0,
+        "attendancePercentage": 90.00,
+        "totalRooms": 8,
+        "totalBeds": 32,
+        "occupiedBeds": 20,
+        "availableBeds": 10,
+        "maintenanceBeds": 2,
+        "occupancyPercentage": 66.67
+      }
+    ]
+  }
+}
+```
 
 ---
 
-## 7. Project Change Log
+## 8. Statistics Formulas
 
-* **2026-08-22 (Phase 2)**
-  * **Change**: Implemented secure authentication and Role-Based Access Control (RBAC).
-  * **Reason**: Fulfilling the Phase 2 requirements for CHMS.
-  * **Files Affected**:
-    * `backend/package.json` (added cookie-parser)
-    * `backend/src/app.js` (integrated cookie-parser and auth routing)
-    * `backend/src/config/db.js` (added mock database fallback)
-    * `backend/src/routes/authRoutes.js`, `backend/src/controllers/authController.js` (login/logout/me)
-    * `backend/src/routes/studentRoutes.js`, `backend/src/controllers/studentController.js` (student profile routes)
-    * `backend/src/middleware/authMiddleware.js`, `backend/src/middleware/rateLimiter.js` (guards, limits)
-    * `backend/src/utils/password.js`, `backend/src/utils/authorization.js` (hashers, scope queries)
-    * `backend/src/testAuth.js` (12 test script verification suite)
-    * `database/seed.sql` (added test users: superadmin, warden, student)
-    * `frontend/package.json`, `frontend/src/services/api.js` (axios credentials)
-    * `frontend/src/context/AuthContext.jsx`, `frontend/src/components/ProtectedRoute.jsx` (state, guards)
-    * `frontend/src/pages/Login.jsx`, `frontend/src/pages/DashboardPlaceholder.jsx` (auth pages, role dashboards)
-    * `frontend/src/components/Navbar.jsx`, `frontend/src/components/Sidebar.jsx` (badge updates, menu roles)
-    * `frontend/src/index.css` (appended login, forbidden, and student profile CSS)
-  * **Database Changes**: Updated seed data.
-  * **API Changes**: Added `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/students/profile/me`, `/api/students/:id`.
-  * **Frontend Changes**: Configured Router paths and contextual dashboard layouts.
-  * **Security Impact**: Secure cookie storage, brute force rate limiter, and backend database owner verifications.
-  * **Status**: Complete. 12/12 integration test suite runs passed successfully.
+### Attendance
+```
+Present    = active students with status='PRESENT' today
+Absent     = active students with status='ABSENT' today
+Not Marked = active students - students with ANY attendance record today
 
-* **2026-08-22 (Phase 1)**
-  * **Change**: Initialized system repository, backend and database structure, and mobile-first frontend shell.
-  * **Reason**: Fulfilling the Foundation Phase criteria for CHMS.
+Attendance % = Present / (Present + Absent) × 100
+             = 0 if nobody marked yet (never treat missing as absent)
+
+Precision: 2 decimal places
+```
+
+### Occupancy
+```
+Usable Beds  = Occupied + Available  (excludes Maintenance)
+Occupancy %  = Occupied / Usable Beds × 100
+             = 0 if Usable Beds = 0
+
+Precision: 2 decimal places
+```
+
+---
+
+## 9. Frontend Routing
+
+| Path | Role | Component |
+|------|------|-----------|
+| `/` | Any | RoleRedirect → role dashboard |
+| `/login` | Public | Login |
+| `/admin/dashboard` | SUPER_ADMIN | AdminDashboard |
+| `/admin/hostels` | SUPER_ADMIN | HostelsPage |
+| `/admin/hostels/:id` | SUPER_ADMIN | HostelDetailsPage |
+| `/admin/students` | SUPER_ADMIN | StudentsPage |
+| `/admin/attendance` | SUPER_ADMIN | Placeholder (Phase 7) |
+| `/superintendent/dashboard` | SUPERINTENDENT | SuperintendentDashboard |
+| `/superintendent/hostels` | SUPERINTENDENT | HostelsPage |
+| `/superintendent/hostels/:id` | SUPERINTENDENT | HostelDetailsPage |
+| `/superintendent/students` | SUPERINTENDENT | StudentsPage |
+| `/superintendent/attendance` | SUPERINTENDENT | Placeholder (Phase 7) |
+| `/student/attendance` | STUDENT | Placeholder |
+
+---
+
+## 10. Security & Configuration Decisions
+
+1. **HttpOnly Cookies**: JWT stored in HttpOnly cookie (no XSS access).
+2. **SameSite Lax + Secure**: CSRF protection, HTTPS-only in production.
+3. **Role enforcement on backend**: Frontend role checks are UX only. All data scoping happens server-side via `req.user.role`.
+4. **Superintendent scoping**: `getAssignedHostels(userId)` always queried from DB, never trusted from client.
+5. **No secrets in frontend**: Only `VITE_API_BASE_URL` is exposed to the browser.
+6. **Login rate limiting**: 5 attempts per 15 minutes per IP.
+7. **Parameterized queries**: All SQL uses `mysql2/promise` placeholders.
+8. **Helmet.js**: Secure HTTP headers on all responses.
+
+---
+
+## 11. Completed Features (All Phases)
+
+| Phase | Feature | Status |
+|-------|---------|--------|
+| 1 | Project foundation, DB schema, frontend shell | ✅ Complete |
+| 2 | JWT auth, RBAC, login UI, ProtectedRoute | ✅ Complete |
+| 3 | Hostel/Floor/Room/Bed CRUD management | ✅ Complete |
+| 4 | Student management, Cloudinary photo upload | ✅ Complete |
+| 5 | Daily attendance marking, history, stats | ✅ Complete |
+| 6 | Dashboard backend aggregation, frontend UI | ✅ Complete |
+| 6.5 | Dashboard verification, polish, hardening | ✅ Complete |
+
+### Not Yet Implemented (Future Phases)
+- Notices / Announcements board
+- Fee management
+- Reports / PDF / Excel export
+- QR attendance / Face recognition
+- Complaints management
+- Visitor management
+- Parent portal
+
+---
+
+## 12. Project Change Log
+
+* **2026-08-23 (Phase 6.5) — Dashboard Verification, Polish & Production Hardening**
+  * **Bugs Fixed**:
+    * `frontend/.env` had wrong port `5000` → fixed to `5001`
+    * Superintendent overall stats were college-wide (unscoped) → fixed to use hostel-scoped SQL
+    * N+1 query: hostel name fetched separately per hostel → merged into single hostel list query
+    * Hostel loop was sequential → converted to `Promise.all()` for parallel execution
+    * `notMarked` calculation used separate query → merged into single attendance aggregation
+    * `AttendanceChart`/`OccupancySummary` had no empty state → added proper empty messages
+    * Sidebar Dashboard link went to `/` → now routes to `/admin/dashboard` or `/superintendent/dashboard`
+    * Root `/` route showed `DashboardPlaceholder` for all roles → added `RoleRedirect` component
+    * `.gitignore` missing `!.env.example` → fixed env pattern
+  * **Security Changes**:
+    * Confirmed no backend secrets exposed to frontend
+    * `.gitignore` now uses `.env.*` wildcard + `!.env.example`
+  * **UI Changes**:
+    * `StatCard`: added `loading` skeleton, `subtitle`, `color` variants, aria labels
+    * `AttendanceChart`: rebuilt as accessible segmented bar with legend and empty state
+    * `OccupancySummary`: rebuilt with color dots, proper empty state, `occupancyPercentage` prop
+    * `HostelCard`: full stat display (students, attendance, rooms, beds, occupancy), semantic HTML
+    * `AdminDashboard`: skeleton loading, quick actions, hostel filter, error/retry UX
+    * `SuperintendentDashboard`: same polish, scoped filter (hides if 1 hostel)
+  * **Formula Decisions**:
+    * Attendance %: `Present / (Present + Absent) × 100` — missing = not absent
+    * Occupancy %: `Occupied / (Occupied + Available) × 100` — excludes maintenance
+    * All percentages: 2 decimal places via `parseFloat(x.toFixed(2))`
+  * **Performance**:
+    * Dashboard uses `Promise.all()` for parallel per-hostel queries
+    * Overall aggregation consolidated into parallel queries
+  * **Routing**:
+    * Added `attendance` placeholder routes for admin and superintendent
+    * `RoleRedirect` at root sends users to role-specific dashboard
+  * **Status**: Complete.
+
+* **2026-08-23 (Phase 6) — Main Dashboard & Hostel Analytics**
+  * **Change**: Implemented backend dashboard aggregation service and frontend dashboard pages.
+  * **Files Added**: `dashboardService.js`, `dashboardRoutes.js`, `AdminDashboard.jsx`, `SuperintendentDashboard.jsx`, `StatCard`, `HostelCard`, `AttendanceChart`, `OccupancySummary` components.
+  * **Status**: Complete (refined in Phase 6.5).
+
+* **2026-08-22 (Phase 5) — Attendance Management**
+  * **Change**: Implemented daily attendance marking, student attendance history, attendance stats.
+  * **Files Added**: `attendanceService.js`, `attendanceController.js`, `attendanceRoutes.js`.
+  * **Status**: Complete.
+
+* **2026-08-22 (Phase 4) — Student Management & Cloudinary Integration**
+  * **Change**: Full student CRUD, profile photos via Cloudinary, room/bed assignment.
+  * **Files Added**: `studentService.js`, `studentController.js`, `studentRoutes.js`, Cloudinary config.
+  * **Status**: Complete.
+
+* **2026-08-22 (Phase 3) — Hostel/Floor/Room/Bed Management**
+  * **Change**: Full infrastructure CRUD for hostels, floors, rooms, beds.
+  * **Files Added**: `hostelService.js`, `floorService.js`, `roomService.js`, `bedService.js`, respective controllers and routes.
+  * **Status**: Complete.
+
+* **2026-08-22 (Phase 2) — Authentication & RBAC**
+  * **Change**: Implemented secure authentication and Role-Based Access Control.
+  * **Status**: Complete. 12/12 integration tests passed.
+
+* **2026-08-22 (Phase 1) — Foundation**
+  * **Change**: Initialized repository, backend and database structure, mobile-first frontend shell.
   * **Status**: Complete.

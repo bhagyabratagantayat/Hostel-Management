@@ -1,15 +1,30 @@
 const db = require('../config/db');
-const { hasHostelAccess, hasStudentAccess, getAssignedHostels } = require('../utils/authorization');
+const { getAssignedHostels } = require('../utils/authorization');
 
 /**
  * Build dashboard overview aggregation based on user role.
- * Returns an object { overall: {...}, hostels: [{...}] }
+ *
+ * Formulas:
+ *   Present  = active students with PRESENT attendance today
+ *   Absent   = active students with ABSENT attendance today
+ *   NotMarked = active students - students with ANY attendance record today
+ *   Attendance % = Present / (Present + Absent) * 100  [0 if none marked]
+ *
+ *   Occupied        = beds with status OCCUPIED
+ *   Available       = beds with status AVAILABLE
+ *   Maintenance     = beds with status MAINTENANCE
+ *   Usable Beds     = Occupied + Available
+ *   Occupancy %     = Occupied / Usable Beds * 100      [0 if usable = 0]
+ *
+ * Percentages are rounded to 2 decimal places.
+ *
+ * Returns { overall: {...}, hostels: [{...}] }
  */
 async function getDashboardOverview(user) {
   if (!user) throw new Error('Unauthenticated');
 
-  // Determine scope: for SUPER_ADMIN all hostels, for SUPERINTENDENT only assigned
-  let allowedHostelIds = null; // null => all
+  // ── Role scope resolution ──────────────────────────────────────────────────
+  let allowedHostelIds = null; // null = all hostels (SUPER_ADMIN)
   if (user.role === 'SUPERINTENDENT') {
     const assigned = await getAssignedHostels(user.id);
     allowedHostelIds = assigned.length ? assigned : [];
@@ -19,137 +34,211 @@ async function getDashboardOverview(user) {
     throw err;
   }
 
-  // Helper to format date as YYYY-MM-DD (local server timezone)
+  // ── Today's date string ───────────────────────────────────────────────────
   const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  // Base queries (no hostel filter)
-  const [hostelCountRows] = await db.pool.query('SELECT COUNT(*) AS totalHostels FROM hostels');
-  const [studentCountRows] = await db.pool.query("SELECT COUNT(*) AS totalStudents FROM students WHERE status = 'ACTIVE'");
-  const [roomCountRows] = await db.pool.query('SELECT COUNT(*) AS totalRooms FROM rooms');
-  const [bedCounts] = await db.pool.query('SELECT COUNT(*) AS totalBeds, SUM(status = \'OCCUPIED\') AS occupiedBeds, SUM(status = \'AVAILABLE\') AS availableBeds, SUM(status = \'MAINTENANCE\') AS maintenanceBeds FROM beds');
+  // ── Hostel IN clause helper ───────────────────────────────────────────────
+  const buildHostelWhere = (alias = 'r') => {
+    if (allowedHostelIds === null) return { clause: '', params: [] };
+    if (allowedHostelIds.length === 0) return { clause: ` AND 1=0`, params: [] };
+    const ph = allowedHostelIds.map(() => '?').join(',');
+    return { clause: ` AND ${alias}.hostel_id IN (${ph})`, params: allowedHostelIds };
+  };
 
-  const [presentRows] = await db.pool.query('SELECT COUNT(*) AS present FROM attendance WHERE attendance_date = ? AND status = \'PRESENT\'', [todayStr]);
-  const [absentRows] = await db.pool.query('SELECT COUNT(*) AS absent FROM attendance WHERE attendance_date = ? AND status = \'ABSENT\'', [todayStr]);
+  // ── Overall aggregations (all in parallel) ────────────────────────────────
+  const hostelWhere = buildHostelWhere('r');
 
-  // Active students in scope (for not marked calculation)
+  // For SUPER_ADMIN: total hostels is all hostels.
+  // For SUPERINTENDENT: total hostels is assigned count.
+  const hostelCountSql = allowedHostelIds === null
+    ? `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE'`
+    : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostelIds.map(() => '?').join(',')})`;
+  const hostelCountParams = allowedHostelIds === null ? [] : allowedHostelIds;
+
+  // Students, rooms, beds — scoped by hostel assignment
+  const studentSql = allowedHostelIds === null
+    ? `SELECT COUNT(*) AS totalStudents FROM students s WHERE s.status = 'ACTIVE'`
+    : `SELECT COUNT(*) AS totalStudents FROM students s
+       JOIN beds b ON s.bed_id = b.id
+       JOIN rooms r ON b.room_id = r.id
+       WHERE s.status = 'ACTIVE'${hostelWhere.clause}`;
+
+  const roomSql = allowedHostelIds === null
+    ? `SELECT COUNT(*) AS totalRooms FROM rooms`
+    : `SELECT COUNT(*) AS totalRooms FROM rooms r WHERE 1=1${hostelWhere.clause}`;
+
+  const bedSql = allowedHostelIds === null
+    ? `SELECT
+         COUNT(*) AS totalBeds,
+         SUM(status = 'OCCUPIED') AS occupiedBeds,
+         SUM(status = 'AVAILABLE') AS availableBeds,
+         SUM(status = 'MAINTENANCE') AS maintenanceBeds
+       FROM beds`
+    : `SELECT
+         COUNT(*) AS totalBeds,
+         SUM(b.status = 'OCCUPIED') AS occupiedBeds,
+         SUM(b.status = 'AVAILABLE') AS availableBeds,
+         SUM(b.status = 'MAINTENANCE') AS maintenanceBeds
+       FROM beds b
+       JOIN rooms r ON b.room_id = r.id
+       WHERE 1=1${hostelWhere.clause}`;
+
+  const [
+    [hostelCountRows],
+    [studentCountRows],
+    [roomCountRows],
+    [bedCounts]
+  ] = await Promise.all([
+    db.pool.query(hostelCountSql, hostelCountParams),
+    db.pool.query(studentSql, hostelWhere.params),
+    db.pool.query(roomSql, hostelWhere.params),
+    db.pool.query(bedSql, hostelWhere.params),
+  ]);
+
+  // ── Attendance (scoped) ───────────────────────────────────────────────────
+  // Get active student IDs in scope
+  const [scopedStudents] = await db.pool.query(studentSql + ' -- ids', hostelWhere.params);
+  // Re-run with IDs instead
   let activeStudentIds = [];
   if (allowedHostelIds === null) {
-    const [students] = await db.pool.query("SELECT s.id FROM students s WHERE s.status = 'ACTIVE'");
-    activeStudentIds = students.map(s => s.id);
-  } else if (allowedHostelIds.length) {
-    const placeholders = allowedHostelIds.map(() => '?').join(',');
-    const [students] = await db.pool.query(
+    const [rows] = await db.pool.query(`SELECT id FROM students WHERE status = 'ACTIVE'`);
+    activeStudentIds = rows.map(r => r.id);
+  } else if (allowedHostelIds.length > 0) {
+    const ph = allowedHostelIds.map(() => '?').join(',');
+    const [rows] = await db.pool.query(
       `SELECT s.id FROM students s
        JOIN beds b ON s.bed_id = b.id
        JOIN rooms r ON b.room_id = r.id
-       WHERE s.status = 'ACTIVE' AND r.hostel_id IN (${placeholders})`,
+       WHERE s.status = 'ACTIVE' AND r.hostel_id IN (${ph})`,
       allowedHostelIds
     );
-    activeStudentIds = students.map(s => s.id);
+    activeStudentIds = rows.map(r => r.id);
   }
 
-  // Attendance records for today for students in scope
-  let markedStudentIds = [];
-  if (activeStudentIds.length) {
-    const placeholders = activeStudentIds.map(() => '?').join(',');
-    const [attRows] = await db.pool.query(
-      `SELECT DISTINCT student_id FROM attendance WHERE attendance_date = ? AND student_id IN (${placeholders})`,
+  let present = 0, absent = 0, notMarked = 0;
+
+  if (activeStudentIds.length > 0) {
+    const idPh = activeStudentIds.map(() => '?').join(',');
+    const [[attCounts]] = await db.pool.query(
+      `SELECT
+         SUM(status = 'PRESENT') AS present,
+         SUM(status = 'ABSENT') AS absent,
+         COUNT(DISTINCT student_id) AS markedCount
+       FROM attendance
+       WHERE attendance_date = ? AND student_id IN (${idPh})`,
       [todayStr, ...activeStudentIds]
     );
-    markedStudentIds = attRows.map(r => r.student_id);
+    present = Number(attCounts.present) || 0;
+    absent = Number(attCounts.absent) || 0;
+    notMarked = activeStudentIds.length - (Number(attCounts.markedCount) || 0);
   }
-  const notMarkedCount = activeStudentIds.length - markedStudentIds.length;
 
-  const present = presentRows[0].present || 0;
-  const absent = absentRows[0].absent || 0;
   const totalMarked = present + absent;
-  const attendancePercentage = totalMarked ? Math.round((present / totalMarked) * 100) : 0;
-  const occupancyPercentage = (bedCounts[0].occupiedBeds + bedCounts[0].availableBeds) ? Math.round((bedCounts[0].occupiedBeds / (bedCounts[0].occupiedBeds + bedCounts[0].availableBeds)) * 100) : 0;
+  const attendancePercentage = totalMarked > 0 ? parseFloat(((present / totalMarked) * 100).toFixed(2)) : 0;
+
+  const occupiedBeds = Number(bedCounts[0].occupiedBeds) || 0;
+  const availableBeds = Number(bedCounts[0].availableBeds) || 0;
+  const maintenanceBeds = Number(bedCounts[0].maintenanceBeds) || 0;
+  const usableBeds = occupiedBeds + availableBeds;
+  const occupancyPercentage = usableBeds > 0 ? parseFloat(((occupiedBeds / usableBeds) * 100).toFixed(2)) : 0;
 
   const overall = {
-    totalHostels: hostelCountRows[0].totalHostels,
-    totalStudents: studentCountRows[0].totalStudents,
-    totalRooms: roomCountRows[0].totalRooms,
-    totalBeds: bedCounts[0].totalBeds,
-    occupiedBeds: bedCounts[0].occupiedBeds,
-    availableBeds: bedCounts[0].availableBeds,
-    maintenanceBeds: bedCounts[0].maintenanceBeds,
+    totalHostels: Number(hostelCountRows[0].totalHostels) || 0,
+    totalStudents: Number(studentCountRows[0].totalStudents) || 0,
+    totalRooms: Number(roomCountRows[0].totalRooms) || 0,
+    totalBeds: Number(bedCounts[0].totalBeds) || 0,
+    occupiedBeds,
+    availableBeds,
+    maintenanceBeds,
     present,
     absent,
-    notMarked: notMarkedCount,
+    notMarked,
     attendancePercentage,
-    occupancyPercentage
+    occupancyPercentage,
   };
 
-  // Hostels aggregation (if needed)
-  const hostelIdsQuery = allowedHostelIds === null ? 'SELECT id FROM hostels' : `SELECT id FROM hostels WHERE id IN (${allowedHostelIds.map(() => '?').join(',')})`;
-  const hostelIdsParams = allowedHostelIds === null ? [] : allowedHostelIds;
-  const [hostelRows] = await db.pool.query(hostelIdsQuery, hostelIdsParams);
+  // ── Per-hostel aggregation (single efficient query per hostel) ────────────
+  const hostelListSql = allowedHostelIds === null
+    ? `SELECT id, name FROM hostels WHERE status = 'ACTIVE' ORDER BY name`
+    : `SELECT id, name FROM hostels WHERE status = 'ACTIVE' AND id IN (${(allowedHostelIds.length ? allowedHostelIds : [0]).map(() => '?').join(',')}) ORDER BY name`;
+  const hostelListParams = allowedHostelIds === null ? [] : (allowedHostelIds.length ? allowedHostelIds : [0]);
+  const [hostelRows] = await db.pool.query(hostelListSql, hostelListParams);
 
-  const hostels = [];
-  for (const h of hostelRows) {
+  const hostels = await Promise.all(hostelRows.map(async (h) => {
     const hostelId = h.id;
-    const [hNameRows] = await db.pool.query('SELECT name FROM hostels WHERE id = ?', [hostelId]);
-    const name = hNameRows[0].name;
-    // Students per hostel
-    const [stuRows] = await db.pool.query(
-      `SELECT COUNT(*) AS totalStudents FROM students s
-       JOIN beds b ON s.bed_id = b.id
-       JOIN rooms r ON b.room_id = r.id
-       WHERE s.status = 'ACTIVE' AND r.hostel_id = ?`,
-      [hostelId]
-    );
-    const totalStudents = stuRows[0].totalStudents;
-    // Attendance per hostel today
-    const [attStuRows] = await db.pool.query(
-      `SELECT SUM(a.status = 'PRESENT') AS present, SUM(a.status = 'ABSENT') AS absent FROM attendance a
-       JOIN students s ON a.student_id = s.id
-       JOIN beds b ON s.bed_id = b.id
-       JOIN rooms r ON b.room_id = r.id
-       WHERE a.attendance_date = ? AND r.hostel_id = ?`,
-      [todayStr, hostelId]
-    );
-    const presentH = attStuRows[0].present || 0;
-    const absentH = attStuRows[0].absent || 0;
-    const markedH = presentH + absentH;
-    const notMarkedH = totalStudents - markedH;
-    const attendancePct = markedH ? Math.round((presentH / markedH) * 100) : 0;
-    // Beds per hostel
-    const [bedRows] = await db.pool.query(
-      `SELECT COUNT(*) AS totalBeds,
-              SUM(status = 'OCCUPIED') AS occupiedBeds,
-              SUM(status = 'AVAILABLE') AS availableBeds,
-              SUM(status = 'MAINTENANCE') AS maintenanceBeds
-       FROM beds b
-       JOIN rooms r ON b.room_id = r.id
-       WHERE r.hostel_id = ?`,
-      [hostelId]
-    );
-    const totalBeds = bedRows[0].totalBeds;
-    const occupiedBeds = bedRows[0].occupiedBeds;
-    const availableBeds = bedRows[0].availableBeds;
-    const maintenanceBeds = bedRows[0].maintenanceBeds;
-    const occupancyPct = (occupiedBeds + availableBeds) ? Math.round((occupiedBeds / (occupiedBeds + availableBeds)) * 100) : 0;
 
-    hostels.push({
+    const [
+      [stuRows],
+      [attRows],
+      [bRows],
+    ] = await Promise.all([
+      // Students
+      db.pool.query(
+        `SELECT COUNT(*) AS totalStudents FROM students s
+         JOIN beds b ON s.bed_id = b.id
+         JOIN rooms r ON b.room_id = r.id
+         WHERE s.status = 'ACTIVE' AND r.hostel_id = ?`,
+        [hostelId]
+      ),
+      // Attendance today
+      db.pool.query(
+        `SELECT
+           SUM(a.status = 'PRESENT') AS present,
+           SUM(a.status = 'ABSENT') AS absent,
+           COUNT(DISTINCT a.student_id) AS markedCount
+         FROM attendance a
+         JOIN students s ON a.student_id = s.id
+         JOIN beds b ON s.bed_id = b.id
+         JOIN rooms r ON b.room_id = r.id
+         WHERE a.attendance_date = ? AND r.hostel_id = ? AND s.status = 'ACTIVE'`,
+        [todayStr, hostelId]
+      ),
+      // Beds
+      db.pool.query(
+        `SELECT
+           COUNT(*) AS totalBeds,
+           SUM(b.status = 'OCCUPIED') AS occupiedBeds,
+           SUM(b.status = 'AVAILABLE') AS availableBeds,
+           SUM(b.status = 'MAINTENANCE') AS maintenanceBeds,
+           COUNT(DISTINCT r.id) AS totalRooms
+         FROM beds b
+         JOIN rooms r ON b.room_id = r.id
+         WHERE r.hostel_id = ?`,
+        [hostelId]
+      ),
+    ]);
+
+    const hTotalStudents = Number(stuRows[0].totalStudents) || 0;
+    const hPresent = Number(attRows[0].present) || 0;
+    const hAbsent = Number(attRows[0].absent) || 0;
+    const hMarked = Number(attRows[0].markedCount) || 0;
+    const hNotMarked = hTotalStudents - hMarked;
+    const hTotalMarked = hPresent + hAbsent;
+    const hAttPct = hTotalMarked > 0 ? parseFloat(((hPresent / hTotalMarked) * 100).toFixed(2)) : 0;
+
+    const hOccupied = Number(bRows[0].occupiedBeds) || 0;
+    const hAvailable = Number(bRows[0].availableBeds) || 0;
+    const hMaintenance = Number(bRows[0].maintenanceBeds) || 0;
+    const hUsable = hOccupied + hAvailable;
+    const hOccPct = hUsable > 0 ? parseFloat(((hOccupied / hUsable) * 100).toFixed(2)) : 0;
+
+    return {
       hostelId,
-      name,
-      totalStudents,
-      present: presentH,
-      absent: absentH,
-      notMarked: notMarkedH,
-      attendancePercentage: attendancePct,
-      totalBeds,
-      occupiedBeds,
-      availableBeds,
-      maintenanceBeds,
-      occupancyPercentage: occupancyPct
-    });
-  }
+      name: h.name,
+      totalStudents: hTotalStudents,
+      present: hPresent,
+      absent: hAbsent,
+      notMarked: hNotMarked,
+      attendancePercentage: hAttPct,
+      totalRooms: Number(bRows[0].totalRooms) || 0,
+      totalBeds: Number(bRows[0].totalBeds) || 0,
+      occupiedBeds: hOccupied,
+      availableBeds: hAvailable,
+      maintenanceBeds: hMaintenance,
+      occupancyPercentage: hOccPct,
+    };
+  }));
 
   return { overall, hostels };
 }

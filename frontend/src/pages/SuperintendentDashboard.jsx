@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import StatCard from '../components/StatCard';
 import HostelCard from '../components/HostelCard';
@@ -7,72 +8,142 @@ import OccupancySummary from '../components/OccupancySummary';
 import Loading from '../components/Loading';
 import './SuperintendentDashboard.css';
 
-function SuperintendentDashboard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const buildStats = (overall) => [
+  { title: 'My Hostels',    value: overall.totalHostels,           icon: '🏢', color: 'blue'  },
+  { title: 'Students',      value: overall.totalStudents,          icon: '🎓', color: 'blue'  },
+  { title: 'Rooms',         value: overall.totalRooms,             icon: '🚪'                 },
+  { title: 'Total Beds',    value: overall.totalBeds,              icon: '🛏️'                },
+  { title: 'Occupied Beds', value: overall.occupiedBeds,           icon: '✅', color: 'green' },
+  { title: 'Available',     value: overall.availableBeds,          icon: '🟢', color: 'green' },
+  { title: 'Maintenance',   value: overall.maintenanceBeds,        icon: '🔧', color: 'amber' },
+  { title: 'Present Today', value: overall.present,                icon: '👍', color: 'green' },
+  { title: 'Absent Today',  value: overall.absent,                 icon: '👎', color: 'red'   },
+  { title: 'Not Marked',    value: overall.notMarked,              icon: '⏳', color: 'amber' },
+  { title: 'Attendance %',  value: `${overall.attendancePercentage}%`, icon: '📈', color: 'blue' },
+  { title: 'Occupancy %',   value: `${overall.occupancyPercentage}%`,  icon: '📊', color: 'blue' },
+];
 
-  const fetchData = async () => {
+function SuperintendentDashboard() {
+  const navigate = useNavigate();
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(null);
+  const [filter, setFilter]   = useState('all');
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const resp = await api.getDashboardOverview();
       setData(resp.data);
     } catch (err) {
-      setError(err.message || 'Unable to load dashboard data.');
+      setError('Unable to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchData();
   }, []);
 
-  if (loading) return <Loading />;
-  if (error) return (
-    <div className="error-state">
-      <p>{error}</p>
-      <button onClick={fetchData}>Retry</button>
-    </div>
-  );
-  if (!data) return null;
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const { overall, hostels } = data;
-
-  const overallStats = [
-    { title: 'Total Hostels', value: overall.totalHostels },
-    { title: 'Total Students', value: overall.totalStudents },
-    { title: 'Total Rooms', value: overall.totalRooms },
-    { title: 'Total Beds', value: overall.totalBeds },
-    { title: 'Occupied Beds', value: overall.occupiedBeds },
-    { title: 'Available Beds', value: overall.availableBeds },
-    { title: 'Present Today', value: overall.present },
-    { title: 'Absent Today', value: overall.absent },
-    { title: 'Not Marked Today', value: overall.notMarked },
-    { title: 'Attendance %', value: `${overall.attendancePercentage}%` },
-    { title: 'Occupancy %', value: `${overall.occupancyPercentage}%` }
-  ];
+  const visibleHostels = data?.hostels?.filter(h =>
+    filter === 'all' || String(h.hostelId) === filter
+  ) ?? [];
 
   return (
     <div className="super-dashboard page-container">
+      {/* Header */}
       <header className="dashboard-header">
-        <h1>Superintendent Dashboard</h1>
-        <button className="refresh-btn" onClick={fetchData}>↻ Refresh</button>
+        <div>
+          <h1 className="dashboard-title">My Dashboard</h1>
+          <p className="dashboard-subtitle">Your assigned hostels overview</p>
+        </div>
+        <button
+          className="refresh-btn"
+          onClick={fetchData}
+          disabled={loading}
+          aria-label="Refresh dashboard data"
+        >
+          {loading ? '⏳' : '↻'} Refresh
+        </button>
       </header>
-      <div className="overall-stats-grid">
-        {overallStats.map(s => (
-          <StatCard key={s.title} title={s.title} value={s.value} />
-        ))}
-      </div>
-      <AttendanceChart present={overall.present} absent={overall.absent} notMarked={overall.notMarked} />
-      <OccupancySummary occupied={overall.occupiedBeds} available={overall.availableBeds} maintenance={overall.maintenanceBeds} />
-      <h2 className="section-title">Hostel Overview</h2>
-      <div className="hostel-cards-grid">
-        {hostels.map(h => (
-          <HostelCard key={h.hostelId} hostel={h} />
-        ))}
-      </div>
+
+      {/* Quick Actions */}
+      <nav className="quick-actions" aria-label="Quick actions">
+        <button onClick={() => navigate('/superintendent/students')}   className="qa-btn">🎓 Students</button>
+        <button onClick={() => navigate('/superintendent/hostels')}    className="qa-btn">🏢 Rooms & Beds</button>
+        <button onClick={() => navigate('/superintendent/attendance')} className="qa-btn">📝 Mark Attendance</button>
+      </nav>
+
+      {/* Error */}
+      {error && (
+        <div className="dashboard-error" role="alert">
+          <p>⚠️ {error}</p>
+          <button onClick={fetchData} className="retry-btn">Retry</button>
+        </div>
+      )}
+
+      {/* Overall stats — skeleton while loading */}
+      {loading ? (
+        <div className="overall-stats-grid" aria-busy="true">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <StatCard key={i} title="" value="" loading />
+          ))}
+        </div>
+      ) : (!error && data && (
+        <div className="overall-stats-grid">
+          {buildStats(data.overall).map(s => (
+            <StatCard key={s.title} title={s.title} value={s.value} icon={s.icon} color={s.color} />
+          ))}
+        </div>
+      ))}
+
+      {/* Charts + hostel cards */}
+      {!loading && !error && data && (
+        <>
+          <div className="dashboard-charts">
+            <AttendanceChart
+              present={data.overall.present}
+              absent={data.overall.absent}
+              notMarked={data.overall.notMarked}
+            />
+            <OccupancySummary
+              occupied={data.overall.occupiedBeds}
+              available={data.overall.availableBeds}
+              maintenance={data.overall.maintenanceBeds}
+              occupancyPercentage={data.overall.occupancyPercentage}
+            />
+          </div>
+
+          <div className="hostels-section">
+            <div className="hostels-section__header">
+              <h2 className="section-title">My Hostels</h2>
+              {data.hostels.length > 1 && (
+                <select
+                  className="hostel-filter"
+                  value={filter}
+                  onChange={e => setFilter(e.target.value)}
+                  aria-label="Filter by hostel"
+                >
+                  <option value="all">All Hostels</option>
+                  {data.hostels.map(h => (
+                    <option key={h.hostelId} value={String(h.hostelId)}>{h.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {visibleHostels.length === 0 ? (
+              <p className="empty-state">No hostels assigned to your account.</p>
+            ) : (
+              <div className="hostel-cards-grid">
+                {visibleHostels.map(h => (
+                  <HostelCard key={h.hostelId} hostel={h} />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

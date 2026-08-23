@@ -13,21 +13,23 @@ const Sidebar = ({ isOpen, onClose }) => {
     switch (user.role) {
       case 'SUPER_ADMIN':
         return [
-          { label: 'Dashboard', icon: '📊', path: '/' },
+          { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
-          { label: 'Students', icon: '🎓', path: '/admin/students' }
+          { label: 'Students', icon: '🎓', path: '/admin/students' },
+          { label: 'Attendance', icon: '📝', path: '/admin/attendance' },
         ];
       case 'SUPERINTENDENT':
         return [
-          { label: 'Dashboard', icon: '📊', path: '/' },
+          { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
-          { label: 'Students', icon: '🎓', path: '/superintendent/students' }
+          { label: 'Students', icon: '🎓', path: '/superintendent/students' },
+          { label: 'Attendance', icon: '📝', path: '/superintendent/attendance' },
         ];
       case 'STUDENT':
         return [
           { label: 'Dashboard', icon: '📊', path: '/' },
           { label: 'My Profile', icon: '👤', path: '/student/profile' },
-          { label: 'My Attendance', icon: '📝', path: '/student/attendance' }
+          { label: 'My Attendance', icon: '📝', path: '/student/attendance' },
         ];
       default:
         return [];
