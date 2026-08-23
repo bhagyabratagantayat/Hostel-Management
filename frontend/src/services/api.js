@@ -56,4 +56,41 @@ api.updateNoticeStatus = (id, status) => api.patch(`/notices/${id}/status`, { st
 api.markNoticeRead = (id) => api.post(`/notices/${id}/read`);
 api.deleteNotice = (id) => api.delete(`/notices/${id}`);
 
+// Complaint API methods
+api.getComplaints = (params = {}) => api.get('/complaints', { params });
+api.getComplaintSummary = () => api.get('/complaints/summary');
+api.getComplaintById = (id) => api.get(`/complaints/${id}`);
+api.createComplaint = (data) => api.post('/complaints', data);
+api.updateComplaintStatus = (id, status, comment = '', resolution = '') => api.patch(`/complaints/${id}/status`, { status, comment, resolution });
+api.assignComplaint = (id, assignedTo) => api.post(`/complaints/${id}/assign`, { assignedTo });
+api.addComplaintComment = (id, comment, isInternal = false) => api.post(`/complaints/${id}/comments`, { comment, isInternal });
+
+// Visitor API methods
+api.getVisits = (params = {}) => api.get('/visitors', { params });
+api.getVisitorSummary = () => api.get('/visitors/summary');
+api.getCurrentVisitors = (params = {}) => api.get('/visitors/current', { params });
+api.getVisitById = (id) => api.get(`/visitors/${id}`);
+api.createVisit = (data) => api.post('/visitors', data);
+api.approveVisit = (id, comment = '') => api.post(`/visitors/${id}/approve`, { comment });
+api.rejectVisit = (id, comment = '') => api.post(`/visitors/${id}/reject`, { comment });
+api.cancelVisit = (id, comment = '') => api.post(`/visitors/${id}/cancel`, { comment });
+api.checkInVisit = (id, comment = '') => api.post(`/visitors/${id}/check-in`, { comment });
+api.checkOutVisit = (id, comment = '') => api.post(`/visitors/${id}/check-out`, { comment });
+
+// Mess & Food Management API methods
+api.getMessMenus = (params = {}) => api.get('/mess/menu', { params });
+api.getTodayMessMenu = (params = {}) => api.get('/mess/menu/today', { params });
+api.getWeeklyMessMenu = (params = {}) => api.get('/mess/menu/weekly', { params });
+api.createMessMenuItem = (data) => api.post('/mess/menu', data);
+api.updateMessMenuItem = (id, data) => api.put(`/mess/menu/${id}`, data);
+api.deleteMessMenuItem = (id) => api.delete(`/mess/menu/${id}`);
+
+api.getMealParticipationRoster = (params = {}) => api.get('/mess/participation', { params });
+api.getMyMealParticipation = (params = {}) => api.get('/mess/participation/me', { params });
+api.setMealParticipation = (data) => api.post('/mess/participation', data);
+
+api.getMessSummary = (params = {}) => api.get('/mess/summary', { params });
+api.getMessAnalytics = (params = {}) => api.get('/mess/analytics', { params });
+
 export default api;
+

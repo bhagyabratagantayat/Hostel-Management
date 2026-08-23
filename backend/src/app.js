@@ -40,6 +40,9 @@ db.testConnection().then((connected) => {
 });
 
 const noticeRoutes = require('./routes/noticeRoutes');
+const complaintRoutes = require('./routes/complaintRoutes');
+const visitorRoutes = require('./routes/visitorRoutes');
+const messRoutes = require('./routes/messRoutes');
 
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
@@ -52,6 +55,9 @@ app.use('/api/beds', bedRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/notices', noticeRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/visitors', visitorRoutes);
+app.use('/api/mess', messRoutes);
 
 
 // Base route for API documentation / welcome

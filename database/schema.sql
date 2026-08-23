@@ -155,11 +155,70 @@ CREATE TABLE IF NOT EXISTS `notice_reads` (
     UNIQUE KEY `unique_notice_user_read` (`notice_id`, `user_id`)
 ) ENGINE=InnoDB;
 
+-- 12. Complaints Table
+CREATE TABLE IF NOT EXISTS `complaints` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` INT NOT NULL,
+    `hostel_id` INT NOT NULL,
+    `category` ENUM('ROOM', 'ELECTRICITY', 'WATER', 'PLUMBING', 'CLEANLINESS', 'FAN_AC', 'FURNITURE', 'FOOD_MESS', 'INTERNET', 'SECURITY', 'MAINTENANCE', 'OTHER') NOT NULL DEFAULT 'ROOM',
+    `priority` ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT') NOT NULL DEFAULT 'MEDIUM',
+    `title` VARCHAR(150) NOT NULL,
+    `description` TEXT NOT NULL,
+    `status` ENUM('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REOPENED') NOT NULL DEFAULT 'OPEN',
+    `assigned_to` INT DEFAULT NULL,
+    `resolution` TEXT DEFAULT NULL,
+    `resolved_at` TIMESTAMP DEFAULT NULL,
+    `closed_at` TIMESTAMP DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 13. Complaint History Table
+CREATE TABLE IF NOT EXISTS `complaint_history` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `complaint_id` INT NOT NULL,
+    `changed_by` INT NOT NULL,
+    `old_status` VARCHAR(30) DEFAULT NULL,
+    `new_status` VARCHAR(30) DEFAULT NULL,
+    `comment` TEXT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`complaint_id`) REFERENCES `complaints` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`changed_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 14. Complaint Comments Table
+CREATE TABLE IF NOT EXISTS `complaint_comments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `complaint_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `comment` TEXT NOT NULL,
+    `is_internal` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`complaint_id`) REFERENCES `complaints` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
 -- Create Indexes for performance optimization
 CREATE INDEX idx_student_roll ON students(roll_number);
 CREATE INDEX idx_student_email ON students(email);
-CREATE INDEX idx_user_username ON users(username);
 CREATE INDEX idx_attendance_date ON attendance(attendance_date);
+CREATE INDEX idx_notices_status_expires ON notices(status, expires_at);
+CREATE INDEX idx_complaints_student ON complaints(student_id);
+CREATE INDEX idx_complaints_hostel ON complaints(hostel_id);
+CREATE INDEX idx_complaints_status ON complaints(status);
+CREATE INDEX idx_complaints_priority ON complaints(priority);
+CREATE INDEX idx_complaints_category ON complaints(category);
+CREATE INDEX idx_complaints_created ON complaints(created_at);
+CREATE INDEX idx_complaints_assigned ON complaints(assigned_to);
+CREATE INDEX idx_complaint_history_comp ON complaint_history(complaint_id);
+CREATE INDEX idx_complaint_history_user ON complaint_history(changed_by);
+CREATE INDEX idx_complaint_comments_comp ON complaint_comments(complaint_id);
+CREATE INDEX idx_complaint_comments_user ON complaint_comments(user_id);
+
+CREATE INDEX idx_user_username ON users(username);
 CREATE INDEX idx_room_number ON rooms(room_number);
 CREATE INDEX idx_beds_status ON beds(status);
 CREATE INDEX idx_notices_status ON notices(status);
@@ -169,3 +228,94 @@ CREATE INDEX idx_notices_published_at ON notices(published_at);
 CREATE INDEX idx_notices_expires_at ON notices(expires_at);
 CREATE INDEX idx_notice_reads_notice_id ON notice_reads(notice_id);
 CREATE INDEX idx_notice_reads_user_id ON notice_reads(user_id);
+
+-- 15. Visits Table
+CREATE TABLE IF NOT EXISTS `visits` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` INT NOT NULL,
+    `hostel_id` INT NOT NULL,
+    `room_id` INT DEFAULT NULL,
+    `bed_id` INT DEFAULT NULL,
+    `visitor_name` VARCHAR(100) NOT NULL,
+    `visitor_phone` VARCHAR(20) NOT NULL,
+    `visitor_email` VARCHAR(100) DEFAULT NULL,
+    `visitor_type` ENUM('PARENT', 'GUARDIAN', 'RELATIVE', 'FRIEND', 'OFFICIAL', 'OTHER') NOT NULL DEFAULT 'PARENT',
+    `purpose` TEXT NOT NULL,
+    `identification_type` VARCHAR(50) NOT NULL DEFAULT 'Aadhaar',
+    `identification_last4` VARCHAR(10) NOT NULL,
+    `visit_date` DATE NOT NULL,
+    `expected_check_in` DATETIME NOT NULL,
+    `expected_check_out` DATETIME NOT NULL,
+    `actual_check_in` DATETIME DEFAULT NULL,
+    `actual_check_out` DATETIME DEFAULT NULL,
+    `status` ENUM('REQUESTED', 'APPROVED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', 'REJECTED') NOT NULL DEFAULT 'REQUESTED',
+    `created_by` INT NOT NULL,
+    `approved_by` INT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`room_id`) REFERENCES `rooms` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`bed_id`) REFERENCES `beds` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- 16. Visitor History Table
+CREATE TABLE IF NOT EXISTS `visitor_history` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `visit_id` INT NOT NULL,
+    `changed_by` INT NOT NULL,
+    `old_status` VARCHAR(50) DEFAULT NULL,
+    `new_status` VARCHAR(50) NOT NULL,
+    `comment` TEXT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`visit_id`) REFERENCES `visits` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`changed_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE INDEX idx_visits_student ON visits(student_id);
+CREATE INDEX idx_visits_hostel ON visits(hostel_id);
+CREATE INDEX idx_visits_status ON visits(status);
+CREATE INDEX idx_visits_date ON visits(visit_date);
+CREATE INDEX idx_visits_phone ON visits(visitor_phone);
+CREATE INDEX idx_visits_created ON visits(created_at);
+CREATE INDEX idx_visits_expected_out ON visits(expected_check_out);
+CREATE INDEX idx_visitor_history_visit ON visitor_history(visit_id);
+CREATE INDEX idx_visitor_history_user ON visitor_history(changed_by);
+
+-- 17. Mess Menus Table
+CREATE TABLE IF NOT EXISTS `mess_menus` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `hostel_id` INT DEFAULT NULL,
+    `menu_date` DATE NOT NULL,
+    `meal_type` ENUM('BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER') NOT NULL,
+    `meal_name` VARCHAR(255) NOT NULL,
+    `description` TEXT DEFAULT NULL,
+    `is_available` TINYINT(1) DEFAULT 1,
+    `created_by` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+    INDEX `idx_mess_menus_hostel_date` (`hostel_id`, `menu_date`),
+    INDEX `idx_mess_menus_date_type` (`menu_date`, `meal_type`)
+) ENGINE=InnoDB;
+
+-- 18. Meal Participation / Attendance Table
+CREATE TABLE IF NOT EXISTS `meal_attendance` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `student_id` INT NOT NULL,
+    `hostel_id` INT NOT NULL,
+    `meal_date` DATE NOT NULL,
+    `meal_type` ENUM('BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER') NOT NULL,
+    `status` ENUM('TAKING', 'NOT_TAKING') NOT NULL DEFAULT 'TAKING',
+    `marked_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE KEY `uk_student_meal_date` (`student_id`, `meal_date`, `meal_type`),
+    INDEX `idx_meal_att_hostel_date` (`hostel_id`, `meal_date`, `meal_type`),
+    INDEX `idx_meal_att_student_date` (`student_id`, `meal_date`)
+) ENGINE=InnoDB;
+
+

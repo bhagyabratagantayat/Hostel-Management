@@ -78,7 +78,8 @@ const getMyProfile = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      data: students[0]
+      data: students[0],
+      student: students[0]
     });
   } catch (error) {
     next(error);

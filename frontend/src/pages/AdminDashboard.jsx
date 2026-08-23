@@ -6,7 +6,11 @@ import HostelCard from '../components/HostelCard';
 import AttendanceChart from '../components/AttendanceChart';
 import OccupancySummary from '../components/OccupancySummary';
 import RecentNoticesSection from '../components/RecentNoticesSection';
+import RecentComplaintsSection from '../components/complaints/RecentComplaintsSection';
+import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection';
+import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
+import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import './AdminDashboard.css';
 
 // Stat card definitions for the overall section
@@ -32,6 +36,7 @@ function AdminDashboard() {
   const [error, setError]     = useState(null);
   const [filter, setFilter]   = useState('all');
   const [selectedNotice, setSelectedNotice] = useState(null);
+  const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -116,6 +121,14 @@ function AdminDashboard() {
         />
       )}
 
+      {/* Complaints Section */}
+      {!loading && !error && (
+        <RecentComplaintsSection
+          user={{ role: 'SUPER_ADMIN' }}
+          complaintsPath="/admin/complaints"
+        />
+      )}
+
       {/* Charts */}
       {!loading && !error && data && (
         <>
@@ -132,6 +145,9 @@ function AdminDashboard() {
               occupancyPercentage={data.overall.occupancyPercentage}
             />
           </div>
+
+          {/* Mess Section */}
+          <RecentMessSection userRole="SUPER_ADMIN" />
 
           {/* Hostel cards with filter */}
           <div className="hostels-section">
@@ -171,6 +187,14 @@ function AdminDashboard() {
           onClose={() => setSelectedNotice(null)}
         />
       )}
+
+      {/* Visitor Form Modal */}
+      <VisitorFormModal
+        isOpen={isVisitorModalOpen}
+        onClose={() => setIsVisitorModalOpen(false)}
+        onSubmitSuccess={() => setIsVisitorModalOpen(false)}
+        userRole="SUPER_ADMIN"
+      />
     </div>
   );
 }

@@ -31,6 +31,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
           { label: 'Students', icon: '🎓', path: '/admin/students' },
+          { label: 'Mess & Food', icon: '🍲', path: '/admin/mess' },
+          { label: 'Visitors', icon: '👥', path: '/admin/visitors' },
+          { label: 'Complaints', icon: '🛠️', path: '/admin/complaints' },
           { label: 'Attendance', icon: '📝', path: '/admin/attendance' },
           { label: 'Notices', icon: '📢', path: '/admin/notices', badge: unreadCount },
         ];
@@ -39,12 +42,18 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
           { label: 'Students', icon: '🎓', path: '/superintendent/students' },
+          { label: 'Mess & Food', icon: '🍲', path: '/superintendent/mess' },
+          { label: 'Visitors', icon: '👥', path: '/superintendent/visitors' },
+          { label: 'Complaints', icon: '🛠️', path: '/superintendent/complaints' },
           { label: 'Attendance', icon: '📝', path: '/superintendent/attendance' },
           { label: 'Notices', icon: '📢', path: '/superintendent/notices', badge: unreadCount },
         ];
       case 'STUDENT':
         return [
           { label: 'Dashboard', icon: '📊', path: '/student/dashboard' },
+          { label: 'Mess & Food', icon: '🍲', path: '/student/mess' },
+          { label: 'Visitors', icon: '👥', path: '/student/visitors' },
+          { label: 'My Complaints', icon: '🛠️', path: '/student/complaints' },
           { label: 'Notices', icon: '📢', path: '/student/notices', badge: unreadCount },
           { label: 'My Profile', icon: '👤', path: '/student/profile' },
           { label: 'My Attendance', icon: '📝', path: '/student/attendance' },

@@ -60,6 +60,7 @@ const requireAuth = async (req, res, next) => {
  * @param {...string} allowedRoles - List of authorized roles (e.g. 'SUPER_ADMIN', 'SUPERINTENDENT')
  */
 const requireRole = (...allowedRoles) => {
+  const roles = Array.isArray(allowedRoles[0]) ? allowedRoles[0] : allowedRoles;
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
@@ -68,10 +69,10 @@ const requireRole = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `Forbidden: Access restricted to [${allowedRoles.join(', ')}]`
+        message: `Forbidden: Access restricted to [${roles.join(', ')}]`
       });
     }
 
@@ -81,5 +82,7 @@ const requireRole = (...allowedRoles) => {
 
 module.exports = {
   requireAuth,
-  requireRole
+  requireRole,
+  requireRoles: requireRole
 };
+

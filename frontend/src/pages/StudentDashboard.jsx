@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import RecentNoticesSection from '../components/RecentNoticesSection';
+import RecentComplaintsSection from '../components/complaints/RecentComplaintsSection';
+import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection';
+import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
+import VisitorFormModal from '../components/visitors/VisitorFormModal';
+import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
 import Loading from '../components/Loading';
 import './StudentDashboard.css';
 
@@ -18,6 +23,8 @@ const StudentDashboard = () => {
   const [error, setError] = useState(null);
 
   const [selectedNotice, setSelectedNotice] = useState(null);
+  const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
+  const [isMessComplaintModalOpen, setIsMessComplaintModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -107,7 +114,15 @@ const StudentDashboard = () => {
           {unreadCount > 0 && <span className="tile-badge">{unreadCount}</span>}
         </div>
 
-        <div className="action-tile tile-attendance" onClick={() => navigate('/attendance')}>
+        <div className="action-tile tile-complaints" onClick={() => navigate('/student/complaints')}>
+          <div className="tile-icon">🛠️</div>
+          <div className="tile-content">
+            <h3>My Complaints</h3>
+            <p>Submit & track room maintenance requests</p>
+          </div>
+        </div>
+
+        <div className="action-tile tile-attendance" onClick={() => navigate('/student/attendance')}>
           <div className="tile-icon">📅</div>
           <div className="tile-content">
             <h3>My Attendance</h3>
@@ -115,7 +130,7 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        <div className="action-tile tile-profile" onClick={() => navigate('/profile')}>
+        <div className="action-tile tile-profile" onClick={() => navigate('/student/profile')}>
           <div className="tile-icon">👤</div>
           <div className="tile-content">
             <h3>My Profile</h3>
@@ -123,6 +138,24 @@ const StudentDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Mess Management Overview */}
+      <RecentMessSection
+        userRole="STUDENT"
+        onOpenMessComplaint={() => setIsMessComplaintModalOpen(true)}
+      />
+
+      {/* Visitor Management Overview */}
+      <RecentVisitorsSection
+        userRole="STUDENT"
+        onRequestNewVisitor={() => setIsVisitorModalOpen(true)}
+      />
+
+      {/* Complaints Section */}
+      <RecentComplaintsSection
+        user={user}
+        complaintsPath="/student/complaints"
+      />
 
       {/* Recent Notices Section */}
       <RecentNoticesSection
@@ -141,6 +174,25 @@ const StudentDashboard = () => {
           onReadMarked={handleReadMarked}
         />
       )}
+
+      {/* Visitor Form Modal */}
+      <VisitorFormModal
+        isOpen={isVisitorModalOpen}
+        onClose={() => setIsVisitorModalOpen(false)}
+        onSubmitSuccess={() => setIsVisitorModalOpen(false)}
+        userRole="STUDENT"
+      />
+
+      {/* Mess Complaint Modal */}
+      <ComplaintFormModal
+        isOpen={isMessComplaintModalOpen}
+        onClose={() => setIsMessComplaintModalOpen(false)}
+        defaultCategory="FOOD_MESS"
+        onComplaintCreated={() => {
+          setIsMessComplaintModalOpen(false);
+          alert('Mess complaint submitted successfully.');
+        }}
+      />
     </div>
   );
 };

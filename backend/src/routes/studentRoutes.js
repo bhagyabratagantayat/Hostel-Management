@@ -5,6 +5,7 @@ const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 
 // Get current student's own profile
 router.get('/profile/me', requireAuth, requireRole('STUDENT'), studentController.getMyProfile);
+router.get('/me', requireAuth, requireRole('STUDENT'), studentController.getMyProfile);
 
 // List all students (Super Admin or Superintendent only)
 router.get('/', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.getAllStudents);

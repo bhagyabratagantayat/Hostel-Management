@@ -5,9 +5,12 @@ import StatCard from '../components/StatCard';
 import HostelCard from '../components/HostelCard';
 import AttendanceChart from '../components/AttendanceChart';
 import OccupancySummary from '../components/OccupancySummary';
-import Loading from '../components/Loading';
 import RecentNoticesSection from '../components/RecentNoticesSection';
+import RecentComplaintsSection from '../components/complaints/RecentComplaintsSection';
+import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection';
+import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
+import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import './SuperintendentDashboard.css';
 
 const buildStats = (overall) => [
@@ -32,6 +35,7 @@ function SuperintendentDashboard() {
   const [error, setError]     = useState(null);
   const [filter, setFilter]   = useState('all');
   const [selectedNotice, setSelectedNotice] = useState(null);
+  const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -110,6 +114,14 @@ function SuperintendentDashboard() {
         />
       )}
 
+      {/* Complaints Section */}
+      {!loading && !error && (
+        <RecentComplaintsSection
+          user={{ role: 'SUPERINTENDENT' }}
+          complaintsPath="/superintendent/complaints"
+        />
+      )}
+
       {/* Charts + hostel cards */}
       {!loading && !error && data && (
         <>
@@ -126,6 +138,9 @@ function SuperintendentDashboard() {
               occupancyPercentage={data.overall.occupancyPercentage}
             />
           </div>
+
+          {/* Mess Section */}
+          <RecentMessSection userRole="SUPERINTENDENT" />
 
           <div className="hostels-section">
             <div className="hostels-section__header">
@@ -166,6 +181,14 @@ function SuperintendentDashboard() {
           onClose={() => setSelectedNotice(null)}
         />
       )}
+
+      {/* Visitor Form Modal */}
+      <VisitorFormModal
+        isOpen={isVisitorModalOpen}
+        onClose={() => setIsVisitorModalOpen(false)}
+        onSubmitSuccess={() => setIsVisitorModalOpen(false)}
+        userRole="SUPERINTENDENT"
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 7.5 — Notice System Production Verification & Data Safety (Complete)
+* **Current Development Phase**: Phase 10 — Hostel Mess & Food Management (Complete)
 
 ---
 
@@ -315,6 +315,29 @@ Precision: 2 decimal places
 
 ## 12. Project Change Log
 
+* **2026-08-23 (Phase 8) — Complaint & Grievance Management System**
+  * **Objective**: Build an end-to-end complaint system enabling students to log room/hostel maintenance issues and staff to track, assign, resolve, comment, and audit status changes.
+  * **Database Schema**:
+    * Created `complaints` table (id, student_id, hostel_id, room_number, bed_number, title, description, category, priority, status, assigned_to, resolution, resolved_at, closed_at, timestamps).
+    * Created `complaint_history` audit log table (complaint_id, changed_by, old_status, new_status, comment, created_at).
+    * Created `complaint_comments` table (complaint_id, user_id, comment, is_internal, created_at).
+    * Validated indexes on `(hostel_id, status)`, `(student_id, status)`, `(category)`, and `(assigned_to)`.
+  * **Backend Service & API (`complaintService.js`, `complaintController.js`, `complaintRoutes.js`)**:
+    * Enforced transaction-based status updates with history recording (`OPEN` ➔ `IN_PROGRESS` ➔ `RESOLVED` / `CLOSED` / `REOPENED`).
+    * Role-aware scoping: Students only access their own complaints; Superintendents are restricted to assigned hostels; Super Admins have global access.
+    * Mandated `resolution` text for marking complaints as `RESOLVED`.
+    * Restricted internal comments (`is_internal: true`) to hostel staff only.
+  * **Frontend UI Components & Pages**:
+    * `ComplaintCard.jsx`: Displays category icon, status pill, priority tag, relative time, and student/hostel details.
+    * `ComplaintFormModal.jsx`: Mobile-friendly modal for student complaint creation with category and priority selectors.
+    * `ComplaintDetailsModal.jsx`: Comprehensive detail modal with status management transitions, self-assignment, internal note toggle, comment list, and timeline audit log.
+    * `RecentComplaintsSection.jsx`: Integrated into Admin, Superintendent, and Student dashboards with KPI summary cards.
+    * `ComplaintsPage.jsx`: Filterable page with status tabs, category/priority drop-downs, search bar, and role-appropriate actions.
+  * **Testing & Mock DB**:
+    * Updated `backend/src/config/db.js` mock database engine for complaint queries and transactions.
+    * Verified via `test_phase8_complaints.js` (12/12 integration tests passed).
+  * **Status**: Complete.
+
 * **2026-08-23 (Phase 7.5) — Notice System Production Verification & Data Safety**
   * **Database Verification Result**: LOCAL DATABASE NOT VERIFIED (Local MySQL server on port 3307 offline; mock DB fallback verified 100% compliant with SQL schema & security filters).
   * **Migration File**: Created `database/migrations/phase7_notices.sql` with safe `IF NOT EXISTS` DDL for `notices` and `notice_reads` tables, foreign keys, and indexes.
@@ -372,6 +395,22 @@ Precision: 2 decimal places
   * **Routing**:
     * Added `attendance` placeholder routes for admin and superintendent
     * `RoleRedirect` at root sends users to role-specific dashboard
+* **2026-08-23 (Phase 10) — Hostel Mess & Food Management System**
+  * **Objective**: Designed and implemented end-to-end Mess & Food Management allowing staff to publish daily/weekly menus, track meal attendance (TAKING / NOT_TAKING), enforce meal cutoff rules, view mess analytics, and handle mess complaints.
+  * **Database Tables**: Added `mess_menus` and `meal_attendance` tables with composite unique constraints `(hostel_id, menu_date, meal_type)` and `(student_id, meal_date, meal_type)`. Indexed `(hostel_id, menu_date)` and `(student_id, meal_date)`.
+  * **Business & Security Logic**: Created `messService.js`, `messController.js`, and `messRoutes.js`. Built role-based menu scoping (Super Admin multi-hostel/common, Superintendent assigned hostels, Student read-only/own hostel). Derived `student_id` strictly from JWT session for IDOR protection. Implemented cutoff enforcement.
+  * **Complaints Integration**: Integrated with existing `complaints` table under category `FOOD_MESS`.
+  * **Frontend UI Components**: Developed `MealCard.jsx`, `WeeklyMenu.jsx` (desktop table grid & mobile accordion), `MenuFormModal.jsx`, `MessAnalyticsCard.jsx`, `RecentMessSection.jsx`, and `MessPage.jsx`. Connected Sidebar navigation and embedded widgets into Admin, Superintendent, and Student dashboards.
+  * **Verification**: Authored `backend/src/test_phase10_mess.js`. All 10/10 automated tests passed successfully. Verified production build using `npm run build`.
+  * **Status**: Complete.
+
+* **2026-08-23 (Phase 9) — Hostel Visitor Management System**
+  * **Objective**: Built a secure, role-based visitor tracking workflow (REQUESTED → APPROVED → CHECKED_IN → CHECKED_OUT) with strict IDOR protections and privacy compliance.
+  * **Database Tables**: Created `visits` and `visitor_history` with foreign key constraints and indexes on `(hostel_id, status)`, `(student_id, visit_date)`, `(status, expected_check_out)`.
+  * **Privacy Compliance**: Enforced `identification_type` + `identification_last4` storage. Sensitive document numbers (e.g., Aadhaar/SSN) are masked.
+  * **Backend Service**: Developed `visitorService.js`, `visitorController.js`, and `visitorRoutes.js`. Implemented student profile automatic derivation, superintendent hostel scoping, and status state machine guards.
+  * **Frontend UI Components**: Built `VisitorCard.jsx`, `VisitorFormModal.jsx`, `VisitorDetailsModal.jsx`, `RecentVisitorsSection.jsx`, and `VisitorsPage.jsx` with real-time status tabs and search filtering.
+  * **Verification**: Authored `test_phase9_visitors.js`. All 13 audit tests passed successfully.
   * **Status**: Complete.
 
 * **2026-08-23 (Phase 6) — Main Dashboard & Hostel Analytics**
