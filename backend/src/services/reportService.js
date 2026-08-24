@@ -99,23 +99,23 @@ async function getOverviewReport(user, options = {}) {
   const allowedHostels = await resolveHostelScope(user, options.hostel_id);
   const { date_from, date_to } = validateDateRange(options.date_from, options.date_to);
 
-  // 1. Infrastructure & Beds
-  const hClause = buildHostelClause(allowedHostels, 'r');
+  const rClause = buildHostelClause(allowedHostels, 'r');
+
   const hostelCountSql = allowedHostels === null
     ? `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE'`
     : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostels.map(() => '?').join(',')})`;
   const hostelCountParams = allowedHostels === null ? [] : allowedHostels;
 
   const studentSql = allowedHostels === null
-    ? `SELECT COUNT(*) AS totalStudents FROM students WHERE status = 'ACTIVE'`
+    ? `SELECT COUNT(*) AS totalStudents FROM students s WHERE s.status = 'ACTIVE'`
     : `SELECT COUNT(*) AS totalStudents FROM students s
        JOIN beds b ON s.bed_id = b.id
        JOIN rooms r ON b.room_id = r.id
-       WHERE s.status = 'ACTIVE'${hClause.clause}`;
+       WHERE s.status = 'ACTIVE'${rClause.clause}`;
 
   const roomSql = allowedHostels === null
     ? `SELECT COUNT(*) AS totalRooms FROM rooms`
-    : `SELECT COUNT(*) AS totalRooms FROM rooms r WHERE 1=1${hClause.clause}`;
+    : `SELECT COUNT(*) AS totalRooms FROM rooms r WHERE 1=1${rClause.clause}`;
 
   const bedSql = allowedHostels === null
     ? `SELECT
@@ -131,15 +131,15 @@ async function getOverviewReport(user, options = {}) {
          SUM(b.status = 'MAINTENANCE') AS maintenanceBeds
        FROM beds b
        JOIN rooms r ON b.room_id = r.id
-       WHERE 1=1${hClause.clause}`;
+       WHERE 1=1${rClause.clause}`;
 
   const [
     [hRows], [sRows], [rRows], [bRows]
   ] = await Promise.all([
-    db.pool.query(hostelCountSql, hostelCountParams),
-    db.pool.query(studentSql, hClause.params),
-    db.pool.query(roomSql, hClause.params),
-    db.pool.query(bedSql, hClause.params)
+    db.pool.query(hostelCountSql, hostelCountParams).then(res => res[0]),
+    db.pool.query(studentSql, rClause.params).then(res => res[0]),
+    db.pool.query(roomSql, rClause.params).then(res => res[0]),
+    db.pool.query(bedSql, rClause.params).then(res => res[0])
   ]);
 
   const occupiedBeds = Number(bRows?.[0]?.occupiedBeds) || 0;
@@ -151,21 +151,16 @@ async function getOverviewReport(user, options = {}) {
   // 2. Today's Attendance
   const today = new Date().toISOString().split('T')[0];
   let present = 0, absent = 0, notMarked = 0;
-  let activeStudentIds = [];
-  if (allowedHostels === null) {
-    const [stRows] = await db.pool.query(`SELECT id FROM students WHERE status = 'ACTIVE'`);
-    activeStudentIds = stRows.map(r => r.id);
-  } else if (allowedHostels.length > 0) {
-    const ph = allowedHostels.map(() => '?').join(',');
-    const [stRows] = await db.pool.query(
-      `SELECT s.id FROM students s
+
+  const stSql = allowedHostels === null
+    ? `SELECT s.id FROM students s WHERE s.status = 'ACTIVE'`
+    : `SELECT s.id FROM students s
        JOIN beds b ON s.bed_id = b.id
        JOIN rooms r ON b.room_id = r.id
-       WHERE s.status = 'ACTIVE' AND r.hostel_id IN (${ph})`,
-      allowedHostels
-    );
-    activeStudentIds = stRows.map(r => r.id);
-  }
+       WHERE s.status = 'ACTIVE'${rClause.clause}`;
+
+  const [stRows] = await db.pool.query(stSql, rClause.params);
+  const activeStudentIds = stRows.map(r => r.id);
 
   if (activeStudentIds.length > 0) {
     const idPh = activeStudentIds.map(() => '?').join(',');
@@ -180,7 +175,7 @@ async function getOverviewReport(user, options = {}) {
     );
     present = Number(attCounts?.present) || 0;
     absent = Number(attCounts?.absent) || 0;
-    notMarked = activeStudentIds.length - (Number(attCounts?.markedCount) || 0);
+    notMarked = Math.max(0, activeStudentIds.length - (Number(attCounts?.markedCount) || 0));
   }
   const totalMarked = present + absent;
   const attendancePercentage = totalMarked > 0 ? parseFloat(((present / totalMarked) * 100).toFixed(2)) : 0;
@@ -190,10 +185,10 @@ async function getOverviewReport(user, options = {}) {
   const [[cRows]] = await db.pool.query(
     `SELECT
        COUNT(*) AS totalComplaints,
-       SUM(status IN ('SUBMITTED', 'REOPENED')) AS openComplaints,
+       SUM(status IN ('OPEN', 'REOPENED')) AS openComplaints,
        SUM(status = 'IN_PROGRESS') AS inProgressComplaints,
        SUM(status IN ('RESOLVED', 'CLOSED')) AS resolvedComplaints,
-       SUM(priority = 'URGENT' AND status IN ('SUBMITTED', 'IN_PROGRESS', 'REOPENED')) AS urgentComplaints
+       SUM(priority = 'URGENT' AND status IN ('OPEN', 'IN_PROGRESS', 'REOPENED')) AS urgentComplaints
      FROM complaints c WHERE 1=1${cClause.clause}`,
     cClause.params
   );
@@ -270,49 +265,36 @@ async function getOverviewReport(user, options = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function getStudentReport(user, options = {}) {
   const allowedHostels = await resolveHostelScope(user, options.hostel_id);
+  const rClause = buildHostelClause(allowedHostels, 'r');
 
-  const hClause = buildHostelClause(allowedHostels, 'r');
+  const studentJoin = allowedHostels === null
+    ? `FROM students s WHERE s.status = 'ACTIVE'`
+    : `FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.status = 'ACTIVE'${rClause.clause}`;
+
+  const studentParams = allowedHostels === null ? [] : rClause.params;
 
   // Overall count
   const [[totalRows]] = await db.pool.query(
-    `SELECT COUNT(*) as total FROM students s
-     JOIN beds b ON s.bed_id = b.id
-     JOIN rooms r ON b.room_id = r.id
-     WHERE s.status = 'ACTIVE'${hClause.clause}`,
-    hClause.params
+    `SELECT COUNT(*) as total ${studentJoin}`,
+    studentParams
   );
 
   // Breakdown by Branch
   const [branchRows] = await db.pool.query(
-    `SELECT COALESCE(s.branch, 'Unspecified') AS branch, COUNT(*) AS count
-     FROM students s
-     JOIN beds b ON s.bed_id = b.id
-     JOIN rooms r ON b.room_id = r.id
-     WHERE s.status = 'ACTIVE'${hClause.clause}
-     GROUP BY s.branch ORDER BY count DESC`,
-    hClause.params
+    `SELECT COALESCE(s.branch, 'Unspecified') AS branch, COUNT(*) AS count ${studentJoin} GROUP BY s.branch ORDER BY count DESC`,
+    studentParams
   );
 
   // Breakdown by Course
   const [courseRows] = await db.pool.query(
-    `SELECT COALESCE(s.course, 'Unspecified') AS course, COUNT(*) AS count
-     FROM students s
-     JOIN beds b ON s.bed_id = b.id
-     JOIN rooms r ON b.room_id = r.id
-     WHERE s.status = 'ACTIVE'${hClause.clause}
-     GROUP BY s.course ORDER BY count DESC`,
-    hClause.params
+    `SELECT COALESCE(s.course, 'Unspecified') AS course, COUNT(*) AS count ${studentJoin} GROUP BY s.course ORDER BY count DESC`,
+    studentParams
   );
 
   // Breakdown by Year
   const [yearRows] = await db.pool.query(
-    `SELECT COALESCE(s.year, '1') AS year, COUNT(*) AS count
-     FROM students s
-     JOIN beds b ON s.bed_id = b.id
-     JOIN rooms r ON b.room_id = r.id
-     WHERE s.status = 'ACTIVE'${hClause.clause}
-     GROUP BY s.year ORDER BY s.year ASC`,
-    hClause.params
+    `SELECT COALESCE(s.year, '1') AS year, COUNT(*) AS count ${studentJoin} GROUP BY s.year ORDER BY s.year ASC`,
+    studentParams
   );
 
   // Breakdown by Hostel
@@ -350,25 +332,18 @@ async function getAttendanceReport(user, options = {}) {
   const allowedHostels = await resolveHostelScope(user, options.hostel_id);
   const { date_from, date_to } = validateDateRange(options.date_from, options.date_to);
 
-  const hClause = buildHostelClause(allowedHostels, 'r');
+  const rClause = buildHostelClause(allowedHostels, 'r');
+  const aClause = buildHostelClause(allowedHostels, 'a');
 
   // Today's snapshot
   const today = new Date().toISOString().split('T')[0];
-  let activeStudentIds = [];
-  if (allowedHostels === null) {
-    const [stRows] = await db.pool.query(`SELECT id FROM students WHERE status = 'ACTIVE'`);
-    activeStudentIds = stRows.map(r => r.id);
-  } else if (allowedHostels.length > 0) {
-    const ph = allowedHostels.map(() => '?').join(',');
-    const [stRows] = await db.pool.query(
-      `SELECT s.id FROM students s
-       JOIN beds b ON s.bed_id = b.id
-       JOIN rooms r ON b.room_id = r.id
-       WHERE s.status = 'ACTIVE' AND r.hostel_id IN (${ph})`,
-      allowedHostels
-    );
-    activeStudentIds = stRows.map(r => r.id);
-  }
+
+  const stSql = allowedHostels === null
+    ? `SELECT s.id FROM students s WHERE s.status = 'ACTIVE'`
+    : `SELECT s.id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.status = 'ACTIVE'${rClause.clause}`;
+
+  const [stRows] = await db.pool.query(stSql, rClause.params);
+  const activeStudentIds = stRows.map(r => r.id);
 
   let present = 0, absent = 0, notMarked = 0;
   if (activeStudentIds.length > 0) {
@@ -384,7 +359,7 @@ async function getAttendanceReport(user, options = {}) {
     );
     present = Number(attCounts?.present) || 0;
     absent = Number(attCounts?.absent) || 0;
-    notMarked = activeStudentIds.length - (Number(attCounts?.markedCount) || 0);
+    notMarked = Math.max(0, activeStudentIds.length - (Number(attCounts?.markedCount) || 0));
   }
   const totalMarked = present + absent;
   const attendancePercentage = totalMarked > 0 ? parseFloat(((present / totalMarked) * 100).toFixed(2)) : 0;
@@ -395,12 +370,9 @@ async function getAttendanceReport(user, options = {}) {
                     SUM(status = 'PRESENT') AS present,
                     SUM(status = 'ABSENT') AS absent
                   FROM attendance a
-                  JOIN students s ON a.student_id = s.id
-                  JOIN beds b ON s.bed_id = b.id
-                  JOIN rooms r ON b.room_id = r.id
-                  WHERE a.attendance_date BETWEEN ? AND ?${hClause.clause}
+                  WHERE a.attendance_date BETWEEN ? AND ?${aClause.clause}
                   GROUP BY attendance_date ORDER BY attendance_date ASC`;
-  const [trendRows] = await db.pool.query(trendSql, [date_from, date_to, ...hClause.params]);
+  const [trendRows] = await db.pool.query(trendSql, [date_from, date_to, ...aClause.params]);
 
   const dailyTrend = trendRows.map(r => {
     const p = Number(r.present) || 0;
@@ -424,31 +396,25 @@ async function getAttendanceReport(user, options = {}) {
 
   const hostelComparison = await Promise.all(hostelRows.map(async (h) => {
     const [stuRows] = await db.pool.query(
-      `SELECT COUNT(*) AS total FROM students s
-       JOIN beds b ON s.bed_id = b.id
-       JOIN rooms r ON b.room_id = r.id
-       WHERE s.status = 'ACTIVE' AND r.hostel_id = ?`,
+      `SELECT COUNT(*) AS total FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.status = 'ACTIVE' AND r.hostel_id = ?`,
       [h.id]
     );
     const totalStu = Number(stuRows?.[0]?.total) || 0;
 
     const [[aRows]] = await db.pool.query(
       `SELECT
-         SUM(a.status = 'PRESENT') AS present,
-         SUM(a.status = 'ABSENT') AS absent,
-         COUNT(DISTINCT a.student_id) AS markedCount
-       FROM attendance a
-       JOIN students s ON a.student_id = s.id
-       JOIN beds b ON s.bed_id = b.id
-       JOIN rooms r ON b.room_id = r.id
-       WHERE a.attendance_date = ? AND r.hostel_id = ? AND s.status = 'ACTIVE'`,
+         SUM(status = 'PRESENT') AS present,
+         SUM(status = 'ABSENT') AS absent,
+         COUNT(DISTINCT student_id) AS markedCount
+       FROM attendance
+       WHERE attendance_date = ? AND hostel_id = ?`,
       [today, h.id]
     );
 
     const hP = Number(aRows?.present) || 0;
     const hA = Number(aRows?.absent) || 0;
     const hM = Number(aRows?.markedCount) || 0;
-    const hNM = totalStu - hM;
+    const hNM = Math.max(0, totalStu - hM);
     const hTot = hP + hA;
     const hPct = hTot > 0 ? parseFloat(((hP / hTot) * 100).toFixed(2)) : 0;
 
@@ -482,8 +448,7 @@ async function getAttendanceReport(user, options = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function getOccupancyReport(user, options = {}) {
   const allowedHostels = await resolveHostelScope(user, options.hostel_id);
-
-  const hClause = buildHostelClause(allowedHostels, 'r');
+  const rClause = buildHostelClause(allowedHostels, 'r');
 
   const bedSql = allowedHostels === null
     ? `SELECT
@@ -499,9 +464,9 @@ async function getOccupancyReport(user, options = {}) {
          SUM(b.status = 'MAINTENANCE') AS maintenance
        FROM beds b
        JOIN rooms r ON b.room_id = r.id
-       WHERE 1=1${hClause.clause}`;
+       WHERE 1=1${rClause.clause}`;
 
-  const [[bRows]] = await db.pool.query(bedSql, hClause.params);
+  const [[bRows]] = await db.pool.query(bedSql, rClause.params);
 
   const occupied = Number(bRows?.occupied) || 0;
   const available = Number(bRows?.available) || 0;
@@ -575,7 +540,7 @@ async function getComplaintReport(user, options = {}) {
   const [[summaryRows]] = await db.pool.query(
     `SELECT
        COUNT(*) AS totalComplaints,
-       SUM(status = 'SUBMITTED') AS open,
+       SUM(status = 'OPEN') AS open,
        SUM(status = 'IN_PROGRESS') AS inProgress,
        SUM(status = 'RESOLVED') AS resolved,
        SUM(status = 'CLOSED') AS closed,
@@ -664,12 +629,12 @@ async function getVisitorReport(user, options = {}) {
     paramsWithDates
   );
 
-  // Breakdown by Visitor Type / Relation
-  const [relationRows] = await db.pool.query(
-    `SELECT COALESCE(relation_to_student, 'Visitor') AS relation, COUNT(*) AS count
+  // Breakdown by Visitor Type
+  const [typeRows] = await db.pool.query(
+    `SELECT COALESCE(visitor_type, 'OTHER') AS relation, COUNT(*) AS count
      FROM visits v
      WHERE visit_date BETWEEN ? AND ?${vClause.clause}
-     GROUP BY relation_to_student ORDER BY count DESC`,
+     GROUP BY visitor_type ORDER BY count DESC`,
     paramsWithDates
   );
 
@@ -694,7 +659,7 @@ async function getVisitorReport(user, options = {}) {
       currentVisitors: Number(summaryRows?.currentVisitors) || 0,
       overdueVisitors: Number(summaryRows?.overdueVisitors) || 0
     },
-    byVisitorType: relationRows.map(r => ({ relation: r.relation, count: Number(r.count) })),
+    byVisitorType: typeRows.map(r => ({ relation: r.relation, count: Number(r.count) })),
     trend: trendRows.map(r => ({
       date: r.visit_date instanceof Date ? r.visit_date.toISOString().split('T')[0] : String(r.visit_date).substring(0, 10),
       count: Number(r.count)
@@ -710,8 +675,8 @@ async function getMessReport(user, options = {}) {
   const allowedHostels = await resolveHostelScope(user, options.hostel_id);
   const { date_from, date_to } = validateDateRange(options.date_from, options.date_to);
 
-  const mClause = buildHostelClause(allowedHostels, 's');
-  const paramsWithDates = [date_from, date_to, ...mClause.params];
+  const maClause = buildHostelClause(allowedHostels, 'ma');
+  const paramsWithDates = [date_from, date_to, ...maClause.params];
 
   const [mealRows] = await db.pool.query(
     `SELECT
@@ -720,10 +685,7 @@ async function getMessReport(user, options = {}) {
        SUM(ma.status = 'NOT_TAKING') AS notTakingCount,
        COUNT(*) AS totalResponses
      FROM meal_attendance ma
-     JOIN students s ON ma.student_id = s.id
-     JOIN beds b ON s.bed_id = b.id
-     JOIN rooms r ON b.room_id = r.id
-     WHERE ma.meal_date BETWEEN ? AND ?${mClause.clause}
+     WHERE ma.meal_date BETWEEN ? AND ?${maClause.clause}
      GROUP BY ma.meal_type`,
     paramsWithDates
   );
@@ -795,16 +757,17 @@ async function getFeeReport(user, options = {}) {
   // Breakdown by Fee Type
   const [typeRows] = await db.pool.query(
     `SELECT
-       COALESCE(fee_type, 'HOSTEL_FEE') AS fee_type,
-       COALESCE(SUM(amount), 0) AS expected,
-       COALESCE(SUM(paid_amount), 0) AS collected
-     FROM student_fees sf WHERE 1=1${sfClause.clause}
-     GROUP BY fee_type`,
+       COALESCE(fs.fee_type, 'HOSTEL_FEE') AS fee_type,
+       COALESCE(SUM(sf.amount), 0) AS expected,
+       COALESCE(SUM(sf.paid_amount), 0) AS collected
+     FROM student_fees sf
+     LEFT JOIN fee_structures fs ON sf.fee_structure_id = fs.id
+     WHERE 1=1${sfClause.clause}
+     GROUP BY COALESCE(fs.fee_type, 'HOSTEL_FEE')`,
     sfClause.params
   );
 
   // Daily Collection Trend over date range
-  const pClause = buildHostelClause(allowedHostels, 'sf');
   const [trendRows] = await db.pool.query(
     `SELECT
        fp.payment_date,
@@ -812,9 +775,9 @@ async function getFeeReport(user, options = {}) {
        COUNT(fp.id) AS transaction_count
      FROM fee_payments fp
      JOIN student_fees sf ON fp.student_fee_id = sf.id
-     WHERE fp.payment_date BETWEEN ? AND ?${pClause.clause}
+     WHERE fp.payment_date BETWEEN ? AND ?${sfClause.clause}
      GROUP BY fp.payment_date ORDER BY fp.payment_date ASC`,
-    [date_from, date_to, ...pClause.params]
+    [date_from, date_to, ...sfClause.params]
   );
 
   return {
