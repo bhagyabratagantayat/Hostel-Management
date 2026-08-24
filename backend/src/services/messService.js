@@ -50,7 +50,7 @@ class MessService {
    */
   static async getMenus({ hostelId, date, startDate, endDate, mealType }) {
     let sql = `
-      SELECT m.*, h.name as hostel_name, u.full_name as creator_name
+      SELECT m.*, h.name as hostel_name, u.username as creator_name
       FROM mess_menus m
       LEFT JOIN hostels h ON m.hostel_id = h.id
       LEFT JOIN users u ON m.created_by = u.id

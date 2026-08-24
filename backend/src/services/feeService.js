@@ -19,7 +19,7 @@ class FeeService {
    */
   static async getFeeStructures({ hostelId, feeType, academicYear, isActive }) {
     let sql = `
-      SELECT fs.*, h.name as hostel_name, u.full_name as creator_name
+      SELECT fs.*, h.name as hostel_name, u.username as creator_name
       FROM fee_structures fs
       LEFT JOIN hostels h ON fs.hostel_id = h.id
       LEFT JOIN users u ON fs.created_by = u.id
@@ -611,7 +611,7 @@ class FeeService {
              s.full_name as student_name, s.student_code, s.room_number, s.branch, s.course, s.email as student_email, s.phone as student_phone,
              h.name as hostel_name,
              fs.name as fee_name, fs.fee_type, fs.frequency,
-             u.full_name as waived_by_name
+             u.username as waived_by_name
       FROM student_fees sf
       JOIN students s ON sf.student_id = s.id
       JOIN hostels h ON sf.hostel_id = h.id
@@ -626,7 +626,7 @@ class FeeService {
 
     // Fetch payment records
     const [payments] = await pool.query(
-      `SELECT fp.*, u.full_name as received_by_name
+      `SELECT fp.*, u.username as received_by_name
        FROM fee_payments fp
        LEFT JOIN users u ON fp.received_by = u.id
        WHERE fp.student_fee_id = ?
@@ -636,7 +636,7 @@ class FeeService {
 
     // Fetch audit history
     const [history] = await pool.query(
-      `SELECT fh.*, u.full_name as changed_by_name
+      `SELECT fh.*, u.username as changed_by_name
        FROM fee_history fh
        LEFT JOIN users u ON fh.changed_by = u.id
        WHERE fh.student_fee_id = ?
@@ -671,7 +671,7 @@ class FeeService {
              fs.name as fee_name, fs.fee_type,
              s.full_name as student_name, s.student_code, s.room_number,
              h.name as hostel_name,
-             u.full_name as received_by_name
+             u.username as received_by_name
       FROM fee_payments fp
       JOIN student_fees sf ON fp.student_fee_id = sf.id
       JOIN students s ON fp.student_id = s.id
@@ -738,7 +738,7 @@ class FeeService {
              s.full_name as student_name, s.student_code, s.room_number,
              h.name as hostel_name,
              fs.name as fee_name, fs.fee_type,
-             u.full_name as received_by_name
+             u.username as received_by_name
       FROM fee_payments fp
       JOIN students s ON fp.student_id = s.id
       JOIN hostels h ON fp.hostel_id = h.id
