@@ -18,16 +18,16 @@ router.post('/structures', requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), feeCont
 router.put('/structures/:id', requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), feeController.updateFeeStructure);
 router.patch('/structures/:id/status', requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), feeController.toggleStructureStatus);
 
-// Student Fee Assignments & List
-router.get('/', feeController.getStudentFees);
-router.get('/:id', feeController.getStudentFeeById);
-router.post('/assign', requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), feeController.assignStudentFee);
-router.patch('/:id/waive', requireRole('SUPER_ADMIN'), feeController.waiveStudentFee);
-
-// Payment Records & Receipts
+// Payment Records & Receipts (MUST be declared before /:id parameter route)
 router.get('/payments', feeController.getPayments);
 router.post('/payments', requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), feeController.recordPayment);
 router.get('/payments/:paymentId', feeController.getPaymentReceipt);
 router.get('/receipts/:paymentId', feeController.getPaymentReceipt);
+
+// Student Fee Assignments & List
+router.get('/', feeController.getStudentFees);
+router.post('/assign', requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), feeController.assignStudentFee);
+router.patch('/:id/waive', requireRole('SUPER_ADMIN'), feeController.waiveStudentFee);
+router.get('/:id', feeController.getStudentFeeById);
 
 module.exports = router;

@@ -542,7 +542,7 @@ class FeeService {
     }
 
     if (search && search.trim()) {
-      whereClause += ` AND (s.full_name LIKE ? OR s.student_code LIKE ? OR s.room_number LIKE ? OR fs.name LIKE ?)`;
+      whereClause += ` AND (s.full_name LIKE ? OR s.student_id LIKE ? OR s.roll_number LIKE ? OR fs.name LIKE ?)`;
       const term = `%${search.trim()}%`;
       params.push(term, term, term, term);
     }
@@ -560,12 +560,14 @@ class FeeService {
     const dataSql = `
       SELECT sf.*, 
              (sf.amount - sf.paid_amount) as remaining_amount,
-             s.full_name as student_name, s.student_code, s.room_number, s.branch, s.course,
+             s.full_name as student_name, s.student_id as student_code, r.room_number, s.branch, s.course,
              h.name as hostel_name,
              fs.name as fee_name, fs.fee_type, fs.frequency
       FROM student_fees sf
       JOIN students s ON sf.student_id = s.id
       JOIN hostels h ON sf.hostel_id = h.id
+      LEFT JOIN beds b ON s.bed_id = b.id
+      LEFT JOIN rooms r ON b.room_id = r.id
       LEFT JOIN fee_structures fs ON sf.fee_structure_id = fs.id
       ${whereClause}
       ORDER BY sf.due_date ASC, sf.id DESC
@@ -608,13 +610,15 @@ class FeeService {
     const sql = `
       SELECT sf.*, 
              (sf.amount - sf.paid_amount) as remaining_amount,
-             s.full_name as student_name, s.student_code, s.room_number, s.branch, s.course, s.email as student_email, s.phone as student_phone,
+             s.full_name as student_name, s.student_id as student_code, r.room_number, s.branch, s.course, s.email as student_email, s.phone as student_phone,
              h.name as hostel_name,
              fs.name as fee_name, fs.fee_type, fs.frequency,
              u.username as waived_by_name
       FROM student_fees sf
       JOIN students s ON sf.student_id = s.id
       JOIN hostels h ON sf.hostel_id = h.id
+      LEFT JOIN beds b ON s.bed_id = b.id
+      LEFT JOIN rooms r ON b.room_id = r.id
       LEFT JOIN fee_structures fs ON sf.fee_structure_id = fs.id
       LEFT JOIN users u ON sf.waived_by = u.id
       WHERE sf.id = ?
@@ -669,13 +673,15 @@ class FeeService {
       SELECT fp.*,
              sf.academic_year, sf.amount as total_fee_amount, sf.paid_amount as current_total_paid,
              fs.name as fee_name, fs.fee_type,
-             s.full_name as student_name, s.student_code, s.room_number,
+             s.full_name as student_name, s.student_id as student_code, r.room_number,
              h.name as hostel_name,
              u.username as received_by_name
       FROM fee_payments fp
       JOIN student_fees sf ON fp.student_fee_id = sf.id
       JOIN students s ON fp.student_id = s.id
       JOIN hostels h ON fp.hostel_id = h.id
+      LEFT JOIN beds b ON s.bed_id = b.id
+      LEFT JOIN rooms r ON b.room_id = r.id
       LEFT JOIN fee_structures fs ON sf.fee_structure_id = fs.id
       LEFT JOIN users u ON fp.received_by = u.id
       WHERE fp.id = ?
@@ -719,7 +725,7 @@ class FeeService {
     }
 
     if (search && search.trim()) {
-      whereClause += ` AND (s.full_name LIKE ? OR s.student_code LIKE ? OR fp.receipt_number LIKE ? OR fp.transaction_reference LIKE ?)`;
+      whereClause += ` AND (s.full_name LIKE ? OR s.student_id LIKE ? OR fp.receipt_number LIKE ? OR fp.transaction_reference LIKE ?)`;
       const term = `%${search.trim()}%`;
       params.push(term, term, term, term);
     }
@@ -735,7 +741,7 @@ class FeeService {
 
     const dataSql = `
       SELECT fp.*,
-             s.full_name as student_name, s.student_code, s.room_number,
+             s.full_name as student_name, s.student_id as student_code, r.room_number,
              h.name as hostel_name,
              fs.name as fee_name, fs.fee_type,
              u.username as received_by_name
@@ -743,6 +749,8 @@ class FeeService {
       JOIN students s ON fp.student_id = s.id
       JOIN hostels h ON fp.hostel_id = h.id
       JOIN student_fees sf ON fp.student_fee_id = sf.id
+      LEFT JOIN beds b ON s.bed_id = b.id
+      LEFT JOIN rooms r ON b.room_id = r.id
       LEFT JOIN fee_structures fs ON sf.fee_structure_id = fs.id
       LEFT JOIN users u ON fp.received_by = u.id
       ${whereClause}
