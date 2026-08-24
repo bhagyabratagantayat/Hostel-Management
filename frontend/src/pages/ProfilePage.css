@@ -89,3 +89,88 @@
 .info-val.highlight {
   color: var(--primary-color, #2563eb);
 }
+
+.profile-container .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.profile-container .form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main, #1e293b);
+  margin-bottom: 0.4rem;
+}
+
+.profile-container .form-control {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color, #cbd5e1);
+  background-color: #ffffff;
+  color: #0f172a !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-container .form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.password-checklist {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.password-checklist .checklist-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.password-checklist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.password-checklist li.met {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.role-badge, .status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.role-badge {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.status-badge.status-active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.status-inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}

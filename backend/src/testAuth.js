@@ -174,11 +174,11 @@ const runTests = async () => {
     // ----------------------------------------------------
     // Test 11: Superintendent attempting another hostel's data
     // ----------------------------------------------------
-    // Meridian Girls Hostel has id = 2. Let's verify that warden's returned list does not contain id = 2.
+    // BEC Girls Hostel 1 has id = 2. Let's verify that warden's returned list does not contain id = 2.
     const hasUnassignedHostel = hostelsWardenData.data.some(h => h.id === 2);
     assert(
       !hasUnassignedHostel,
-      'Test 11: SUPERINTENDENT must NOT receive unassigned hostels (e.g. Meridian Girls Hostel, id=2) in list response'
+      'Test 11: SUPERINTENDENT must NOT receive unassigned hostels (e.g. BEC Girls Hostel 1, id=2) in list response'
     );
 
     // ----------------------------------------------------

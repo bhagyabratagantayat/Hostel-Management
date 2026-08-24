@@ -1,4 +1,5 @@
 import React from 'react';
+import './ActivityTimeline.css';
 
 const MODULES = [
   { label: 'All Modules', value: '' },
@@ -22,29 +23,29 @@ export const ActivityFilterBar = ({ filters, onFilterChange, onReset, hostels = 
   };
 
   return (
-    <div className="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-xl p-4 mb-6 shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className="activity-filter-bar">
+      <div className="filter-grid">
         {/* Search */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">Search Description</label>
+        <div className="filter-field">
+          <label className="filter-label">Search Description</label>
           <input
             type="text"
             name="search"
             value={filters.search || ''}
             onChange={handleChange}
             placeholder="Search activities..."
-            className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="filter-input"
           />
         </div>
 
         {/* Module Filter */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">Module</label>
+        <div className="filter-field">
+          <label className="filter-label">Module</label>
           <select
             name="module"
             value={filters.module || ''}
             onChange={handleChange}
-            className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="filter-select"
           >
             {MODULES.map((m) => (
               <option key={m.value} value={m.value}>
@@ -55,13 +56,13 @@ export const ActivityFilterBar = ({ filters, onFilterChange, onReset, hostels = 
         </div>
 
         {/* Hostel Filter */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">Hostel</label>
+        <div className="filter-field">
+          <label className="filter-label">Hostel</label>
           <select
             name="hostelId"
             value={filters.hostelId || ''}
             onChange={handleChange}
-            className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="filter-select"
           >
             <option value="">All Hostels</option>
             {hostels.map((h) => (
@@ -73,34 +74,34 @@ export const ActivityFilterBar = ({ filters, onFilterChange, onReset, hostels = 
         </div>
 
         {/* Start Date */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">From Date</label>
+        <div className="filter-field">
+          <label className="filter-label">From Date</label>
           <input
             type="date"
             name="startDate"
             value={filters.startDate || ''}
             onChange={handleChange}
-            className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="filter-input"
           />
         </div>
 
         {/* End Date */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">To Date</label>
+        <div className="filter-field">
+          <label className="filter-label">To Date</label>
           <input
             type="date"
             name="endDate"
             value={filters.endDate || ''}
             onChange={handleChange}
-            className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="filter-input"
           />
         </div>
       </div>
 
-      <div className="mt-3 flex justify-end">
+      <div className="filter-actions">
         <button
           onClick={onReset}
-          className="text-xs font-semibold text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 transition-all"
+          className="btn-reset-filters"
         >
           Reset Filters
         </button>

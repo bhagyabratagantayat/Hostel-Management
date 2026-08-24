@@ -55,7 +55,7 @@ async function getStudentAssignment(userId) {
       full_name: st.full_name,
       student_code: st.student_id,
       hostel_id: 1,
-      hostel_name: 'Meridian Boys Hostel',
+      hostel_name: 'BEC Boys Hostel 1',
       room_number: '101',
       bed_number: 'A-1'
     };
@@ -69,7 +69,7 @@ async function getStudentAssignment(userId) {
     full_name: row.full_name,
     student_code: row.student_code || row.student_id,
     hostel_id: row.hostel_id || 1,
-    hostel_name: row.hostel_name || 'Meridian Boys Hostel',
+    hostel_name: row.hostel_name || 'BEC Boys Hostel 1',
     room_number: row.room_number || '101',
     bed_number: row.bed_number || 'A-1'
   };

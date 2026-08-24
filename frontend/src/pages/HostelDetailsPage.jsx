@@ -253,7 +253,8 @@ const HostelDetailsPage = () => {
 
   // Filter calculations
   const filteredRooms = rooms.filter(r => {
-    const matchesSearch = r.room_number.toLowerCase().includes(roomSearch.toLowerCase());
+    const roomNumStr = r?.room_number !== undefined && r?.room_number !== null ? String(r.room_number) : '';
+    const matchesSearch = roomNumStr.toLowerCase().includes((roomSearch || '').toLowerCase());
     const matchesFloor = roomFloorFilter ? r.floor_id === parseInt(roomFloorFilter, 10) : true;
     return matchesSearch && matchesFloor;
   });

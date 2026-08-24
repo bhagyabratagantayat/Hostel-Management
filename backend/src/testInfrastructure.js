@@ -135,7 +135,7 @@ const runTests = async () => {
     console.log('\n--- 2. FLOOR CRUD TESTS ---');
 
     // Create floor - Warden on unassigned hostel (should fail)
-    // Meridian Girls Hostel is id = 2, warden is NOT assigned.
+    // BEC Girls Hostel 1 is id = 2, warden is NOT assigned.
     const createFloorUnassigned = await fetch(`${BASE_URL}/floors`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: wardenCookie },
@@ -147,7 +147,7 @@ const runTests = async () => {
     );
 
     // Create floor - Warden on assigned hostel (should succeed)
-    // Meridian Boys Hostel is id = 1, warden IS assigned.
+    // BEC Boys Hostel 1 is id = 1, warden IS assigned.
     const uniqueFloorNum = Math.floor(Math.random() * 100) + 10;
     const createFloorWarden = await fetch(`${BASE_URL}/floors`, {
       method: 'POST',

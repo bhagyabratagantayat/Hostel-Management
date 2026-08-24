@@ -236,10 +236,16 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.9rem;
-  color: #334155;
+  color: #0f172a;
   outline: none;
-  background: #ffffff;
+  background-color: #ffffff;
   cursor: pointer;
+  font-weight: 500;
+}
+
+.filter-select option {
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 .filter-select:focus {

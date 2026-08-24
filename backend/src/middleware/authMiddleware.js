@@ -44,6 +44,13 @@ const requireAuth = async (req, res, next) => {
     }
 
     const user = users[0];
+    if (user.role === 'SUPERINTENDENT') {
+      const [shRows] = await db.pool.query(
+        `SELECT hostel_id FROM superintendent_hostels WHERE user_id = ?`,
+        [user.id]
+      );
+      user.assignedHostels = shRows.map(r => r.hostel_id);
+    }
     req.user = user;
 
     // First login password change enforcement

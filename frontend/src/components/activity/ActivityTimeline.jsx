@@ -2,19 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { getActivities, getActivityStats } from '../../api/activity';
 import { ActivityFilterBar } from './ActivityFilterBar';
 import { ActivityDetailsModal } from './ActivityDetailsModal';
+import './ActivityTimeline.css';
 
-const MODULE_COLORS = {
-  AUTHENTICATION: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  USERS: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  STUDENTS: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  HOSTELS: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  ATTENDANCE: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  NOTICES: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  COMPLAINTS: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  VISITORS: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  MESS: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-  FEES: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  ALLOCATION: 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+const getModuleBadgeClass = (module) => {
+  switch (module) {
+    case 'AUTHENTICATION': return 'badge-auth';
+    case 'USERS': return 'badge-users';
+    case 'STUDENTS': return 'badge-students';
+    case 'HOSTELS': return 'badge-hostels';
+    case 'ATTENDANCE': return 'badge-attendance';
+    case 'NOTICES': return 'badge-notices';
+    case 'COMPLAINTS': return 'badge-complaints';
+    case 'VISITORS': return 'badge-visitors';
+    case 'MESS': return 'badge-mess';
+    case 'FEES': return 'badge-fees';
+    default: return 'badge-default';
+  }
 };
 
 export const ActivityTimeline = () => {
@@ -38,15 +41,21 @@ export const ActivityTimeline = () => {
     try {
       const [actData, statsData] = await Promise.all([
         getActivities(filters),
-        getActivityStats()
+        getActivityStats().catch(() => null)
       ]);
-      setActivities(actData.activities || actData.records || []);
-      setPagination({
-        page: actData.page,
-        totalPages: actData.totalPages,
-        total: actData.total
-      });
-      setStats(statsData);
+
+      if (actData) {
+        setActivities(actData.activities || actData.records || (Array.isArray(actData) ? actData : []));
+        setPagination({
+          page: actData.page || 1,
+          totalPages: actData.totalPages || 1,
+          total: actData.total || (actData.activities ? actData.activities.length : 0)
+        });
+      }
+
+      if (statsData) {
+        setStats(statsData);
+      }
     } catch (err) {
       console.error('Error fetching activity log:', err);
     } finally {
@@ -77,41 +86,39 @@ export const ActivityTimeline = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="activity-container">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100">System Activity & Audit Center</h1>
-        <p className="text-sm text-slate-400">
+      <div className="activity-header">
+        <h1 className="activity-title">System Activity & Audit Center</h1>
+        <p className="activity-subtitle">
           Centralized operational audit trail tracking actions across all hostel management modules.
         </p>
       </div>
 
       {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl shadow-lg">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Activities</span>
-            <span className="text-2xl font-bold text-slate-100 mt-1 block">{stats.total || 0}</span>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl shadow-lg">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Last 24 Hours</span>
-            <span className="text-2xl font-bold text-indigo-400 mt-1 block">{stats.last24Hours || 0}</span>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl shadow-lg">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Top Module</span>
-            <span className="text-lg font-bold text-emerald-400 mt-1 block truncate">
-              {stats.byModule && stats.byModule[0] ? `${stats.byModule[0].module} (${stats.byModule[0].count})` : 'N/A'}
-            </span>
-          </div>
-
-          <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-xl shadow-lg">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Active Actors</span>
-            <span className="text-2xl font-bold text-amber-400 mt-1 block">{stats.uniqueActors || 0}</span>
-          </div>
+      <div className="activity-stats-grid">
+        <div className="activity-stat-card">
+          <span className="stat-label">Total Today</span>
+          <span className="stat-value">{stats?.totalToday ?? stats?.total ?? pagination.total ?? 0}</span>
         </div>
-      )}
+
+        <div className="activity-stat-card">
+          <span className="stat-label">Logins Today</span>
+          <span className="stat-value indigo">{stats?.loginsToday ?? stats?.last24Hours ?? 0}</span>
+        </div>
+
+        <div className="activity-stat-card">
+          <span className="stat-label">Student Updates</span>
+          <span className="stat-value emerald">
+            {stats?.studentChangesToday ?? stats?.uniqueActors ?? 0}
+          </span>
+        </div>
+
+        <div className="activity-stat-card">
+          <span className="stat-label">Operations Logged</span>
+          <span className="stat-value amber">{stats?.operationalToday ?? 0}</span>
+        </div>
+      </div>
 
       {/* Filter Bar */}
       <ActivityFilterBar
@@ -121,101 +128,91 @@ export const ActivityTimeline = () => {
       />
 
       {/* Activities Feed Timeline */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
-          <h2 className="text-lg font-bold text-slate-200">Activity Log Timeline</h2>
-          <span className="text-xs font-semibold text-slate-400">
+      <div className="activity-feed-card">
+        <div className="feed-header">
+          <h2 className="feed-title">Activity Log Timeline</h2>
+          <span className="feed-meta">
             Showing {activities.length} of {pagination.total} entries
           </span>
         </div>
 
         {loading ? (
-          <div className="py-12 text-center text-slate-400">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent mb-2"></div>
-            <p className="text-sm">Loading activity logs...</p>
+          <div style={{ padding: '48px 0', textAlign: 'center', color: '#64748b' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 12px' }}></div>
+            <p className="feed-meta">Loading activity logs...</p>
           </div>
         ) : activities.length === 0 ? (
-          <div className="py-12 text-center text-slate-500">
-            <p className="text-base font-semibold">No activity logs found</p>
-            <p className="text-xs mt-1">Try adjusting your filters or search terms.</p>
+          <div style={{ padding: '48px 0', textAlign: 'center', color: '#64748b' }}>
+            <p style={{ fontWeight: 700, fontSize: '15px' }}>No activity logs found</p>
+            <p style={{ fontSize: '12px', marginTop: '4px' }}>System events will appear here as users perform operations.</p>
           </div>
         ) : (
-          <div className="relative border-l-2 border-slate-800 ml-4 space-y-6">
-            {activities.map((item) => {
-              const colorClass = MODULE_COLORS[item.module] || 'bg-slate-800 text-slate-300 border-slate-700';
+          <div className="timeline-track">
+            {activities.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => setSelectedActivity(item)}
+                className="timeline-item"
+              >
+                {/* Dot */}
+                <div className="timeline-dot" />
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedActivity(item)}
-                  className="relative pl-6 group cursor-pointer"
-                >
-                  {/* Timeline dot */}
-                  <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-slate-900 border-2 border-indigo-500 group-hover:scale-125 transition-transform" />
-
-                  <div className="bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800/80 hover:border-slate-700 p-4 rounded-xl transition-all shadow-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${colorClass}`}>
-                          {item.module || 'SYSTEM'}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-300">
-                          {item.action}
-                        </span>
-                      </div>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {new Date(item.created_at).toLocaleString()}
+                <div className="timeline-card">
+                  <div className="timeline-card-header">
+                    <div className="timeline-badge-group">
+                      <span className={`module-badge ${getModuleBadgeClass(item.module)}`}>
+                        {item.module || 'SYSTEM'}
                       </span>
+                      <span className="action-title">{item.action}</span>
                     </div>
+                    <span className="timestamp-text">
+                      {new Date(item.created_at).toLocaleString()}
+                    </span>
+                  </div>
 
-                    <p className="text-sm text-slate-200 font-medium mb-2">
-                      {item.description}
-                    </p>
+                  <p className="item-description">{item.description}</p>
 
-                    <div className="flex flex-wrap justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-800/40">
-                      <div>
-                        <span>Actor: </span>
-                        <span className="font-semibold text-slate-300">
-                          {item.actor_name || 'System'}
-                        </span>
-                        {item.actor_username && (
-                          <span className="text-slate-500"> (@{item.actor_username})</span>
-                        )}
-                      </div>
-
-                      {item.hostel_name && (
-                        <div>
-                          <span>Hostel: </span>
-                          <span className="font-semibold text-slate-300">{item.hostel_name}</span>
-                        </div>
+                  <div className="item-footer">
+                    <div>
+                      <span>Actor: </span>
+                      <span className="actor-highlight">{item.actor_name || item.actor_username || 'System'}</span>
+                      {item.actor_role && (
+                        <span className="timestamp-text"> ({item.actor_role})</span>
                       )}
                     </div>
+
+                    {item.hostel_name && (
+                      <div>
+                        <span>Hostel: </span>
+                        <span className="actor-highlight">{item.hostel_name}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
         {/* Pagination Controls */}
         {pagination.totalPages > 1 && (
-          <div className="mt-8 pt-4 border-t border-slate-800 flex justify-between items-center text-xs">
+          <div className="pagination-bar">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page <= 1}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-slate-300 font-semibold transition-all"
+              className="pagination-btn"
             >
-              Previous
+              &larr; Previous
             </button>
-            <span className="text-slate-400 font-medium">
+            <span className="feed-meta">
               Page {pagination.page} of {pagination.totalPages}
             </span>
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-slate-300 font-semibold transition-all"
+              className="pagination-btn"
             >
-              Next
+              Next &rarr;
             </button>
           </div>
         )}

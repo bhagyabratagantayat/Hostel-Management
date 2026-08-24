@@ -2,11 +2,18 @@ const floorService = require('../services/floorService');
 
 const getAllFloors = async (req, res, next) => {
   try {
-    const floors = await floorService.getAllFloors(req.query, req.user);
+    const result = await floorService.getAllFloors(req.query, req.user);
+    if (result && result.pagination) {
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    }
     return res.status(200).json({
       success: true,
-      count: floors.length,
-      data: floors
+      count: result.length,
+      data: result
     });
   } catch (error) {
     next(error);

@@ -8,7 +8,7 @@ This file serves as the permanent project memory, architecture specification, an
 * **Project Name**: College Hostel Management System (CHMS)
 * **Project Purpose**: Provide a modern, mobile-first, robust web application to manage college hostel operations, room allocations, student registrations, attendance, fee details, and notices.
 * **Project Vision**: Eliminate paper-based registers, prevent room double-booking, streamline superintendent oversight, and provide students with a modern portal for profiles, leaves, and notifications.
-* **Current Development Phase**: Phase 15 — System Activity & Audit Center (Complete)
+* **Current Development Phase**: Phase 17 — Master Data Management & Data Integrity Center (Complete)
 
 ---
 
@@ -124,7 +124,7 @@ Hostel Management/
 
 1. **`roles`** — System authorization levels (`SUPER_ADMIN`, `SUPERINTENDENT`, `STUDENT`)
 2. **`users`** — Main authentication table (id, role_id, username, email, password_hash, status)
-3. **`hostels`** — Six hostels (Meridian Boys/Girls, BEC Boys/Kara, Barmunda Boys/Girls)
+3. **`hostels`** — Six hostels (BEC Boys 1/Girls 1, BEC Boys/Kara, Barmunda Boys/Girls)
 4. **`floors`** — Floors inside hostels (hostel_id FK, floor_name, floor_number, status)
 5. **`rooms`** — Rooms inside floors (hostel_id FK, floor_id FK, room_number, capacity, status)
 6. **`beds`** — Individual beds (room_id FK, bed_number, status: AVAILABLE/OCCUPIED/MAINTENANCE)
@@ -212,7 +212,7 @@ Hostel Management/
     "hostels": [
       {
         "hostelId": 1,
-        "name": "Meridian Boys Hostel",
+        "name": "BEC Boys Hostel 1",
         "totalStudents": 20,
         "present": 18,
         "absent": 2,
@@ -447,9 +447,27 @@ Precision: 2 decimal places
     * `GET /api/reports/mess`: Meal participation rates by meal type (Breakfast, Lunch, Snacks, Dinner).
     * `GET /api/reports/fees`: Expected, collected, pending, overdue, waived totals, collection rates, and daily revenue trends.
   * **Frontend UI Components**:
-    * Built `ReportFilterBar.jsx`, `ReportStatCard.jsx`, `ReportChart.jsx` (SVG bar charts and trendlines), and `ReportsPage.jsx` (`.css`).
-    * Mobile-first responsive layout with category tabs and card fallbacks.
-  * **Verification**: Authored `backend/src/test_phase12_reports.js`. All 19/19 audit tests passed. Frontend build (`npm run build`) succeeded with 0 errors.
+* **2026-08-23 (Phase 16) — Hostel Operations, Maintenance & Daily Task Management**
+  * **Objective**: Designed and implemented the complete daily hostel operations, maintenance ticket management, and room inspection tracking system with state-machine workflow enforcement and security audit logging.
+  * **Database Architecture**: Created `maintenance_requests`, `maintenance_updates`, and `room_inspections` tables with index optimization on `(hostel_id, status)`, `(student_id, status)`, and `(room_id, inspection_date)`.
+  * **Workflow & State Machine**: Implemented status state machine (`OPEN` → `ASSIGNED` / `IN_PROGRESS` → `RESOLVED` → `CLOSED`, with student `REOPENED` workflow). Guarded priority elevation (`LOW`/`MEDIUM`/`HIGH` for students; `URGENT` restricted to staff or staff elevation).
+  * **Location Validation & IDOR Protection**: Enforced strict location hierarchy checking (`hostel` → `floor` → `room` → `bed`) and role scoping (students see own requests/allocations; superintendents see assigned hostels).
+  * **Frontend UI Components**: Built `MaintenancePage.jsx`, `InspectionsPage.jsx`, `OperationsDashboardPage.jsx`, `MaintenanceFormModal.jsx`, `MaintenanceDetailsModal.jsx`, `InspectionFormModal.jsx`, and `InspectionHistoryModal.jsx`. Updated `Sidebar.jsx` and `App.jsx` with operational route management.
+  * **Activity Log Integration**: Integrated all maintenance creation, status changes, assignments, priority shifts, and room inspection events into Phase 15 `activity_log` under module `OPERATIONS`.
+  * **Verification**: Authored `backend/src/scripts/test_phase16_operations.js`. All 24/24 automated operational audit tests passed successfully.
+  * **Status**: Complete.
+
+* **2026-08-23 (Phase 17) — Master Data Management & Data Integrity Center**
+  * **Objective**: Centralized master data administration for hostels, floors, rooms, beds, and academic structures with automated data integrity diagnostics and controlled safe repairs.
+  * **Safety & Data Consistency**: Enforced relational integrity guards preventing deactivation or deletion of entities with active dependencies (occupied beds, active allocations, open maintenance).
+  * **Diagnostic Center**: Implemented `integrityService.js` supporting diagnostic scanning across 15+ integrity rules and safe repair endpoints.
+  * **Verification**: Authored `backend/src/scripts/test_phase17_master_data.js`. All 15/15 automated unit, safety guard, and integrity diagnostic tests passed successfully (100% pass rate).
+  * **Status**: Complete.
+
+* **2026-08-23 (Phase 15) — System Activity & Audit Center**
+  * **Objective**: Built a centralized operational activity and audit logging system (`activity_log`) recording action, module, entityType, actor, hostel, and sanitized metadata.
+  * **Security & Sanitization**: Stripped secrets/tokens and masked sensitive identification fields.
+  * **Verification**: Authored `backend/src/scripts/test_phase15_activity.js`. All audit tests passed successfully.
   * **Status**: Complete.
 
 * **2026-08-23 (Phase 11) — Hostel Fees & Payment Management System**

@@ -23,6 +23,15 @@ import UserManagementPage from './pages/UserManagementPage';
 import SecurityAuditPage from './pages/SecurityAuditPage';
 import ProfilePage from './pages/ProfilePage';
 import ActivityPage from './pages/ActivityPage';
+import MaintenancePage from './pages/MaintenancePage';
+import InspectionsPage from './pages/InspectionsPage';
+import OperationsDashboardPage from './pages/OperationsDashboardPage';
+import MasterOverviewPage from './pages/MasterOverviewPage';
+import MasterHostelsPage from './pages/MasterHostelsPage';
+import MasterFloorsPage from './pages/MasterFloorsPage';
+import MasterRoomsPage from './pages/MasterRoomsPage';
+import MasterBedsPage from './pages/MasterBedsPage';
+import DataIntegrityPage from './pages/DataIntegrityPage';
 import Loading from './components/Loading';
 
 /**
@@ -102,6 +111,15 @@ function App() {
                     <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
                     <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="activity"            element={<ActivityPage />} />
+                    <Route path="operations"          element={<OperationsDashboardPage role="SUPER_ADMIN" />} />
+                    <Route path="maintenance"         element={<MaintenancePage role="SUPER_ADMIN" />} />
+                    <Route path="inspections"         element={<InspectionsPage role="SUPER_ADMIN" />} />
+                    <Route path="master"              element={<MasterOverviewPage />} />
+                    <Route path="master/hostels"      element={<MasterHostelsPage />} />
+                    <Route path="master/floors"       element={<MasterFloorsPage />} />
+                    <Route path="master/rooms"        element={<MasterRoomsPage />} />
+                    <Route path="master/beds"         element={<MasterBedsPage />} />
+                    <Route path="data-integrity"      element={<DataIntegrityPage />} />
                     <Route path="*"                   element={<Navigate to="/admin/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -130,6 +148,9 @@ function App() {
                     <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
                     <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="activity"            element={<ActivityPage />} />
+                    <Route path="operations"          element={<OperationsDashboardPage role="SUPERINTENDENT" />} />
+                    <Route path="maintenance"         element={<MaintenancePage role="SUPERINTENDENT" />} />
+                    <Route path="inspections"         element={<InspectionsPage role="SUPERINTENDENT" />} />
                     <Route path="*"                   element={<Navigate to="/superintendent/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
@@ -152,6 +173,7 @@ function App() {
                     <Route path="visitors"      element={<VisitorsPage />} />
                     <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
                     <Route path="fees"          element={<FeeManagementPage />} />
+                    <Route path="maintenance"   element={<MaintenancePage role="STUDENT" />} />
                     <Route path="profile"       element={<Navigate to="/profile" replace />} />
                     <Route path="attendance"    element={<RoutePlaceholder title="My Attendance" />} />
                     <Route path="*"             element={<Navigate to="/student/dashboard" replace />} />

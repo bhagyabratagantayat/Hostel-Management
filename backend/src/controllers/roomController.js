@@ -2,11 +2,18 @@ const roomService = require('../services/roomService');
 
 const getAllRooms = async (req, res, next) => {
   try {
-    const rooms = await roomService.getAllRooms(req.query, req.user);
+    const result = await roomService.getAllRooms(req.query, req.user);
+    if (result && result.pagination) {
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    }
     return res.status(200).json({
       success: true,
-      count: rooms.length,
-      data: rooms
+      count: result.length,
+      data: result
     });
   } catch (error) {
     next(error);

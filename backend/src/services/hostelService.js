@@ -1,11 +1,18 @@
 const db = require('../config/db');
 const authorization = require('../utils/authorization');
+const masterService = require('./masterService');
+const activityService = require('./activityService');
 
 /**
- * Retrieves all hostels based on user's authorization.
+ * Retrieves all hostels based on user's authorization, pagination, and search.
  */
-const getAllHostels = async (user) => {
+const getAllHostels = async (filters, user) => {
+  const { page = 1, limit = 20, search, status } = filters || {};
   const { id: userId, role } = user;
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  const offset = (pageNum - 1) * limitNum;
 
   const statsFields = `
     (SELECT COUNT(*) FROM floors f WHERE f.hostel_id = h.id) as total_floors,
@@ -16,43 +23,61 @@ const getAllHostels = async (user) => {
     (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id AND b.status = 'MAINTENANCE') as maintenance_beds
   `;
 
-  let query = '';
+  let whereClauses = [];
   let queryParams = [];
 
   if (role === 'SUPER_ADMIN') {
-    // Super Admins see all hostels with counts
-    query = `SELECT h.id, h.name, h.code, h.gender, h.location, h.status, ${statsFields} FROM hostels h ORDER BY h.id ASC`;
+    // All hostels
   } else if (role === 'SUPERINTENDENT') {
-    // Superintendents see only assigned hostels
-    query = `
-      SELECT h.id, h.name, h.code, h.gender, h.location, h.status, ${statsFields} 
-      FROM hostels h
-      JOIN superintendent_hostels sh ON h.id = sh.hostel_id
-      WHERE sh.user_id = ?
-      ORDER BY h.id ASC
-    `;
-    queryParams = [userId];
+    const assigned = user.assignedHostels || [];
+    if (assigned.length === 0) return { data: [], pagination: { page: pageNum, limit: limitNum, totalPages: 0, totalItems: 0 } };
+    whereClauses.push('h.id IN (?)');
+    queryParams.push(assigned);
   } else if (role === 'STUDENT') {
-    // Students see only their assigned hostel
-    query = `
-      SELECT h.id, h.name, h.code, h.gender, h.location, h.status, ${statsFields} 
-      FROM hostels h
-      JOIN rooms r ON h.id = r.hostel_id
-      JOIN beds b ON r.id = b.room_id
-      JOIN students s ON b.id = s.bed_id
-      WHERE s.user_id = ? AND h.status = "ACTIVE"
-    `;
-    queryParams = [userId];
+    whereClauses.push('h.id IN (SELECT r.hostel_id FROM rooms r JOIN beds b ON r.id = b.room_id JOIN students s ON b.id = s.bed_id WHERE s.user_id = ?)');
+    queryParams.push(userId);
   } else {
     throw new Error('Forbidden: Unknown user role.');
   }
 
-  const [rows] = await db.pool.query(query, queryParams);
-  return rows;
+  if (status) {
+    whereClauses.push('h.status = ?');
+    queryParams.push(status);
+  }
+
+  if (search && search.trim()) {
+    whereClauses.push('(h.name LIKE ? OR h.code LIKE ? OR h.location LIKE ?)');
+    const searchTerm = `%${search.trim()}%`;
+    queryParams.push(searchTerm, searchTerm, searchTerm);
+  }
+
+  const whereSql = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+
+  const [countRows] = await db.pool.query(
+    `SELECT COUNT(*) as total FROM hostels h ${whereSql}`,
+    queryParams
+  );
+  const totalItems = countRows[0]?.total || 0;
+  const totalPages = Math.ceil(totalItems / limitNum);
+
+  const query = `SELECT h.id, h.name, h.code, h.gender, h.location, h.status, ${statsFields} 
+                 FROM hostels h ${whereSql} ORDER BY h.id ASC LIMIT ? OFFSET ?`;
+  
+  const [rows] = await db.pool.query(query, [...queryParams, limitNum, offset]);
+
+  return {
+    data: rows,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      totalPages,
+      totalItems
+    }
+  };
 };
 
 /**
- * Retrieves a single hostel by ID, checking user permissions.
+ * Retrieves a single hostel by ID.
  */
 const getHostelById = async (hostelId, user) => {
   const hasAccess = await authorization.hasHostelAccess(user, hostelId);
@@ -77,10 +102,15 @@ const getHostelById = async (hostelId, user) => {
 /**
  * Creates a new hostel (Super Admin only).
  */
-const createHostel = async (hostelData) => {
-  const { name, code, gender, location, status } = hostelData;
+const createHostel = async (hostelData, user) => {
+  masterService.assertSuperAdmin(user);
 
-  // Validation
+  let { name, code, gender, type, location, status = 'ACTIVE' } = hostelData;
+
+  if (!gender && type) {
+    gender = type === 'BOYS' ? 'MALE' : type === 'GIRLS' ? 'FEMALE' : 'COED';
+  }
+
   if (!name || !name.trim()) {
     const error = new Error('Hostel name is required.');
     error.status = 400;
@@ -102,17 +132,16 @@ const createHostel = async (hostelData) => {
     throw error;
   }
 
-  // Check unique constraints
   const [existingName] = await db.pool.query('SELECT id FROM hostels WHERE name = ?', [name.trim()]);
   if (existingName.length > 0) {
-    const error = new Error('Hostel name already exists.');
+    const error = new Error(`Hostel name "${name.trim()}" already exists.`);
     error.status = 400;
     throw error;
   }
 
   const [existingCode] = await db.pool.query('SELECT id FROM hostels WHERE code = ?', [code.trim()]);
   if (existingCode.length > 0) {
-    const error = new Error('Hostel code already exists.');
+    const error = new Error(`Hostel code "${code.trim()}" already exists.`);
     error.status = 400;
     throw error;
   }
@@ -122,16 +151,40 @@ const createHostel = async (hostelData) => {
     [name.trim(), code.trim(), gender, location || '', status]
   );
 
-  return { id: result.insertId, name, code, gender, location, status };
+  const createdHostel = { id: result.insertId, name: name.trim(), code: code.trim(), gender, location: location || '', status };
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action: 'HOSTEL_CREATED',
+    module: 'MASTER_DATA',
+    entityType: 'HOSTEL',
+    entityId: result.insertId,
+    hostelId: result.insertId,
+    description: `Created hostel "${name.trim()}" (${code.trim()})`,
+    metadata: createdHostel
+  });
+
+  return createdHostel;
 };
 
 /**
  * Updates an existing hostel (Super Admin only).
  */
-const updateHostel = async (hostelId, hostelData) => {
-  const { name, code, gender, location, status } = hostelData;
+const updateHostel = async (hostelId, hostelData, user) => {
+  masterService.assertSuperAdmin(user);
 
-  // Validation
+  let { name, code, gender, type, location, status } = hostelData;
+
+  const current = await getHostelById(hostelId, user);
+
+  if (!gender && type) {
+    gender = type === 'BOYS' ? 'MALE' : type === 'GIRLS' ? 'FEMALE' : 'COED';
+  }
+
+  if (status === 'INACTIVE' && current.status === 'ACTIVE') {
+    await masterService.validateHostelDeactivation(hostelId);
+  }
+
   if (!name || !name.trim()) {
     const error = new Error('Hostel name is required.');
     error.status = 400;
@@ -153,13 +206,12 @@ const updateHostel = async (hostelId, hostelData) => {
     throw error;
   }
 
-  // Check unique constraints excluding current ID
   const [existingName] = await db.pool.query(
     'SELECT id FROM hostels WHERE name = ? AND id != ?',
     [name.trim(), hostelId]
   );
   if (existingName.length > 0) {
-    const error = new Error('Hostel name already exists.');
+    const error = new Error(`Hostel name "${name.trim()}" already exists.`);
     error.status = 400;
     throw error;
   }
@@ -169,7 +221,7 @@ const updateHostel = async (hostelId, hostelData) => {
     [code.trim(), hostelId]
   );
   if (existingCode.length > 0) {
-    const error = new Error('Hostel code already exists.');
+    const error = new Error(`Hostel code "${code.trim()}" already exists.`);
     error.status = 400;
     throw error;
   }
@@ -185,25 +237,33 @@ const updateHostel = async (hostelId, hostelData) => {
     throw error;
   }
 
-  return { id: hostelId, name, code, gender, location, status };
+  const action = status === 'INACTIVE' ? 'HOSTEL_DEACTIVATED' : (current.status === 'INACTIVE' && status === 'ACTIVE' ? 'HOSTEL_ACTIVATED' : 'HOSTEL_UPDATED');
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action,
+    module: 'MASTER_DATA',
+    entityType: 'HOSTEL',
+    entityId: hostelId,
+    hostelId: hostelId,
+    description: `Updated hostel "${name.trim()}" status to ${status}`,
+    metadata: { id: hostelId, name: name.trim(), code: code.trim(), status }
+  });
+
+  return { id: hostelId, name: name.trim(), code: code.trim(), gender, location, status };
 };
 
 /**
  * Safely deletes a hostel (Super Admin only).
  */
-const deleteHostel = async (hostelId) => {
-  // Check if hostel contains floors
+const deleteHostel = async (hostelId, user) => {
+  masterService.assertSuperAdmin(user);
+
+  await masterService.validateHostelDeactivation(hostelId);
+
   const [floors] = await db.pool.query('SELECT id FROM floors WHERE hostel_id = ? LIMIT 1', [hostelId]);
   if (floors.length > 0) {
-    const error = new Error('Cannot delete hostel: It has active floors configured. Deactivate the hostel or remove dependent floors first.');
-    error.status = 400;
-    throw error;
-  }
-
-  // Check if hostel contains rooms
-  const [rooms] = await db.pool.query('SELECT id FROM rooms WHERE hostel_id = ? LIMIT 1', [hostelId]);
-  if (rooms.length > 0) {
-    const error = new Error('Cannot delete hostel: It has active rooms configured. Remove dependent rooms first.');
+    const error = new Error('Cannot delete hostel: It has active floors configured. Remove dependent floors first.');
     error.status = 400;
     throw error;
   }
@@ -268,3 +328,4 @@ module.exports = {
   deleteHostel,
   getHostelSummary
 };
+

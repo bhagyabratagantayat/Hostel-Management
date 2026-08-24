@@ -5,11 +5,18 @@ const hostelService = require('../services/hostelService');
  */
 const getAllHostels = async (req, res, next) => {
   try {
-    const hostels = await hostelService.getAllHostels(req.user);
+    const result = await hostelService.getAllHostels(req.query, req.user);
+    if (result && result.pagination) {
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    }
     return res.status(200).json({
       success: true,
-      count: hostels.length,
-      data: hostels
+      count: result.length,
+      data: result
     });
   } catch (error) {
     next(error);
@@ -37,14 +44,7 @@ const getHostelById = async (req, res, next) => {
  */
 const createHostel = async (req, res, next) => {
   try {
-    if (req.user.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Forbidden: Only Super Admins can create hostels.'
-      });
-    }
-
-    const hostel = await hostelService.createHostel(req.body);
+    const hostel = await hostelService.createHostel(req.body, req.user);
     return res.status(201).json({
       success: true,
       data: hostel
@@ -59,15 +59,8 @@ const createHostel = async (req, res, next) => {
  */
 const updateHostel = async (req, res, next) => {
   try {
-    if (req.user.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Forbidden: Only Super Admins can update hostels.'
-      });
-    }
-
     const { id } = req.params;
-    const hostel = await hostelService.updateHostel(id, req.body);
+    const hostel = await hostelService.updateHostel(id, req.body, req.user);
     return res.status(200).json({
       success: true,
       data: hostel
@@ -82,15 +75,8 @@ const updateHostel = async (req, res, next) => {
  */
 const deleteHostel = async (req, res, next) => {
   try {
-    if (req.user.role !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Forbidden: Only Super Admins can delete hostels.'
-      });
-    }
-
     const { id } = req.params;
-    await hostelService.deleteHostel(id);
+    await hostelService.deleteHostel(id, req.user);
     return res.status(200).json({
       success: true,
       message: 'Hostel deleted successfully.'
@@ -99,6 +85,7 @@ const deleteHostel = async (req, res, next) => {
     next(error);
   }
 };
+
 
 /**
  * Retrieves summary statistics for a hostel.

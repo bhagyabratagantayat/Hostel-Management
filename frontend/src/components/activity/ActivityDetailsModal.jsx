@@ -1,64 +1,72 @@
 import React from 'react';
+import './ActivityTimeline.css';
 
 export const ActivityDetailsModal = ({ activity, onClose }) => {
   if (!activity) return null;
 
+  const getModuleBadgeClass = (module) => {
+    switch (module) {
+      case 'AUTHENTICATION': return 'badge-auth';
+      case 'USERS': return 'badge-users';
+      case 'STUDENTS': return 'badge-students';
+      case 'HOSTELS': return 'badge-hostels';
+      case 'ATTENDANCE': return 'badge-attendance';
+      case 'NOTICES': return 'badge-notices';
+      case 'COMPLAINTS': return 'badge-complaints';
+      case 'VISITORS': return 'badge-visitors';
+      case 'MESS': return 'badge-mess';
+      case 'FEES': return 'badge-fees';
+      default: return 'badge-default';
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl overflow-hidden text-slate-200">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content-card" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex justify-between items-start pb-4 border-b border-slate-800">
+        <div className="modal-header">
           <div>
-            <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-2">
+            <span className={`module-badge ${getModuleBadgeClass(activity.module)}`}>
               {activity.module || 'SYSTEM'}
             </span>
-            <h3 className="text-lg font-bold text-slate-100">{activity.action}</h3>
+            <h3 className="action-title" style={{ fontSize: '18px', marginTop: '6px' }}>
+              {activity.action}
+            </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-xl font-bold p-1 rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            &times;
-          </button>
+          <button onClick={onClose} className="modal-close-btn">&times;</button>
         </div>
 
         {/* Details Grid */}
-        <div className="py-4 space-y-4 text-sm max-h-[60vh] overflow-y-auto custom-scrollbar">
-          <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800/80">
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Description</h4>
-            <p className="text-slate-200 font-medium">{activity.description || 'No description available'}</p>
+        <div className="modal-body">
+          <div className="detail-box">
+            <h4 className="detail-box-label">Description</h4>
+            <p className="detail-box-value">{activity.description || 'No description available'}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800/80">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Actor</span>
-              <p className="text-slate-200 font-semibold mt-1">
-                {activity.actor_name || 'System / Anonymous'}
-              </p>
+          <div className="grid-2">
+            <div className="detail-box">
+              <span className="detail-box-label">Actor</span>
+              <p className="detail-box-value">{activity.actor_name || 'System / Anonymous'}</p>
               {activity.actor_username && (
-                <p className="text-xs text-slate-400">@{activity.actor_username} ({activity.actor_role})</p>
+                <span className="timestamp-text">@{activity.actor_username} ({activity.actor_role})</span>
               )}
             </div>
 
-            <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800/80">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Timestamp</span>
-              <p className="text-slate-200 font-semibold mt-1">
-                {new Date(activity.created_at).toLocaleString()}
-              </p>
+            <div className="detail-box">
+              <span className="detail-box-label">Timestamp</span>
+              <p className="detail-box-value">{new Date(activity.created_at).toLocaleString()}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800/80">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Hostel Context</span>
-              <p className="text-slate-200 font-semibold mt-1">
-                {activity.hostel_name || 'Global / N/A'}
-              </p>
+          <div className="grid-2">
+            <div className="detail-box">
+              <span className="detail-box-label">Hostel Context</span>
+              <p className="detail-box-value">{activity.hostel_name || 'Global / N/A'}</p>
             </div>
 
-            <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800/80">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Target Entity</span>
-              <p className="text-slate-200 font-semibold mt-1">
+            <div className="detail-box">
+              <span className="detail-box-label">Target Entity</span>
+              <p className="detail-box-value">
                 {activity.entity_type ? `${activity.entity_type} #${activity.entity_id || ''}` : 'N/A'}
               </p>
             </div>
@@ -66,27 +74,24 @@ export const ActivityDetailsModal = ({ activity, onClose }) => {
 
           {/* Metadata JSON display */}
           {activity.metadata && (
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
-              <span className="text-slate-400 font-sans block text-xs font-semibold mb-2">Event Metadata</span>
-              <pre>{JSON.stringify(activity.metadata, null, 2)}</pre>
+            <div className="detail-box">
+              <span className="detail-box-label" style={{ marginBottom: '8px', display: 'block' }}>Event Metadata</span>
+              <pre className="json-code-block">{JSON.stringify(activity.metadata, null, 2)}</pre>
             </div>
           )}
 
           {/* Technical Info */}
-          <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-800/60">
+          <div className="item-footer">
             <span>IP: {activity.ip_address || 'Internal'}</span>
-            <span className="truncate max-w-[250px]" title={activity.user_agent}>
+            <span className="timestamp-text" title={activity.user_agent}>
               UA: {activity.user_agent || 'Server Process'}
             </span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="pt-4 border-t border-slate-800 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm rounded-xl transition-all"
-          >
+        <div className="modal-footer">
+          <button onClick={onClose} className="btn-reset-filters">
             Close
           </button>
         </div>

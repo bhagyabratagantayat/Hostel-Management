@@ -130,8 +130,8 @@ const HostelsPage = () => {
   };
 
   const filteredHostels = hostels.filter(h => 
-    h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    h.code.toLowerCase().includes(searchQuery.toLowerCase())
+    (h?.name || '').toLowerCase().includes((searchQuery || '').toLowerCase()) ||
+    (h?.code || '').toLowerCase().includes((searchQuery || '').toLowerCase())
   );
 
   if (loading) return <Loading message="Loading hostels directory..." />;

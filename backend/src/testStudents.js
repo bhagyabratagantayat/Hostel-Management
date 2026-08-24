@@ -63,7 +63,7 @@ const runTests = async () => {
     // ----------------------------------------------------
     // Create Temporary Infrastructure for Testing
     // ----------------------------------------------------
-    // Hostel 1 (Meridian Boys - assigned to Warden)
+    // Hostel 1 (BEC Boys Hostel 1 - assigned to Warden)
     // Create floor
     const f1Res = await fetch(`${BASE_URL}/floors`, {
       method: 'POST',
@@ -126,7 +126,7 @@ const runTests = async () => {
       body: JSON.stringify({ hostel_id: 1, floor_id: floorId1, room_number: 'R999', capacity: 3, status: 'ACTIVE' })
     });
 
-    // Hostel 2 (Meridian Girls - NOT assigned to Warden)
+    // Hostel 2 (BEC Girls Hostel 1 - NOT assigned to Warden)
     const f2Res = await fetch(`${BASE_URL}/floors`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: superadminCookie },

@@ -26,7 +26,7 @@ const Navbar = ({ onToggleSidebar }) => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
         </button>
-        <span className="navbar-logo-text">Meridian Portal</span>
+        <span className="navbar-logo-text">BEC Portal</span>
       </div>
       
       <div className="navbar-right">

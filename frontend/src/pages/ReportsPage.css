@@ -84,6 +84,11 @@
   transition: border-color 0.2s ease;
 }
 
+.filter-select option {
+  background-color: #0F172A;
+  color: #F8FAFC;
+}
+
 .filter-select:focus,
 .filter-input:focus {
   border-color: var(--color-primary, #6366F1);

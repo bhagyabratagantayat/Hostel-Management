@@ -2,11 +2,18 @@ const bedService = require('../services/bedService');
 
 const getAllBeds = async (req, res, next) => {
   try {
-    const beds = await bedService.getAllBeds(req.query, req.user);
+    const result = await bedService.getAllBeds(req.query, req.user);
+    if (result && result.pagination) {
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    }
     return res.status(200).json({
       success: true,
-      count: beds.length,
-      data: beds
+      count: result.length,
+      data: result
     });
   } catch (error) {
     next(error);

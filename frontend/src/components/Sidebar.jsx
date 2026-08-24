@@ -29,6 +29,11 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'SUPER_ADMIN':
         return [
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
+          { label: 'Master Data Hub', icon: '🏛️', path: '/admin/master' },
+          { label: 'Data Integrity Center', icon: '🛡️', path: '/admin/data-integrity' },
+          { label: 'Operations Hub', icon: '⚙️', path: '/admin/operations' },
+          { label: 'Maintenance Requests', icon: '🔧', path: '/admin/maintenance' },
+          { label: 'Room Inspections', icon: '🔍', path: '/admin/inspections' },
           { label: 'User Directory', icon: '👥', path: '/admin/users' },
           { label: 'Activity Log', icon: '📋', path: '/admin/activity' },
           { label: 'Security Audit', icon: '🛡️', path: '/admin/security-audit' },
@@ -47,6 +52,9 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'SUPERINTENDENT':
         return [
           { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
+          { label: 'Operations Hub', icon: '⚙️', path: '/superintendent/operations' },
+          { label: 'Maintenance Requests', icon: '🔧', path: '/superintendent/maintenance' },
+          { label: 'Room Inspections', icon: '🔍', path: '/superintendent/inspections' },
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
           { label: 'Students', icon: '🎓', path: '/superintendent/students' },
           { label: 'Allocations & Transfers', icon: '🛏️', path: '/superintendent/allocations' },
@@ -64,6 +72,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: '📊', path: '/student/dashboard' },
           { label: 'My Accommodation', icon: '🛏️', path: '/student/accommodation' },
+          { label: 'My Maintenance', icon: '🔧', path: '/student/maintenance' },
           { label: 'Fees & Dues', icon: '💳', path: '/student/fees' },
           { label: 'Mess & Food', icon: '🍲', path: '/student/mess' },
           { label: 'Visitors', icon: '👥', path: '/student/visitors' },

@@ -36,10 +36,10 @@ const ProfilePage = () => {
     setError('');
     try {
       const res = await api.getMe();
-      const userData = res.data.user;
+      const userData = res.user || res.data?.user || res.data;
       setProfile(userData);
-      setEmailVal(userData.email || '');
-      if (userData.student_profile) {
+      setEmailVal(userData?.email || '');
+      if (userData?.student_profile) {
         setPhoneVal(userData.student_profile.phone_number || '');
       }
     } catch (err) {

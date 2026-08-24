@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getActivities } from '../../api/activity';
+import '../activity/ActivityTimeline.css';
 
 export const RecentActivity = ({ limit = 5, onNavigateAll }) => {
   const [activities, setActivities] = useState([]);
@@ -20,16 +21,17 @@ export const RecentActivity = ({ limit = 5, onNavigateAll }) => {
   }, [limit]);
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-xl">
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
-        <h3 className="text-base font-bold text-slate-200 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+    <div className="activity-feed-card" style={{ padding: '20px' }}>
+      <div className="feed-header" style={{ marginBottom: '14px', paddingBottom: '10px' }}>
+        <h3 className="feed-title" style={{ fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#6366f1', display: 'inline-block' }}></span>
           Recent System Activity
         </h3>
         {onNavigateAll && (
           <button
             onClick={onNavigateAll}
-            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="btn-reset-filters"
+            style={{ padding: '4px 10px', fontSize: '11px', color: '#6366f1', borderColor: '#818cf8' }}
           >
             View All &rarr;
           </button>
@@ -37,25 +39,30 @@ export const RecentActivity = ({ limit = 5, onNavigateAll }) => {
       </div>
 
       {loading ? (
-        <div className="py-6 text-center text-xs text-slate-500">Loading activities...</div>
+        <div style={{ padding: '24px 0', textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
+          Loading activities...
+        </div>
       ) : activities.length === 0 ? (
-        <div className="py-6 text-center text-xs text-slate-500">No recent activity recorded</div>
+        <div style={{ padding: '24px 0', textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
+          No recent activity recorded
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {activities.map((item) => (
             <div
               key={item.id}
-              className="p-3 bg-slate-800/40 rounded-xl border border-slate-800/60 hover:bg-slate-800/80 transition-all text-xs"
+              className="timeline-card"
+              style={{ padding: '10px 12px', fontSize: '12px' }}
             >
-              <div className="flex justify-between items-start gap-2 mb-1">
-                <span className="font-semibold text-slate-200 truncate">{item.description}</span>
-                <span className="text-[10px] text-slate-500 shrink-0">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
+                <span className="action-title" style={{ fontSize: '12px' }}>{item.description}</span>
+                <span className="timestamp-text" style={{ fontSize: '10px' }}>
                   {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-[10px] text-slate-400">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#64748b' }}>
                 <span>By {item.actor_name || 'System'}</span>
-                <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono">
+                <span className="module-badge badge-default" style={{ fontSize: '9px', padding: '1px 6px' }}>
                   {item.module}
                 </span>
               </div>

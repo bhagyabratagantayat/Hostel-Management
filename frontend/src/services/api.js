@@ -131,6 +131,13 @@ api.transferStudent = (id, data) => api.post(`/allocations/${id}/transfer`, data
 api.checkoutStudent = (id, data) => api.post(`/allocations/${id}/checkout`, data);
 api.getAllocationConsistency = () => api.get('/allocations/consistency');
 
+// Student Management API methods
+api.getStudents = (params = {}) => api.get('/students', { params });
+api.getStudentById = (id) => api.get(`/students/${id}`);
+api.createStudent = (data) => api.post('/students', data);
+api.updateStudent = (id, data) => api.put(`/students/${id}`, data);
+api.deactivateStudent = (id, status) => api.patch(`/students/${id}/deactivate`, { status });
+
 // User Management & Security Hardening API methods
 api.getUsers = (params = {}) => api.get('/users', { params });
 api.getUserById = (id) => api.get(`/users/${id}`);
@@ -139,9 +146,37 @@ api.updateUserStatus = (id, status) => api.patch(`/users/${id}/status`, { status
 api.updateUserRole = (id, role) => api.patch(`/users/${id}/role`, { role });
 api.adminResetPassword = (id, new_password) => api.post(`/users/${id}/reset-password`, { new_password });
 api.updateSuperintendentHostels = (id, hostel_ids) => api.put(`/users/${id}/hostels`, { hostel_ids });
+api.getMe = () => api.get('/auth/me');
 api.changePassword = (data) => api.post('/auth/change-password', data);
 api.updateSelfProfile = (data) => api.patch('/profile', data);
 api.getAuditLogs = (params = {}) => api.get('/security/audit', { params });
+
+// Phase 17 — Master Data & Data Integrity Center API methods
+api.getMasterSummary = () => api.get('/master/summary');
+api.getDataIntegrity = (params = {}) => api.get('/master/data-integrity', { params });
+api.getDataIntegritySummary = () => api.get('/data-integrity/summary');
+api.repairDataIntegrity = (issueType, targetId, repairAction) => api.post('/master/data-integrity/repair', { issueType, targetId, repairAction });
+
+// Master Data Infrastructure CRUD methods
+api.getHostels = (params = {}) => api.get('/hostels', { params });
+api.createHostel = (data) => api.post('/hostels', data);
+api.updateHostel = (id, data) => api.put(`/hostels/${id}`, data);
+api.deleteHostel = (id) => api.delete(`/hostels/${id}`);
+
+api.getFloors = (params = {}) => api.get('/floors', { params });
+api.createFloor = (data) => api.post('/floors', data);
+api.updateFloor = (id, data) => api.put(`/floors/${id}`, data);
+api.deleteFloor = (id) => api.delete(`/floors/${id}`);
+
+api.getRooms = (params = {}) => api.get('/rooms', { params });
+api.createRoom = (data) => api.post('/rooms', data);
+api.updateRoom = (id, data) => api.put(`/rooms/${id}`, data);
+api.deleteRoom = (id) => api.delete(`/rooms/${id}`);
+
+api.getBeds = (params = {}) => api.get('/beds', { params });
+api.createBed = (data) => api.post('/beds', data);
+api.updateBed = (id, data) => api.put(`/beds/${id}`, data);
+api.deleteBed = (id) => api.delete(`/beds/${id}`);
 
 export default api;
 

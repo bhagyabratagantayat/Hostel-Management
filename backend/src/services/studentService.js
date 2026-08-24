@@ -99,7 +99,7 @@ const getAllStudents = async (filters = {}, user) => {
       return { students: [], currentPage: pageNum, totalPages: 0, totalStudents: 0, limit: limitNum };
     }
 
-    if (hostel_id) {
+    if (hostel_id && hostel_id !== 'all') {
       if (!assignedHostels.includes(Number(hostel_id))) {
         const error = new Error('Forbidden: You do not have access to this hostel.');
         error.status = 403;
@@ -112,7 +112,7 @@ const getAllStudents = async (filters = {}, user) => {
       queryParams.push(assignedHostels);
     }
   } else if (role === 'SUPER_ADMIN') {
-    if (hostel_id) {
+    if (hostel_id && hostel_id !== 'all') {
       conditions.push('r.hostel_id = ?');
       queryParams.push(hostel_id);
     }
@@ -161,7 +161,7 @@ const getAllStudents = async (filters = {}, user) => {
   `;
 
   const [countResult] = await db.pool.query(countQuery, queryParams);
-  const totalStudents = countResult[0].total;
+  const totalStudents = countResult && countResult[0] ? (countResult[0].total ?? countResult[0].cnt ?? (Array.isArray(countResult) ? countResult.length : 0)) : 0;
   const totalPages = Math.ceil(totalStudents / limitNum);
 
   // Get paginated student rows

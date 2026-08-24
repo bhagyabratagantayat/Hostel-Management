@@ -48,6 +48,10 @@ const reportRoutes = require('./routes/reportRoutes');
 const allocationRoutes = require('./routes/allocationRoutes');
 const userRoutes = require('./routes/userRoutes');
 const activityRoutes = require('./routes/activityRoutes');
+const maintenanceRoutes = require('./routes/maintenanceRoutes');
+const inspectionRoutes = require('./routes/inspectionRoutes');
+const operationsRoutes = require('./routes/operationsRoutes');
+const masterRoutes = require('./routes/masterRoutes');
 
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
@@ -67,8 +71,30 @@ app.use('/api/fees', feeRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/inspections', inspectionRoutes);
+app.use('/api/operations', operationsRoutes);
+app.use('/api/master', masterRoutes);
+app.use('/api/data-integrity', masterRoutes);
 app.use('/api', userRoutes);
 
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'College Hostel Management System API Server Running',
+    version: '1.0.0',
+    status: 'RUNNING',
+    database: 'Hostinger Production MySQL',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      students: '/api/students',
+      hostels: '/api/hostels'
+    }
+  });
+});
 
 // Base route for API documentation / welcome
 app.get('/api', (req, res) => {
@@ -90,7 +116,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     status: statusCode,
-    message: env.NODE_ENV === 'development' ? message : 'An unexpected error occurred.',
+    message: (env.NODE_ENV === 'development' || env.NODE_ENV === 'test' || statusCode < 500) ? message : 'An unexpected error occurred.',
     stack: env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
@@ -105,13 +131,33 @@ app.use('*', (req, res) => {
 
 // Start listening if run directly
 if (require.main === module) {
-  app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, () => {
     console.log(`Server is running in ${env.NODE_ENV} mode on port ${env.PORT}`);
     console.log(`Health endpoint available at http://localhost:${env.PORT}/api/health`);
     console.log(`Hostels endpoint available at http://localhost:${env.PORT}/api/hostels`);
     console.log(`Auth endpoints mounted at http://localhost:${env.PORT}/api/auth`);
     console.log(`Students endpoints mounted at http://localhost:${env.PORT}/api/students`);
   });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\x1b[31mPort ${env.PORT} is already in use by another process. Exiting process...\x1b[0m`);
+      process.exit(1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+
+  // Graceful shutdown on signals
+  const gracefulShutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+  };
+
+  process.once('SIGUSR2', gracefulShutdown);
+  process.once('SIGINT', gracefulShutdown);
+  process.once('SIGTERM', gracefulShutdown);
 }
 
 module.exports = app;

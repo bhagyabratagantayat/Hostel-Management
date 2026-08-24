@@ -141,6 +141,12 @@
   font-size: 0.9rem;
   outline: none;
   background: #ffffff;
+  color: #0f172a;
+}
+
+.filter-select option {
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 .filter-input {

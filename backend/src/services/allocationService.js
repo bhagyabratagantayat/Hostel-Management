@@ -28,7 +28,7 @@ const getAllocations = async (filters = {}, user) => {
       return { allocations: [], currentPage: pageNum, totalPages: 0, totalAllocations: 0, limit: limitNum };
     }
 
-    if (hostel_id) {
+    if (hostel_id && hostel_id !== 'all') {
       if (!assignedHostels.includes(Number(hostel_id))) {
         const error = new Error('Forbidden: You do not have access to this hostel allocations.');
         error.status = 403;
