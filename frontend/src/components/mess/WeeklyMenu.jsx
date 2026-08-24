@@ -11,24 +11,37 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, canManage = false })
 
   // Map items by day index (0-6) and meal_type
   const getItemsForDay = (dayIndex) => {
-    if (!weeklyData || !weeklyData.items || !weeklyData.startDate) return {};
+    if (!weeklyData || !weeklyData.items || !weeklyData.startDate) {
+      return { dateStr: '', items: {} };
+    }
 
-    const startDate = new Date(weeklyData.startDate);
-    const targetDate = new Date(startDate);
-    targetDate.setDate(startDate.getDate() + dayIndex);
-    const targetDateStr = targetDate.toISOString().split('T')[0];
+    try {
+      const parts = String(weeklyData.startDate).substring(0, 10).split('-').map(Number);
+      const startDate = new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+      const targetDate = new Date(startDate);
+      targetDate.setDate(startDate.getDate() + dayIndex);
 
-    const dayItems = weeklyData.items.filter(item => {
-      const itemDateStr = new Date(item.menu_date).toISOString().split('T')[0];
-      return itemDateStr === targetDateStr;
-    });
+      const yyyy = targetDate.getFullYear();
+      const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(targetDate.getDate()).padStart(2, '0');
+      const targetDateStr = `${yyyy}-${mm}-${dd}`;
 
-    const mapped = {};
-    MEAL_TYPES.forEach(type => {
-      mapped[type] = dayItems.find(i => i.meal_type === type);
-    });
+      const dayItems = (weeklyData.items || []).filter(item => {
+        if (!item || !item.menu_date) return false;
+        const itemDateStr = String(item.menu_date).substring(0, 10);
+        return itemDateStr === targetDateStr;
+      });
 
-    return { dateStr: targetDateStr, items: mapped };
+      const mapped = {};
+      MEAL_TYPES.forEach(type => {
+        mapped[type] = dayItems.find(i => i.meal_type === type);
+      });
+
+      return { dateStr: targetDateStr, items: mapped };
+    } catch (err) {
+      console.error('Error computing weekly menu day items:', err);
+      return { dateStr: '', items: {} };
+    }
   };
 
   return (
@@ -47,7 +60,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, canManage = false })
           </thead>
           <tbody>
             {DAYS.map((dayName, idx) => {
-              const { dateStr, items } = getItemsForDay(idx);
+              const { dateStr, items = {} } = getItemsForDay(idx);
               return (
                 <tr key={dayName}>
                   <td className="day-header-cell">
@@ -55,7 +68,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, canManage = false })
                     <div className="day-date">{dateStr}</div>
                   </td>
                   {MEAL_TYPES.map(mealType => {
-                    const item = items[mealType];
+                    const item = items ? items[mealType] : undefined;
                     return (
                       <td key={mealType} className="meal-cell">
                         {item ? (
@@ -104,7 +117,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, canManage = false })
       {/* Mobile Accordion View (< 768px) */}
       <div className="mobile-weekly-accordion">
         {DAYS.map((dayName, idx) => {
-          const { dateStr, items } = getItemsForDay(idx);
+          const { dateStr, items = {} } = getItemsForDay(idx);
           const isExpanded = expandedDay === idx;
 
           return (
@@ -124,7 +137,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, canManage = false })
               {isExpanded && (
                 <div className="day-accordion-body">
                   {MEAL_TYPES.map(mealType => {
-                    const item = items[mealType];
+                    const item = items ? items[mealType] : undefined;
                     return (
                       <div key={mealType} className="mobile-meal-item">
                         <div className="mobile-meal-type">{mealType}</div>

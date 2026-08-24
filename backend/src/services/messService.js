@@ -363,7 +363,7 @@ class MessService {
     }
 
     if (search && search.trim()) {
-      whereClause += ` AND (s.full_name LIKE ? OR s.student_code LIKE ? OR s.room_number LIKE ?)`;
+      whereClause += ` AND (s.full_name LIKE ? OR s.student_id LIKE ? OR s.roll_number LIKE ?)`;
       const term = `%${search.trim()}%`;
       params.push(term, term, term);
     }
@@ -378,9 +378,11 @@ class MessService {
     const total = countRows[0]?.total || 0;
 
     const dataSql = `
-      SELECT ma.*, s.full_name as student_name, s.student_code, s.room_number
+      SELECT ma.*, s.full_name as student_name, s.student_id as student_code, r.room_number
       FROM meal_attendance ma
       JOIN students s ON ma.student_id = s.id
+      LEFT JOIN beds b ON s.bed_id = b.id
+      LEFT JOIN rooms r ON b.room_id = r.id
       ${whereClause}
       ORDER BY ma.meal_date DESC, FIELD(ma.meal_type, 'BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER'), s.full_name ASC
       LIMIT ${l} OFFSET ${offset}
@@ -404,10 +406,10 @@ class MessService {
     const targetDate = mealDate || new Date().toISOString().split('T')[0];
 
     // Total active students in this hostel
-    let studentCountSql = `SELECT COUNT(*) as total FROM students WHERE status = 'ACTIVE'`;
+    let studentCountSql = `SELECT COUNT(*) as total FROM students s WHERE s.status = 'ACTIVE'`;
     const studentParams = [];
     if (hostelId) {
-      studentCountSql += ` AND hostel_id = ?`;
+      studentCountSql = `SELECT COUNT(*) as total FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.status = 'ACTIVE' AND r.hostel_id = ?`;
       studentParams.push(hostelId);
     }
 
