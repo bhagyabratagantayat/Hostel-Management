@@ -12,7 +12,10 @@ class MessController {
 
       // Student scope check: force student's own hostel ID
       if (req.user.role === 'STUDENT') {
-        const [st] = await pool.query('SELECT hostel_id FROM students WHERE user_id = ?', [req.user.id]);
+        const [st] = await pool.query(
+          `SELECT r.hostel_id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.user_id = ?`,
+          [req.user.id]
+        );
         if (st.length > 0) {
           targetHostelId = st[0].hostel_id;
         }
@@ -56,7 +59,10 @@ class MessController {
       let hostelId = req.query.hostel_id ? parseInt(req.query.hostel_id, 10) : undefined;
 
       if (req.user.role === 'STUDENT') {
-        const [st] = await pool.query('SELECT hostel_id FROM students WHERE user_id = ?', [req.user.id]);
+        const [st] = await pool.query(
+          `SELECT r.hostel_id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.user_id = ?`,
+          [req.user.id]
+        );
         if (st.length > 0) {
           hostelId = st[0].hostel_id;
         }
@@ -83,7 +89,10 @@ class MessController {
       let hostelId = req.query.hostel_id ? parseInt(req.query.hostel_id, 10) : undefined;
 
       if (req.user.role === 'STUDENT') {
-        const [st] = await pool.query('SELECT hostel_id FROM students WHERE user_id = ?', [req.user.id]);
+        const [st] = await pool.query(
+          `SELECT r.hostel_id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.user_id = ?`,
+          [req.user.id]
+        );
         if (st.length > 0) {
           hostelId = st[0].hostel_id;
         }
@@ -252,7 +261,10 @@ class MessController {
 
       if (req.user.role === 'STUDENT') {
         // IDOR Protection: Ignore student_id passed in body, derive from req.user.id
-        const [st] = await pool.query('SELECT id, hostel_id FROM students WHERE user_id = ?', [req.user.id]);
+        const [st] = await pool.query(
+          `SELECT s.id, r.hostel_id FROM students s LEFT JOIN beds b ON s.bed_id = b.id LEFT JOIN rooms r ON b.room_id = r.id WHERE s.user_id = ?`,
+          [req.user.id]
+        );
         if (st.length === 0) {
           return res.status(404).json({
             success: false,
@@ -269,7 +281,10 @@ class MessController {
             message: 'Staff must specify student_id.'
           });
         }
-        const [st] = await pool.query('SELECT id, hostel_id FROM students WHERE id = ?', [student_id]);
+        const [st] = await pool.query(
+          `SELECT s.id, r.hostel_id FROM students s LEFT JOIN beds b ON s.bed_id = b.id LEFT JOIN rooms r ON b.room_id = r.id WHERE s.id = ?`,
+          [student_id]
+        );
         if (st.length === 0) {
           return res.status(404).json({
             success: false,
@@ -412,7 +427,10 @@ class MessController {
       let hostelId = req.query.hostel_id ? parseInt(req.query.hostel_id, 10) : undefined;
 
       if (req.user.role === 'STUDENT') {
-        const [st] = await pool.query('SELECT hostel_id FROM students WHERE user_id = ?', [req.user.id]);
+        const [st] = await pool.query(
+          `SELECT r.hostel_id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.user_id = ?`,
+          [req.user.id]
+        );
         if (st.length > 0) hostelId = st[0].hostel_id;
       } else if (req.user.role === 'SUPERINTENDENT' && hostelId) {
         const [sh] = await pool.query(

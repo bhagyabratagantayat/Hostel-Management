@@ -11,7 +11,10 @@ class FeeController {
       let targetHostelId = hostel_id ? parseInt(hostel_id, 10) : undefined;
 
       if (req.user.role === 'STUDENT') {
-        const [st] = await pool.query('SELECT hostel_id FROM students WHERE user_id = ?', [req.user.id]);
+        const [st] = await pool.query(
+          `SELECT r.hostel_id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.user_id = ?`,
+          [req.user.id]
+        );
         if (st.length > 0) targetHostelId = st[0].hostel_id;
       } else if (req.user.role === 'SUPERINTENDENT' && targetHostelId) {
         const [sh] = await pool.query(
@@ -238,7 +241,10 @@ class FeeController {
       }
 
       if (req.user.role === 'SUPERINTENDENT') {
-        const [st] = await pool.query('SELECT hostel_id FROM students WHERE id = ?', [student_id]);
+        const [st] = await pool.query(
+          `SELECT r.hostel_id FROM students s JOIN beds b ON s.bed_id = b.id JOIN rooms r ON b.room_id = r.id WHERE s.id = ?`,
+          [student_id]
+        );
         if (st.length > 0) {
           const [sh] = await pool.query(
             'SELECT 1 FROM superintendent_hostels WHERE user_id = ? AND hostel_id = ?',

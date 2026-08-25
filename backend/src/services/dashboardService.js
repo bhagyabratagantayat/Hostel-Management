@@ -62,7 +62,7 @@ async function getDashboardOverview(user) {
   // For SUPERINTENDENT/STUDENT: total hostels is assigned count.
   const hostelCountSql = allowedHostelIds === null
     ? `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE'`
-    : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostelIds.map(() => '?').join(',')})`;
+    : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostelIds.length ? allowedHostelIds.map(() => '?').join(',') : 'NULL'})`;
   const hostelCountParams = allowedHostelIds === null ? [] : allowedHostelIds;
 
   // Students, rooms, beds — scoped by hostel assignment
@@ -170,8 +170,8 @@ async function getDashboardOverview(user) {
   // ── Per-hostel aggregation (single efficient query per hostel) ────────────
   const hostelListSql = allowedHostelIds === null
     ? `SELECT id, name FROM hostels WHERE status = 'ACTIVE' ORDER BY name`
-    : `SELECT id, name FROM hostels WHERE status = 'ACTIVE' AND id IN (${(allowedHostelIds.length ? allowedHostelIds : [0]).map(() => '?').join(',')}) ORDER BY name`;
-  const hostelListParams = allowedHostelIds === null ? [] : (allowedHostelIds.length ? allowedHostelIds : [0]);
+    : `SELECT id, name FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostelIds.length ? allowedHostelIds.map(() => '?').join(',') : 'NULL'}) ORDER BY name`;
+  const hostelListParams = allowedHostelIds === null ? [] : allowedHostelIds;
   const [hostelRows] = await db.pool.query(hostelListSql, hostelListParams);
 
   const hostels = await Promise.all(hostelRows.map(async (h) => {

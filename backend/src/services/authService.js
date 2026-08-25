@@ -196,7 +196,7 @@ const getUserProfile = async (userId) => {
 
   if (user.role === 'STUDENT') {
     const [students] = await db.pool.query(
-      `SELECT s.id as student_id, s.full_name, s.student_code, s.roll_number, s.branch, s.course, s.year_of_study, s.phone_number, s.photo_url,
+      `SELECT s.id as student_id, s.student_id as student_code, s.full_name, s.roll_number, s.branch, s.course, s.year as year_of_study, s.phone as phone_number, s.photo_url,
               h.name as hostel_name, r.room_number, b.bed_number
        FROM students s
        LEFT JOIN beds b ON s.bed_id = b.id
