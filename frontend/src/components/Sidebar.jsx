@@ -30,7 +30,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'Master Data Hub', icon: '🏛️', path: '/admin/master' },
-          { label: 'Data Integrity Center', icon: '🛡️', path: '/admin/data-integrity' },
           { label: 'Operations Hub', icon: '⚙️', path: '/admin/operations' },
           { label: 'Maintenance Requests', icon: '🔧', path: '/admin/maintenance' },
           { label: 'Room Inspections', icon: '🔍', path: '/admin/inspections' },

@@ -41,9 +41,6 @@ const MasterOverviewPage = () => {
           </p>
         </div>
         <div className="header-actions">
-          <Link to="/admin/data-integrity" className="btn btn-secondary flex items-center gap-2">
-            <span>🛡️</span> Data Integrity Center
-          </Link>
         </div>
       </div>
 
@@ -169,10 +166,6 @@ const MasterOverviewPage = () => {
             Hostels, floors, rooms, and occupied beds are protected from accidental deactivation or deletion when active allocations exist.
           </p>
         </div>
-        <Link to="/admin/data-integrity" className="btn btn-indigo text-sm whitespace-nowrap">
-          Run Diagnostics
-        </Link>
-      </div>
     </div>
   );
 };
