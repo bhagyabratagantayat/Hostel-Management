@@ -25,9 +25,9 @@ const getUsers = async ({ page = 1, limit = 20, role, status, search }) => {
   }
 
   if (search) {
-    whereClauses.push('(u.username LIKE ? OR u.email LIKE ? OR s.full_name LIKE ? OR s.student_code LIKE ?)');
+    whereClauses.push('(u.username LIKE ? OR u.email LIKE ? OR s.full_name LIKE ? OR s.student_id LIKE ? OR s.roll_number LIKE ?)');
     const term = `%${search}%`;
-    queryParams.push(term, term, term, term);
+    queryParams.push(term, term, term, term, term);
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -45,7 +45,7 @@ const getUsers = async ({ page = 1, limit = 20, role, status, search }) => {
   const [users] = await db.pool.query(
     `SELECT u.id, u.username, u.email, u.status, u.must_change_password, u.last_login_at, u.created_at, u.updated_at,
             r.name as role,
-            s.id as student_id, s.full_name as student_name, s.student_code,
+            s.id as student_record_id, s.full_name as student_name, s.student_id as student_code, s.roll_number,
             (SELECT GROUP_CONCAT(h.name SEPARATOR ', ')
              FROM superintendent_hostels sh
              JOIN hostels h ON sh.hostel_id = h.id
@@ -100,7 +100,7 @@ const getUserById = async (targetId) => {
     user.assigned_hostels = assigned;
   } else if (user.role === 'STUDENT') {
     const [students] = await db.pool.query(
-      `SELECT s.id as student_id, s.full_name, s.student_code, s.roll_number, s.branch, s.course, s.year_of_study, s.phone_number
+      `SELECT s.id as student_record_id, s.full_name, s.student_id as student_code, s.student_id, s.roll_number, s.branch, s.course, s.year as year_of_study, s.year, s.semester, s.phone as phone_number, s.phone, s.photo_url
        FROM students s WHERE s.user_id = ?`,
       [targetId]
     );
@@ -517,10 +517,11 @@ const updateSelfProfile = async (userId, updates, reqContext = {}) => {
   }
 
   // If student role, check student-specific whitelisted fields
-  if (role === 'STUDENT' && updates.phone_number) {
+  if (role === 'STUDENT' && (updates.phone_number || updates.phone)) {
+    const phoneVal = updates.phone_number || updates.phone;
     await db.pool.query(
-      'UPDATE students SET phone_number = ? WHERE user_id = ?',
-      [updates.phone_number, userId]
+      'UPDATE students SET phone = ? WHERE user_id = ?',
+      [phoneVal, userId]
     );
   }
 

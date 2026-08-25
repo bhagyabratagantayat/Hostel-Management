@@ -5,7 +5,6 @@ import api from '../services/api';
 import RecentNoticesSection from '../components/RecentNoticesSection';
 import RecentComplaintsSection from '../components/complaints/RecentComplaintsSection';
 import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection';
-import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
@@ -24,7 +23,6 @@ const StudentDashboard = () => {
 
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
-  const [isMessComplaintModalOpen, setIsMessComplaintModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -139,12 +137,6 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Mess Management Overview */}
-      <RecentMessSection
-        userRole="STUDENT"
-        onOpenMessComplaint={() => setIsMessComplaintModalOpen(true)}
-      />
-
       {/* Visitor Management Overview */}
       <RecentVisitorsSection
         userRole="STUDENT"
@@ -181,17 +173,6 @@ const StudentDashboard = () => {
         onClose={() => setIsVisitorModalOpen(false)}
         onSubmitSuccess={() => setIsVisitorModalOpen(false)}
         userRole="STUDENT"
-      />
-
-      {/* Mess Complaint Modal */}
-      <ComplaintFormModal
-        isOpen={isMessComplaintModalOpen}
-        onClose={() => setIsMessComplaintModalOpen(false)}
-        defaultCategory="FOOD_MESS"
-        onComplaintCreated={() => {
-          setIsMessComplaintModalOpen(false);
-          alert('Mess complaint submitted successfully.');
-        }}
       />
     </div>
   );

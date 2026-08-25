@@ -49,11 +49,14 @@ const UserManagementPage = () => {
         status: statusFilter || undefined,
         search: searchTerm || undefined
       });
-      setUsers(res.data.users || []);
-      setTotalPages(res.data.totalPages || 1);
-      setTotalUsers(res.data.total || 0);
+      const userList = res.users || res.data?.users || (Array.isArray(res.data) ? res.data : []);
+      const totalP = res.totalPages || res.data?.totalPages || 1;
+      const totalCount = res.total ?? res.data?.total ?? 0;
+      setUsers(userList);
+      setTotalPages(totalP);
+      setTotalUsers(totalCount);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch user directory.');
+      setError(err.message || err.response?.data?.message || 'Failed to fetch user directory.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +65,7 @@ const UserManagementPage = () => {
   const fetchHostels = async () => {
     try {
       const res = await api.getHostels();
-      setHostelsList(res.data || []);
+      setHostelsList(res.data || (Array.isArray(res) ? res : []));
     } catch (err) {
       console.error('Failed to load hostels list:', err);
     }

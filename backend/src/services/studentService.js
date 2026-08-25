@@ -261,8 +261,8 @@ const createStudent = async (studentData, creator) => {
     error.status = 400;
     throw error;
   }
-  if (!hostel_id || !floor_id || !room_id || !bed_id) {
-    const error = new Error('Complete hostel, floor, room, and bed assignments are required.');
+  if (!hostel_id || !room_id || !bed_id) {
+    const error = new Error('Complete hostel, room, and bed assignments are required.');
     error.status = 400;
     throw error;
   }
@@ -318,13 +318,12 @@ const createStudent = async (studentData, creator) => {
     throw error;
   }
 
-  // 4. Validate complete bed -> room -> floor -> hostel hierarchy
+  // 4. Validate complete bed -> room -> hostel hierarchy
   const [bedStructure] = await db.pool.query(
-    `SELECT b.id as bed_id, r.id as room_id, f.id as floor_id, h.id as hostel_id, b.status as bed_status
+    `SELECT b.id as bed_id, r.id as room_id, r.floor_id, r.hostel_id, b.status as bed_status
      FROM beds b
      JOIN rooms r ON b.room_id = r.id
-     JOIN floors f ON r.floor_id = f.id
-     JOIN hostels h ON f.hostel_id = h.id
+     JOIN hostels h ON r.hostel_id = h.id
      WHERE b.id = ?`,
     [bed_id]
   );
@@ -338,8 +337,8 @@ const createStudent = async (studentData, creator) => {
   const bed = bedStructure[0];
   if (
     bed.room_id !== Number(room_id) ||
-    bed.floor_id !== Number(floor_id) ||
-    bed.hostel_id !== Number(hostel_id)
+    bed.hostel_id !== Number(hostel_id) ||
+    (floor_id && bed.floor_id && bed.floor_id !== Number(floor_id))
   ) {
     const error = new Error('Invalid assignment relationship: Bed does not belong to the selected room, floor, or hostel.');
     error.status = 400;
@@ -532,8 +531,8 @@ const updateStudent = async (studentId, updateData, user) => {
 const transferStudent = async (studentId, transferData, user) => {
   const { new_hostel_id, new_floor_id, new_room_id, new_bed_id } = transferData;
 
-  if (!new_hostel_id || !new_floor_id || !new_room_id || !new_bed_id) {
-    const error = new Error('Complete destination hostel, floor, room, and bed assignments are required.');
+  if (!new_hostel_id || !new_room_id || !new_bed_id) {
+    const error = new Error('Complete destination hostel, room, and bed assignments are required.');
     error.status = 400;
     throw error;
   }
@@ -577,11 +576,10 @@ const transferStudent = async (studentId, transferData, user) => {
 
   // 3. Validate target bed structure and availability
   const [bedStructure] = await db.pool.query(
-    `SELECT b.id as bed_id, r.id as room_id, f.id as floor_id, h.id as hostel_id, b.status as bed_status
+    `SELECT b.id as bed_id, r.id as room_id, r.floor_id, r.hostel_id, b.status as bed_status
      FROM beds b
      JOIN rooms r ON b.room_id = r.id
-     JOIN floors f ON r.floor_id = f.id
-     JOIN hostels h ON f.hostel_id = h.id
+     JOIN hostels h ON r.hostel_id = h.id
      WHERE b.id = ?`,
     [new_bed_id]
   );
@@ -595,8 +593,8 @@ const transferStudent = async (studentId, transferData, user) => {
   const targetBed = bedStructure[0];
   if (
     targetBed.room_id !== Number(new_room_id) ||
-    targetBed.floor_id !== Number(new_floor_id) ||
-    targetBed.hostel_id !== Number(new_hostel_id)
+    targetBed.hostel_id !== Number(new_hostel_id) ||
+    (new_floor_id && targetBed.floor_id && targetBed.floor_id !== Number(new_floor_id))
   ) {
     const error = new Error('Invalid destination relationship: Bed does not belong to the selected room, floor, or hostel.');
     error.status = 400;

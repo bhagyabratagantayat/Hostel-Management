@@ -25,11 +25,14 @@ const SecurityAuditPage = () => {
         limit: 20,
         action: actionFilter || undefined
       });
-      setLogs(res.data.logs || []);
-      setTotalPages(res.data.totalPages || 1);
-      setTotalLogs(res.data.total || 0);
+      const logList = res.logs || res.data?.logs || (Array.isArray(res.data) ? res.data : []);
+      const totalP = res.totalPages || res.data?.totalPages || 1;
+      const totalCount = res.total ?? res.data?.total ?? 0;
+      setLogs(logList);
+      setTotalPages(totalP);
+      setTotalLogs(totalCount);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch security audit logs.');
+      setError(err.message || err.response?.data?.message || 'Failed to fetch security audit logs.');
     } finally {
       setLoading(false);
     }

@@ -151,7 +151,8 @@ const createHostel = async (hostelData, user) => {
     [name.trim(), code.trim(), gender, location || '', status]
   );
 
-  const createdHostel = { id: result.insertId, name: name.trim(), code: code.trim(), gender, location: location || '', status };
+  const hostelId = result.insertId;
+  const createdHostel = { id: hostelId, name: name.trim(), code: code.trim(), gender, location: location || '', status };
 
   await activityService.logActivity({
     actorId: user.id,

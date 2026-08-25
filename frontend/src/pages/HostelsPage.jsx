@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Loading from '../components/Loading';
 import Error from '../components/Error';
+import './StudentsPage.css';
 
 const HostelsPage = () => {
   const { user } = useAuth();
@@ -45,6 +46,17 @@ const HostelsPage = () => {
 
   useEffect(() => {
     fetchHostels();
+  }, []);
+
+  // Keyboard shortcut (Escape) to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleInputChange = (e) => {
@@ -171,8 +183,21 @@ const HostelsPage = () => {
       </div>
 
       {filteredHostels.length === 0 ? (
-        <div className="empty-hostels-state">
-          <p>No hostels found matching your search query.</p>
+        <div className="empty-hostels-state" style={{ background: '#ffffff', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '54px 24px', textAlign: 'center', marginTop: '16px' }}>
+          <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>🏢</span>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px 0' }}>
+            {searchQuery ? 'No Hostels Found' : 'No Hostels Configured Yet'}
+          </h3>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 18px 0' }}>
+            {searchQuery 
+              ? 'No hostels match your search query. Try clearing the search box.' 
+              : 'Your database is now clean! Click the button below to create your first real hostel.'}
+          </p>
+          {isSuperAdmin && !searchQuery && (
+            <Button onClick={handleOpenAddModal} variant="primary">
+              + Add New Hostel
+            </Button>
+          )}
         </div>
       ) : (
         <>
@@ -245,88 +270,104 @@ const HostelsPage = () => {
 
       {/* Add / Edit Hostel Modal */}
       {isModalOpen && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '500px', padding: '24px', margin: 'auto' }}>
-            <div className="login-header" style={{ textAlign: 'left', marginBottom: '16px' }}>
-              <h2 className="login-title">{modalMode === 'add' ? 'Add New Hostel' : 'Edit Hostel'}</h2>
-              <p className="login-subtitle">Enter details to configure the hostel properties.</p>
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '520px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">
+                  {modalMode === 'add' ? '🏢 Add New Hostel' : '✏️ Edit Hostel'}
+                </h2>
+                <p className="custom-modal-subtitle">Enter details to configure the hostel properties.</p>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
+              >
+                &times;
+              </button>
             </div>
             
-            {formErrors.form && (
-              <div className="login-error-alert">
-                <span className="alert-icon">⚠️</span>
-                <span className="alert-text">{formErrors.form}</span>
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="custom-modal-body">
+                {formErrors.form && (
+                  <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-text">{formErrors.form}</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <Input 
+                    label="Hostel Name *"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    error={formErrors.name}
+                    required
+                  />
+
+                  <Input 
+                    label="Hostel Code *"
+                    id="code"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleInputChange}
+                    error={formErrors.code}
+                    required
+                  />
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="gender">Target Gender Restriction *</label>
+                    <select 
+                      id="gender" 
+                      name="gender" 
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      <option value="MALE">MALE</option>
+                      <option value="FEMALE">FEMALE</option>
+                      <option value="COED">COED</option>
+                    </select>
+                    {formErrors.gender && <span className="form-error-msg">{formErrors.gender}</span>}
+                  </div>
+
+                  <Input 
+                    label="Location / Campus Block"
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                  />
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="status">Hostel Status *</label>
+                    <select 
+                      id="status" 
+                      name="status" 
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                    {formErrors.status && <span className="form-error-msg">{formErrors.status}</span>}
+                  </div>
+                </div>
               </div>
-            )}
 
-            <form onSubmit={handleFormSubmit} className="login-form">
-              <Input 
-                label="Hostel Name"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                error={formErrors.name}
-                required
-              />
-
-              <Input 
-                label="Hostel Code"
-                id="code"
-                name="code"
-                value={formData.code}
-                onChange={handleInputChange}
-                error={formErrors.code}
-                required
-              />
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="gender">Target Gender Restriction *</label>
-                <select 
-                  id="gender" 
-                  name="gender" 
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="MALE">MALE</option>
-                  <option value="FEMALE">FEMALE</option>
-                  <option value="COED">COED</option>
-                </select>
-                {formErrors.gender && <span className="form-error-msg">{formErrors.gender}</span>}
-              </div>
-
-              <Input 
-                label="Location / Campus Block"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-              />
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="status">Hostel Status *</label>
-                <select 
-                  id="status" 
-                  name="status" 
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
-                {formErrors.status && <span className="form-error-msg">{formErrors.status}</span>}
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
-                <Button onClick={() => setIsModalOpen(false)} variant="secondary">
+              <div className="custom-modal-footer">
+                <Button onClick={() => setIsModalOpen(false)} variant="secondary" type="button">
                   Cancel
                 </Button>
                 <Button type="submit" variant="primary" isLoading={actionLoading}>
-                  {modalMode === 'add' ? 'Create' : 'Save Changes'}
+                  {modalMode === 'add' ? 'Create Hostel' : 'Save Changes'}
                 </Button>
               </div>
             </form>

@@ -103,8 +103,10 @@ async function getOverviewReport(user, options = {}) {
 
   const hostelCountSql = allowedHostels === null
     ? `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE'`
-    : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostels.map(() => '?').join(',')})`;
-  const hostelCountParams = allowedHostels === null ? [] : allowedHostels;
+    : (allowedHostels.length === 0
+        ? `SELECT 0 AS totalHostels`
+        : `SELECT COUNT(*) AS totalHostels FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostels.map(() => '?').join(',')})`);
+  const hostelCountParams = (allowedHostels === null || allowedHostels.length === 0) ? [] : allowedHostels;
 
   const studentSql = allowedHostels === null
     ? `SELECT COUNT(*) AS totalStudents FROM students s WHERE s.status = 'ACTIVE'`
@@ -222,10 +224,10 @@ async function getOverviewReport(user, options = {}) {
 
   return {
     infrastructure: {
-      totalHostels: Number(hRows?.[0]?.totalHostels) || 0,
-      totalStudents: Number(sRows?.[0]?.totalStudents) || 0,
-      totalRooms: Number(rRows?.[0]?.totalRooms) || 0,
-      totalBeds: Number(bRows?.[0]?.totalBeds) || 0,
+      totalHostels: Number(hRows?.totalHostels ?? hRows?.[0]?.totalHostels) || 0,
+      totalStudents: Number(sRows?.totalStudents ?? sRows?.[0]?.totalStudents) || 0,
+      totalRooms: Number(rRows?.totalRooms ?? rRows?.[0]?.totalRooms) || 0,
+      totalBeds: Number(bRows?.totalBeds ?? bRows?.[0]?.totalBeds) || 0,
       occupiedBeds,
       availableBeds,
       maintenanceBeds,
@@ -306,14 +308,16 @@ async function getStudentReport(user, options = {}) {
        LEFT JOIN students s ON s.bed_id = b.id AND s.status = 'ACTIVE'
        WHERE h.status = 'ACTIVE'
        GROUP BY h.id, h.name ORDER BY h.name`
-    : `SELECT h.id AS hostel_id, h.name AS hostel_name, COUNT(s.id) AS student_count
-       FROM hostels h
-       LEFT JOIN rooms r ON r.hostel_id = h.id
-       LEFT JOIN beds b ON b.room_id = r.id
-       LEFT JOIN students s ON s.bed_id = b.id AND s.status = 'ACTIVE'
-       WHERE h.status = 'ACTIVE' AND h.id IN (${allowedHostels.map(() => '?').join(',')})
-       GROUP BY h.id, h.name ORDER BY h.name`;
-  const hostelParams = allowedHostels === null ? [] : allowedHostels;
+    : (allowedHostels.length === 0
+        ? `SELECT 1 AS hostel_id, '' AS hostel_name, 0 AS student_count WHERE 1=0`
+        : `SELECT h.id AS hostel_id, h.name AS hostel_name, COUNT(s.id) AS student_count
+           FROM hostels h
+           LEFT JOIN rooms r ON r.hostel_id = h.id
+           LEFT JOIN beds b ON b.room_id = r.id
+           LEFT JOIN students s ON s.bed_id = b.id AND s.status = 'ACTIVE'
+           WHERE h.status = 'ACTIVE' AND h.id IN (${allowedHostels.map(() => '?').join(',')})
+           GROUP BY h.id, h.name ORDER BY h.name`);
+  const hostelParams = (allowedHostels === null || allowedHostels.length === 0) ? [] : allowedHostels;
   const [hostelRows] = await db.pool.query(hostelSql, hostelParams);
 
   return {
@@ -390,8 +394,10 @@ async function getAttendanceReport(user, options = {}) {
   // Cross-Hostel Comparison Breakdown
   const hostelSql = allowedHostels === null
     ? `SELECT id, name FROM hostels WHERE status = 'ACTIVE' ORDER BY name`
-    : `SELECT id, name FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostels.map(() => '?').join(',')}) ORDER BY name`;
-  const hostelParams = allowedHostels === null ? [] : allowedHostels;
+    : (allowedHostels.length === 0
+        ? `SELECT id, name FROM hostels WHERE 1=0`
+        : `SELECT id, name FROM hostels WHERE status = 'ACTIVE' AND id IN (${allowedHostels.map(() => '?').join(',')}) ORDER BY name`);
+  const hostelParams = (allowedHostels === null || allowedHostels.length === 0) ? [] : allowedHostels;
   const [hostelRows] = await db.pool.query(hostelSql, hostelParams);
 
   const hostelComparison = await Promise.all(hostelRows.map(async (h) => {
@@ -486,7 +492,9 @@ async function getOccupancyReport(user, options = {}) {
        JOIN beds b ON b.room_id = r.id
        WHERE h.status = 'ACTIVE'
        GROUP BY h.id, h.name ORDER BY h.name`
-    : `SELECT h.id AS hostel_id, h.name AS hostel_name,
+    : (allowedHostels.length === 0
+        ? `SELECT 1 AS hostel_id, '' AS hostel_name, 0 AS totalBeds, 0 AS occupied, 0 AS available, 0 AS maintenance WHERE 1=0`
+        : `SELECT h.id AS hostel_id, h.name AS hostel_name,
               COUNT(b.id) AS totalBeds,
               SUM(b.status = 'OCCUPIED') AS occupied,
               SUM(b.status = 'AVAILABLE') AS available,
@@ -495,8 +503,8 @@ async function getOccupancyReport(user, options = {}) {
        JOIN rooms r ON r.hostel_id = h.id
        JOIN beds b ON b.room_id = r.id
        WHERE h.status = 'ACTIVE' AND h.id IN (${allowedHostels.map(() => '?').join(',')})
-       GROUP BY h.id, h.name ORDER BY h.name`;
-  const hostelParams = allowedHostels === null ? [] : allowedHostels;
+       GROUP BY h.id, h.name ORDER BY h.name`);
+  const hostelParams = (allowedHostels === null || allowedHostels.length === 0) ? [] : allowedHostels;
   const [hostelRows] = await db.pool.query(hostelSql, hostelParams);
 
   const byHostel = hostelRows.map(r => {

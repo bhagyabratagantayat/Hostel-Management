@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import './MasterData.css';
 
 const MasterRoomsPage = () => {
   const [rooms, setRooms] = useState([]);
@@ -150,8 +151,13 @@ const MasterRoomsPage = () => {
     setSubmitting(true);
 
     try {
+      const payload = {
+        ...formData,
+        floor_id: formData.floor_id ? parseInt(formData.floor_id, 10) : null
+      };
+
       if (editingRoom) {
-        const res = await api.updateRoom(editingRoom.id, formData);
+        const res = await api.updateRoom(editingRoom.id, payload);
         if (res.success) {
           setShowModal(false);
           fetchRooms();
@@ -159,7 +165,7 @@ const MasterRoomsPage = () => {
           setModalError(res.message || 'Failed to update room.');
         }
       } else {
-        const res = await api.createRoom(formData);
+        const res = await api.createRoom(payload);
         if (res.success) {
           setShowModal(false);
           fetchRooms();
@@ -189,27 +195,41 @@ const MasterRoomsPage = () => {
     }
   };
 
+  const getOccupancyPercent = (occupied, capacity) => {
+    if (!capacity || capacity <= 0) return 0;
+    return Math.min(100, Math.round(((occupied || 0) / capacity) * 100));
+  };
+
+  const getOccupancyColor = (percent) => {
+    if (percent >= 100) return 'progress-red';
+    if (percent >= 60) return 'progress-yellow';
+    return 'progress-green';
+  };
+
   return (
-    <div className="master-rooms-page">
-      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <div className="breadcrumbs text-sm text-gray-500 mb-1">
-            <Link to="/admin/master" className="hover:underline">Master Data</Link> / <span>Rooms</span>
+    <div className="master-page-container">
+      {/* Page Header */}
+      <div className="master-header">
+        <div className="master-header-left">
+          <div className="master-breadcrumbs">
+            <Link to="/admin/master">Master Data</Link>
+            <span className="master-breadcrumbs-separator">/</span>
+            <span>Rooms</span>
           </div>
-          <h1 className="page-heading">🚪 Room Management</h1>
-          <p className="page-subheading">Manage room numbers, bed capacities, and active/maintenance status.</p>
+          <h1 className="master-title">🚪 Room Management</h1>
+          <p className="master-subtitle">Manage room numbers, bed capacities, and operational status.</p>
         </div>
-        <button onClick={handleOpenCreateModal} className="btn btn-indigo flex items-center gap-2">
+        <button onClick={handleOpenCreateModal} className="master-btn-primary">
           <span>➕</span> Add New Room
         </button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="search-bar-container bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col lg:flex-row gap-4 justify-between items-center">
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+      {/* Unified Filter & Search Bar */}
+      <div className="master-filter-card">
+        <div className="master-filter-group">
           {/* Hostel Dropdown */}
           <select
-            className="form-select border rounded-md px-3 py-2 text-sm w-full sm:w-52"
+            className="master-select"
             value={selectedHostelId}
             onChange={(e) => {
               setSelectedHostelId(e.target.value);
@@ -225,7 +245,7 @@ const MasterRoomsPage = () => {
           {/* Floor Dropdown */}
           <select
             disabled={!selectedHostelId}
-            className="form-select border rounded-md px-3 py-2 text-sm w-full sm:w-52 disabled:bg-gray-100"
+            className="master-select"
             value={selectedFloorId}
             onChange={(e) => {
               setSelectedFloorId(e.target.value);
@@ -239,10 +259,11 @@ const MasterRoomsPage = () => {
           </select>
 
           {/* Search Input */}
-          <div className="relative w-full sm:w-52">
+          <div className="master-search-box">
+            <span className="master-search-icon">🔍</span>
             <input
               type="text"
-              className="form-input w-full pl-9 pr-4 py-2 border rounded-md text-sm"
+              className="master-search-input"
               placeholder="Search room number..."
               value={searchTerm}
               onChange={(e) => {
@@ -250,102 +271,180 @@ const MasterRoomsPage = () => {
                 setPage(1);
               }}
             />
-            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
           </div>
         </div>
 
-        <div className="text-sm text-gray-500">
-          Total Rooms: <span className="font-semibold text-gray-800">{pagination.total}</span>
+        <div className="master-count-badge">
+          Total Rooms: <strong>{pagination.total || rooms.length}</strong>
         </div>
       </div>
 
-      {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
+      {error && (
+        <div className="master-alert-error">
+          <span>⚠️ {error}</span>
+        </div>
+      )}
 
       {/* Rooms Table / Cards */}
       {loading ? (
         <Loading message="Loading rooms list..." />
       ) : rooms.length === 0 ? (
-        <div className="empty-state bg-white p-8 rounded-lg text-center border">
-          <span className="text-4xl">🚪</span>
-          <h3 className="font-bold text-gray-700 mt-2">No Rooms Found</h3>
-          <p className="text-sm text-gray-500 mt-1">Adjust filters or create a new room in this floor.</p>
+        <div className="master-empty-state">
+          <span className="master-empty-icon">🚪</span>
+          <h3 className="master-empty-title">No Rooms Found</h3>
+          <p className="master-empty-desc">Adjust your filters or create a new room in this floor.</p>
         </div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
-            <table className="w-full text-left border-collapse">
+          <div className="master-table-card">
+            <table className="master-table">
               <thead>
-                <tr className="bg-gray-50 border-b text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  <th className="p-4">Room Number</th>
-                  <th className="p-4">Floor</th>
-                  <th className="p-4">Hostel</th>
-                  <th className="p-4">Capacity</th>
-                  <th className="p-4">Occupancy</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                <tr>
+                  <th>Room Number</th>
+                  <th>Floor</th>
+                  <th>Hostel</th>
+                  <th>Capacity</th>
+                  <th>Occupancy</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {rooms.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-bold text-gray-900">Room {r.room_number}</td>
-                    <td className="p-4 text-gray-600">{r.floor_name || 'Floor'}</td>
-                    <td className="p-4 text-gray-600">{r.hostel_name || 'Hostel'}</td>
-                    <td className="p-4 text-gray-600">{r.capacity} beds</td>
-                    <td className="p-4 text-gray-600">
-                      <span className="badge badge-gray">{r.occupied_beds ?? 0} / {r.capacity}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`badge ${
-                        r.status === 'ACTIVE' ? 'badge-success' : (r.status === 'MAINTENANCE' ? 'badge-warning' : 'badge-danger')
-                      }`}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right space-x-2">
-                      <button onClick={() => handleOpenEditModal(r)} className="btn btn-sm btn-outline">Edit</button>
-                      <button onClick={() => handleDeleteRoom(r.id, r.room_number)} className="btn btn-sm btn-danger-outline">Delete</button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody>
+                {rooms.map((r) => {
+                  const occupied = Number(r.occupied_beds || 0);
+                  const capacity = Number(r.capacity || 1);
+                  const percent = getOccupancyPercent(occupied, capacity);
+                  const progressClass = getOccupancyColor(percent);
+
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <div className="master-cell-room">
+                          <span className="master-room-icon">🚪</span>
+                          <span>Room {r.room_number}</span>
+                        </div>
+                      </td>
+                      <td>{r.floor_name || 'Floor'}</td>
+                      <td>{r.hostel_name || 'Hostel'}</td>
+                      <td>
+                        <strong>{r.capacity}</strong> beds
+                      </td>
+                      <td>
+                        <div className="master-occupancy-container">
+                          <div className="master-occupancy-info">
+                            <span>{occupied} / {capacity} beds</span>
+                            <span>{percent}%</span>
+                          </div>
+                          <div className="master-progress-bar">
+                            <div
+                              className={`master-progress-fill ${progressClass}`}
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge-status ${
+                          r.status === 'ACTIVE'
+                            ? 'badge-active'
+                            : (r.status === 'MAINTENANCE' ? 'badge-maintenance' : 'badge-inactive')
+                        }`}>
+                          <span className="badge-status-dot" />
+                          {r.status || 'ACTIVE'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="master-actions-group">
+                          <button
+                            onClick={() => handleOpenEditModal(r)}
+                            className="master-action-btn btn-action-edit"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRoom(r.id, r.room_number)}
+                            className="master-action-btn btn-action-delete"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid md:hidden grid-cols-1 gap-4 mb-6">
-            {rooms.map((r) => (
-              <div key={r.id} className="bg-white p-4 rounded-lg shadow-sm border space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-gray-900">Room {r.room_number}</h3>
-                    <span className="text-xs text-gray-500">{r.floor_name} • {r.hostel_name}</span>
+          <div className="master-mobile-cards">
+            {rooms.map((r) => {
+              const occupied = Number(r.occupied_beds || 0);
+              const capacity = Number(r.capacity || 1);
+              const percent = getOccupancyPercent(occupied, capacity);
+              const progressClass = getOccupancyColor(percent);
+
+              return (
+                <div key={r.id} className="master-mobile-card">
+                  <div className="master-mobile-card-header">
+                    <div>
+                      <div className="master-mobile-card-title">Room {r.room_number}</div>
+                      <div className="master-mobile-card-subtitle">{r.floor_name} • {r.hostel_name}</div>
+                    </div>
+                    <span className={`badge-status ${
+                      r.status === 'ACTIVE'
+                        ? 'badge-active'
+                        : (r.status === 'MAINTENANCE' ? 'badge-maintenance' : 'badge-inactive')
+                    }`}>
+                      <span className="badge-status-dot" />
+                      {r.status || 'ACTIVE'}
+                    </span>
                   </div>
-                  <span className={`badge ${
-                    r.status === 'ACTIVE' ? 'badge-success' : (r.status === 'MAINTENANCE' ? 'badge-warning' : 'badge-danger')
-                  }`}>
-                    {r.status}
-                  </span>
+                  
+                  <div className="master-occupancy-container" style={{ margin: '4px 0' }}>
+                    <div className="master-occupancy-info">
+                      <span>Occupancy: {occupied} / {capacity} beds</span>
+                      <span>{percent}%</span>
+                    </div>
+                    <div className="master-progress-bar">
+                      <div className={`master-progress-fill ${progressClass}`} style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="master-mobile-card-actions">
+                    <button onClick={() => handleOpenEditModal(r)} className="master-action-btn btn-action-edit">
+                      ✏️ Edit
+                    </button>
+                    <button onClick={() => handleDeleteRoom(r.id, r.room_number)} className="master-action-btn btn-action-delete">
+                      🗑️ Delete
+                    </button>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600 flex justify-between">
-                  <div>Capacity: <strong>{r.capacity} beds</strong></div>
-                  <div>Occupancy: <strong>{r.occupied_beds ?? 0}/{r.capacity}</strong></div>
-                </div>
-                <div className="flex justify-end gap-2 pt-2 border-t">
-                  <button onClick={() => handleOpenEditModal(r)} className="btn btn-sm btn-outline">Edit</button>
-                  <button onClick={() => handleDeleteRoom(r.id, r.room_number)} className="btn btn-sm btn-danger-outline">Delete</button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="pagination flex justify-center items-center gap-2 mb-6">
-              <button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn btn-sm btn-outline">Previous</button>
-              <span className="text-xs text-gray-600">Page {page} of {pagination.totalPages}</span>
-              <button disabled={page === pagination.totalPages} onClick={() => setPage(page + 1)} className="btn btn-sm btn-outline">Next</button>
+            <div className="master-pagination">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="master-page-btn"
+              >
+                ← Previous
+              </button>
+              <span className="master-page-info">
+                Page <strong>{page}</strong> of <strong>{pagination.totalPages}</strong>
+              </span>
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="master-page-btn"
+              >
+                Next →
+              </button>
             </div>
           )}
         </>
@@ -353,24 +452,27 @@ const MasterRoomsPage = () => {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="modal-content bg-white rounded-lg max-w-md w-full p-6 shadow-xl relative">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              {editingRoom ? 'Edit Room' : 'Create New Room'}
-            </h2>
+        <div className="master-modal-overlay">
+          <div className="master-modal-content">
+            <div className="master-modal-header">
+              <h2 className="master-modal-title">
+                {editingRoom ? '✏️ Edit Room' : '➕ Create New Room'}
+              </h2>
+              <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
 
             {modalError && (
-              <div className="alert alert-error text-xs mb-4">
+              <div className="master-alert-error">
                 <span>⚠️ {modalError}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit}>
               {/* Cascading Selection 1: Hostel */}
-              <div>
-                <label className="form-label">Hostel *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Hostel *</label>
                 <select
-                  className="form-select w-full"
+                  className="master-form-select"
                   required
                   value={formData.hostel_id}
                   onChange={(e) => handleModalHostelChange(e.target.value)}
@@ -382,28 +484,27 @@ const MasterRoomsPage = () => {
                 </select>
               </div>
 
-              {/* Cascading Selection 2: Floor */}
-              <div>
-                <label className="form-label">Floor *</label>
+              {/* Cascading Selection 2: Floor (Optional) */}
+              <div className="master-form-group">
+                <label className="master-form-label">Floor (Optional)</label>
                 <select
                   disabled={!formData.hostel_id}
-                  className="form-select w-full disabled:bg-gray-100"
-                  required
+                  className="master-form-select"
                   value={formData.floor_id}
                   onChange={(e) => setFormData({ ...formData, floor_id: e.target.value })}
                 >
-                  <option value="">-- Select Floor --</option>
+                  <option value="">-- No Floor / Ground / Single Floor --</option>
                   {modalFloors.map(f => (
                     <option key={f.id} value={f.id}>{f.floor_name} (Level {f.floor_number})</option>
                   ))}
                 </select>
               </div>
 
-              <div>
-                <label className="form-label">Room Number *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Room Number *</label>
                 <input
                   type="text"
-                  className="form-input w-full"
+                  className="master-form-input"
                   required
                   value={formData.room_number}
                   onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
@@ -411,23 +512,23 @@ const MasterRoomsPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Bed Capacity *</label>
+              <div className="master-form-row">
+                <div className="master-form-group">
+                  <label className="master-form-label">Bed Capacity *</label>
                   <input
                     type="number"
                     min="1"
-                    className="form-input w-full"
+                    className="master-form-input"
                     required
                     value={formData.capacity}
                     onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value, 10) })}
                   />
                 </div>
 
-                <div>
-                  <label className="form-label">Status *</label>
+                <div className="master-form-group">
+                  <label className="master-form-label">Status *</label>
                   <select
-                    className="form-select w-full"
+                    className="master-form-select"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   >
@@ -438,9 +539,11 @@ const MasterRoomsPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn btn-indigo">
+              <div className="master-modal-footer">
+                <button type="button" onClick={() => setShowModal(false)} className="master-btn-cancel">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="master-btn-primary">
                   {submitting ? 'Saving...' : (editingRoom ? 'Save Changes' : 'Create Room')}
                 </button>
               </div>

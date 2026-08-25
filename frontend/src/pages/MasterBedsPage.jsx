@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import './MasterData.css';
 
 const MasterBedsPage = () => {
   const [beds, setBeds] = useState([]);
@@ -114,11 +115,15 @@ const MasterBedsPage = () => {
       setError(null);
       const params = { page, limit: 10, search: searchTerm };
       if (selectedRoomId) params.room_id = selectedRoomId;
+      else if (selectedFloorId) params.floor_id = selectedFloorId;
+      else if (selectedHostelId) params.hostel_id = selectedHostelId;
 
       const res = await api.getBeds(params);
       if (res.success) {
         setBeds(res.data || []);
-        if (res.pagination) setPagination(res.pagination);
+        if (res.pagination) {
+          setPagination(res.pagination);
+        }
       } else {
         setError(res.message || 'Failed to fetch beds.');
       }
@@ -162,15 +167,21 @@ const MasterBedsPage = () => {
 
   const handleModalHostelChange = (hostelId) => {
     setFormData({ ...formData, hostel_id: hostelId, floor_id: '', room_id: '' });
-    setModalRooms([]);
-    if (hostelId) loadFloorsForModal(hostelId);
-    else setModalFloors([]);
+    if (hostelId) {
+      loadFloorsForModal(hostelId);
+    } else {
+      setModalFloors([]);
+      setModalRooms([]);
+    }
   };
 
   const handleModalFloorChange = (floorId) => {
     setFormData({ ...formData, floor_id: floorId, room_id: '' });
-    if (floorId) loadRoomsForModal(floorId);
-    else setModalRooms([]);
+    if (floorId) {
+      loadRoomsForModal(floorId);
+    } else {
+      setModalRooms([]);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -222,27 +233,43 @@ const MasterBedsPage = () => {
     }
   };
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'AVAILABLE':
+        return <span className="badge-status badge-active"><span className="badge-status-dot" />AVAILABLE</span>;
+      case 'OCCUPIED':
+        return <span className="badge-status badge-occupied"><span className="badge-status-dot" />OCCUPIED</span>;
+      case 'MAINTENANCE':
+        return <span className="badge-status badge-maintenance"><span className="badge-status-dot" />MAINTENANCE</span>;
+      default:
+        return <span className="badge-status badge-inactive"><span className="badge-status-dot" />{status}</span>;
+    }
+  };
+
   return (
-    <div className="master-beds-page">
-      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <div className="breadcrumbs text-sm text-gray-500 mb-1">
-            <Link to="/admin/master" className="hover:underline">Master Data</Link> / <span>Beds</span>
+    <div className="master-page-container">
+      {/* Page Header */}
+      <div className="master-header">
+        <div className="master-header-left">
+          <div className="master-breadcrumbs">
+            <Link to="/admin/master">Master Data</Link>
+            <span className="master-breadcrumbs-separator">/</span>
+            <span>Beds</span>
           </div>
-          <h1 className="page-heading">🛏️ Bed Management</h1>
-          <p className="page-subheading">Manage bed identifiers, availability, and occupancy state guards.</p>
+          <h1 className="master-title">🛏️ Bed Management</h1>
+          <p className="master-subtitle">Manage bed identifiers, availability, and occupancy state guards.</p>
         </div>
-        <button onClick={handleOpenCreateModal} className="btn btn-indigo flex items-center gap-2">
+        <button onClick={handleOpenCreateModal} className="master-btn-primary">
           <span>➕</span> Add New Bed
         </button>
       </div>
 
       {/* Cascading Filter Bar */}
-      <div className="search-bar-container bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col lg:flex-row gap-4 justify-between items-center">
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex gap-3 w-full lg:w-auto">
+      <div className="master-filter-card">
+        <div className="master-filter-group">
           {/* Hostel Dropdown */}
           <select
-            className="form-select border rounded-md px-3 py-2 text-sm w-full sm:w-44"
+            className="master-select"
             value={selectedHostelId}
             onChange={(e) => {
               setSelectedHostelId(e.target.value);
@@ -258,7 +285,7 @@ const MasterBedsPage = () => {
           {/* Floor Dropdown */}
           <select
             disabled={!selectedHostelId}
-            className="form-select border rounded-md px-3 py-2 text-sm w-full sm:w-44 disabled:bg-gray-100"
+            className="master-select"
             value={selectedFloorId}
             onChange={(e) => {
               setSelectedFloorId(e.target.value);
@@ -274,7 +301,7 @@ const MasterBedsPage = () => {
           {/* Room Dropdown */}
           <select
             disabled={!selectedFloorId}
-            className="form-select border rounded-md px-3 py-2 text-sm w-full sm:w-44 disabled:bg-gray-100"
+            className="master-select"
             value={selectedRoomId}
             onChange={(e) => {
               setSelectedRoomId(e.target.value);
@@ -288,82 +315,97 @@ const MasterBedsPage = () => {
           </select>
 
           {/* Search Bar */}
-          <div className="relative w-full sm:w-44">
+          <div className="master-search-box">
+            <span className="master-search-icon">🔍</span>
             <input
               type="text"
-              className="form-input w-full pl-9 pr-4 py-2 border rounded-md text-sm"
-              placeholder="Search bed..."
+              className="master-search-input"
+              placeholder="Search bed number..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
             />
-            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
           </div>
         </div>
 
-        <div className="text-sm text-gray-500">
-          Total Beds: <span className="font-semibold text-gray-800">{pagination.total}</span>
+        <div className="master-count-badge">
+          Total Beds: <strong>{pagination.total || beds.length}</strong>
         </div>
       </div>
 
-      {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
+      {error && (
+        <div className="master-alert-error">
+          <span>⚠️ {error}</span>
+        </div>
+      )}
 
       {/* Beds Table / Cards */}
       {loading ? (
         <Loading message="Loading beds list..." />
       ) : beds.length === 0 ? (
-        <div className="empty-state bg-white p-8 rounded-lg text-center border">
-          <span className="text-4xl">🛏️</span>
-          <h3 className="font-bold text-gray-700 mt-2">No Beds Found</h3>
-          <p className="text-sm text-gray-500 mt-1">Adjust filters or create a new bed in this room.</p>
+        <div className="master-empty-state">
+          <span className="master-empty-icon">🛏️</span>
+          <h3 className="master-empty-title">No Beds Found</h3>
+          <p className="master-empty-desc">Adjust your filters or create a new bed in this room.</p>
         </div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
-            <table className="w-full text-left border-collapse">
+          <div className="master-table-card">
+            <table className="master-table">
               <thead>
-                <tr className="bg-gray-50 border-b text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  <th className="p-4">Bed Number</th>
-                  <th className="p-4">Room</th>
-                  <th className="p-4">Hostel</th>
-                  <th className="p-4">Assigned Student</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                <tr>
+                  <th>Bed Number</th>
+                  <th>Room</th>
+                  <th>Hostel</th>
+                  <th>Assigned Student</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
+              <tbody>
                 {beds.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-bold text-gray-900">Bed {b.bed_number}</td>
-                    <td className="p-4 text-gray-600">Room {b.room_number || '101'}</td>
-                    <td className="p-4 text-gray-600">{b.hostel_name || 'Hostel'}</td>
-                    <td className="p-4 text-gray-600">
+                  <tr key={b.id}>
+                    <td>
+                      <div className="master-cell-room">
+                        <span className="master-room-icon" style={{ background: '#fdf2f8', color: '#db2777' }}>🛏️</span>
+                        <span>Bed {b.bed_number}</span>
+                      </div>
+                    </td>
+                    <td>Room {b.room_number || 'N/A'}</td>
+                    <td>{b.hostel_name || 'Hostel'}</td>
+                    <td>
                       {b.student_name ? (
-                        <span className="text-indigo-600 font-medium">{b.student_name}</span>
+                        <span style={{ fontWeight: '600', color: '#4f46e5' }}>
+                          👤 {b.student_name}
+                        </span>
                       ) : (
-                        <span className="text-gray-400 font-normal">Unassigned</span>
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
                       )}
                     </td>
-                    <td className="p-4">
-                      <span className={`badge ${
-                        b.status === 'AVAILABLE' ? 'badge-success' : (b.status === 'OCCUPIED' ? 'badge-info' : 'badge-danger')
-                      }`}>
-                        {b.status}
-                      </span>
+                    <td>
+                      {getStatusBadge(b.status)}
                     </td>
-                    <td className="p-4 text-right space-x-2">
-                      <button onClick={() => handleOpenEditModal(b)} className="btn btn-sm btn-outline">Edit</button>
-                      <button
-                        disabled={b.status === 'OCCUPIED'}
-                        onClick={() => handleDeleteBed(b.id, b.bed_number, b.status)}
-                        className="btn btn-sm btn-danger-outline disabled:opacity-50"
-                        title={b.status === 'OCCUPIED' ? 'Cannot delete occupied bed' : ''}
-                      >
-                        Delete
-                      </button>
+                    <td>
+                      <div className="master-actions-group">
+                        <button
+                          onClick={() => handleOpenEditModal(b)}
+                          className="master-action-btn btn-action-edit"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          disabled={b.status === 'OCCUPIED'}
+                          onClick={() => handleDeleteBed(b.id, b.bed_number, b.status)}
+                          className="master-action-btn btn-action-delete"
+                          title={b.status === 'OCCUPIED' ? 'Cannot delete occupied bed' : 'Delete bed'}
+                          style={{ opacity: b.status === 'OCCUPIED' ? 0.45 : 1, cursor: b.status === 'OCCUPIED' ? 'not-allowed' : 'pointer' }}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -372,31 +414,30 @@ const MasterBedsPage = () => {
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid md:hidden grid-cols-1 gap-4 mb-6">
+          <div className="master-mobile-cards">
             {beds.map((b) => (
-              <div key={b.id} className="bg-white p-4 rounded-lg shadow-sm border space-y-3">
-                <div className="flex justify-between items-start">
+              <div key={b.id} className="master-mobile-card">
+                <div className="master-mobile-card-header">
                   <div>
-                    <h3 className="font-bold text-gray-900">Bed {b.bed_number}</h3>
-                    <span className="text-xs text-gray-500">Room {b.room_number} • {b.hostel_name}</span>
+                    <div className="master-mobile-card-title">Bed {b.bed_number}</div>
+                    <div className="master-mobile-card-subtitle">Room {b.room_number} • {b.hostel_name}</div>
                   </div>
-                  <span className={`badge ${
-                    b.status === 'AVAILABLE' ? 'badge-success' : (b.status === 'OCCUPIED' ? 'badge-info' : 'badge-danger')
-                  }`}>
-                    {b.status}
-                  </span>
+                  {getStatusBadge(b.status)}
                 </div>
-                <div className="text-xs text-gray-600">
-                  <div>Student: <strong>{b.student_name || 'Unassigned'}</strong></div>
+                <div className="master-mobile-card-details">
+                  <span>Student: <strong>{b.student_name || 'Unassigned'}</strong></span>
                 </div>
-                <div className="flex justify-end gap-2 pt-2 border-t">
-                  <button onClick={() => handleOpenEditModal(b)} className="btn btn-sm btn-outline">Edit</button>
+                <div className="master-mobile-card-actions">
+                  <button onClick={() => handleOpenEditModal(b)} className="master-action-btn btn-action-edit">
+                    ✏️ Edit
+                  </button>
                   <button
                     disabled={b.status === 'OCCUPIED'}
                     onClick={() => handleDeleteBed(b.id, b.bed_number, b.status)}
-                    className="btn btn-sm btn-danger-outline disabled:opacity-50"
+                    className="master-action-btn btn-action-delete"
+                    style={{ opacity: b.status === 'OCCUPIED' ? 0.45 : 1 }}
                   >
-                    Delete
+                    🗑️ Delete
                   </button>
                 </div>
               </div>
@@ -405,10 +446,24 @@ const MasterBedsPage = () => {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="pagination flex justify-center items-center gap-2 mb-6">
-              <button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn btn-sm btn-outline">Previous</button>
-              <span className="text-xs text-gray-600">Page {page} of {pagination.totalPages}</span>
-              <button disabled={page === pagination.totalPages} onClick={() => setPage(page + 1)} className="btn btn-sm btn-outline">Next</button>
+            <div className="master-pagination">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="master-page-btn"
+              >
+                ← Previous
+              </button>
+              <span className="master-page-info">
+                Page <strong>{page}</strong> of <strong>{pagination.totalPages}</strong>
+              </span>
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="master-page-btn"
+              >
+                Next →
+              </button>
             </div>
           )}
         </>
@@ -416,24 +471,27 @@ const MasterBedsPage = () => {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="modal-content bg-white rounded-lg max-w-md w-full p-6 shadow-xl relative">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              {editingBed ? 'Edit Bed' : 'Create New Bed'}
-            </h2>
+        <div className="master-modal-overlay">
+          <div className="master-modal-content">
+            <div className="master-modal-header">
+              <h2 className="master-modal-title">
+                {editingBed ? '✏️ Edit Bed' : '➕ Create New Bed'}
+              </h2>
+              <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
 
             {modalError && (
-              <div className="alert alert-error text-xs mb-4">
+              <div className="master-alert-error">
                 <span>⚠️ {modalError}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit}>
               {/* Cascading Selection 1: Hostel */}
-              <div>
-                <label className="form-label">Hostel *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Hostel *</label>
                 <select
-                  className="form-select w-full"
+                  className="master-form-select"
                   required
                   value={formData.hostel_id}
                   onChange={(e) => handleModalHostelChange(e.target.value)}
@@ -446,11 +504,11 @@ const MasterBedsPage = () => {
               </div>
 
               {/* Cascading Selection 2: Floor */}
-              <div>
-                <label className="form-label">Floor *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Floor *</label>
                 <select
                   disabled={!formData.hostel_id}
-                  className="form-select w-full disabled:bg-gray-100"
+                  className="master-form-select"
                   required
                   value={formData.floor_id}
                   onChange={(e) => handleModalFloorChange(e.target.value)}
@@ -463,11 +521,11 @@ const MasterBedsPage = () => {
               </div>
 
               {/* Cascading Selection 3: Room */}
-              <div>
-                <label className="form-label">Room *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Room *</label>
                 <select
                   disabled={!formData.floor_id}
-                  className="form-select w-full disabled:bg-gray-100"
+                  className="master-form-select"
                   required
                   value={formData.room_id}
                   onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
@@ -479,11 +537,11 @@ const MasterBedsPage = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="form-label">Bed Identifier *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Bed Identifier *</label>
                 <input
                   type="text"
-                  className="form-input w-full"
+                  className="master-form-input"
                   required
                   value={formData.bed_number}
                   onChange={(e) => setFormData({ ...formData, bed_number: e.target.value })}
@@ -491,10 +549,10 @@ const MasterBedsPage = () => {
                 />
               </div>
 
-              <div>
-                <label className="form-label">Status *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Status *</label>
                 <select
-                  className="form-select w-full"
+                  className="master-form-select"
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
@@ -505,9 +563,11 @@ const MasterBedsPage = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn btn-indigo">
+              <div className="master-modal-footer">
+                <button type="button" onClick={() => setShowModal(false)} className="master-btn-cancel">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="master-btn-primary">
                   {submitting ? 'Saving...' : (editingBed ? 'Save Changes' : 'Create Bed')}
                 </button>
               </div>

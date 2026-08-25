@@ -8,7 +8,6 @@ import OccupancySummary from '../components/OccupancySummary';
 import RecentNoticesSection from '../components/RecentNoticesSection';
 import RecentComplaintsSection from '../components/complaints/RecentComplaintsSection';
 import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection';
-import RecentMessSection from '../components/mess/RecentMessSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
@@ -140,9 +139,6 @@ function SuperintendentDashboard() {
               occupancyPercentage={data.overall.occupancyPercentage}
             />
           </div>
-
-          {/* Mess Section */}
-          <RecentMessSection userRole="SUPERINTENDENT" />
 
           {/* System Recent Activity Audit Widget */}
           <div className="mb-6">

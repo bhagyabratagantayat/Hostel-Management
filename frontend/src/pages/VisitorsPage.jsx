@@ -4,6 +4,7 @@ import api from '../services/api';
 import VisitorCard from '../components/visitors/VisitorCard';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import VisitorDetailsModal from '../components/visitors/VisitorDetailsModal';
+import './VisitorsPage.css';
 
 export default function VisitorsPage() {
   const { user } = useAuth();

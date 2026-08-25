@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Loading from '../components/Loading';
 import Error from '../components/Error';
+import './StudentsPage.css';
 
 const StudentsPage = () => {
   const { user } = useAuth();
@@ -76,6 +77,20 @@ const StudentsPage = () => {
     status: 'INACTIVE'
   });
 
+  // Keyboard shortcut (Escape) to close modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsDetailsOpen(false);
+        setIsAddEditOpen(false);
+        setIsTransferOpen(false);
+        setIsStatusOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Fetch student records from the backend
   const fetchStudents = async () => {
     setLoading(true);
@@ -139,17 +154,24 @@ const StudentsPage = () => {
     if (!hostelId) return;
 
     setFloorsLoading(true);
+    setRoomsLoading(true);
     try {
-      const res = await api.get(`/floors?hostel_id=${hostelId}`);
-      setFloors(res.data || []);
+      const [floorsRes, roomsRes] = await Promise.all([
+        api.get(`/floors?hostel_id=${hostelId}`),
+        api.get(`/rooms?hostel_id=${hostelId}`)
+      ]);
+      setFloors(floorsRes.data || []);
+      setRooms(roomsRes.data || []);
     } catch (err) {
-      console.error('Failed to fetch floors:', err);
+      console.error('Failed to fetch floors / rooms:', err);
     } finally {
       setFloorsLoading(false);
+      setRoomsLoading(false);
     }
   };
 
   const handleFloorChange = async (floorId, isTransfer = false) => {
+    const hostelId = isTransfer ? transferData.new_hostel_id : formData.hostel_id;
     if (isTransfer) {
       setTransferData(prev => ({ ...prev, new_floor_id: floorId, new_room_id: '', new_bed_id: '' }));
     } else {
@@ -158,11 +180,10 @@ const StudentsPage = () => {
     setRooms([]);
     setBeds([]);
 
-    if (!floorId) return;
-
     setRoomsLoading(true);
     try {
-      const res = await api.get(`/rooms?floor_id=${floorId}`);
+      const url = floorId ? `/rooms?floor_id=${floorId}` : `/rooms?hostel_id=${hostelId}`;
+      const res = await api.get(url);
       setRooms(res.data || []);
     } catch (err) {
       console.error('Failed to fetch rooms:', err);
@@ -308,7 +329,6 @@ const StudentsPage = () => {
         errors.password = 'Password must be at least 6 characters.';
       }
       if (!formData.hostel_id) errors.hostel_id = 'Hostel assignment is required.';
-      if (!formData.floor_id) errors.floor_id = 'Floor assignment is required.';
       if (!formData.room_id) errors.room_id = 'Room assignment is required.';
       if (!formData.bed_id) errors.bed_id = 'Bed assignment is required.';
     }
@@ -350,8 +370,8 @@ const StudentsPage = () => {
   // Submit Transfer Form
   const handleTransferSubmit = async (e) => {
     e.preventDefault();
-    if (!transferData.new_hostel_id || !transferData.new_floor_id || !transferData.new_room_id || !transferData.new_bed_id) {
-      setFormErrors({ form: 'Complete hostel, floor, room, and bed assignments are required.' });
+    if (!transferData.new_hostel_id || !transferData.new_room_id || !transferData.new_bed_id) {
+      setFormErrors({ form: 'Complete destination hostel, room, and bed assignments are required.' });
       return;
     }
 
@@ -360,7 +380,7 @@ const StudentsPage = () => {
     try {
       await api.post(`/students/${selectedStudent.id}/transfer`, {
         new_hostel_id: Number(transferData.new_hostel_id),
-        new_floor_id: Number(transferData.new_floor_id),
+        new_floor_id: transferData.new_floor_id ? Number(transferData.new_floor_id) : null,
         new_room_id: Number(transferData.new_room_id),
         new_bed_id: Number(transferData.new_bed_id)
       });
@@ -615,90 +635,94 @@ const StudentsPage = () => {
 
       {/* MODAL 1: View Profile Details */}
       {isDetailsOpen && selectedStudent && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '600px', padding: '24px', margin: 'auto' }}>
-            <div className="login-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-              <div>
-                <h2 className="login-title">Student Profile Card</h2>
-                <p className="login-subtitle">Comprehensive registered student account information.</p>
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsDetailsOpen(false); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '640px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">🎓 Student Profile Details</h2>
+                <p className="custom-modal-subtitle">Comprehensive registered student account information.</p>
               </div>
               <button 
                 onClick={() => setIsDetailsOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '24px', cursor: 'pointer' }}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
               >
                 &times;
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 180px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                {selectedStudent.photo_url ? (
-                  <img 
-                    src={selectedStudent.photo_url} 
-                    alt={selectedStudent.full_name} 
-                    style={{ width: '150px', height: '150px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
-                  />
-                ) : (
-                  <div style={{ width: '150px', height: '150px', borderRadius: '8px', backgroundColor: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '48px', color: 'var(--text-light)' }}>
-                    🎓
-                  </div>
-                )}
-                <span className={`hostel-gender-badge ${
-                  selectedStudent.status === 'ACTIVE' ? 'male' : 'female'
-                }`} style={{ fontSize: '12px', padding: '6px 12px', textTransform: 'uppercase' }}>
-                  Status: {selectedStudent.status}
-                </span>
-              </div>
-
-              <div style={{ flex: '2 2 300px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div className="profile-detail-row">
-                  <span className="p-label">Full Name:</span>
-                  <span className="p-val">{selectedStudent.full_name}</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Student ID:</span>
-                  <span className="p-val"><code>{selectedStudent.student_id}</code></span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Roll Number:</span>
-                  <span className="p-val">{selectedStudent.roll_number}</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Email Address:</span>
-                  <span className="p-val">{selectedStudent.email}</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Phone Number:</span>
-                  <span className="p-val">{selectedStudent.phone || 'N/A'}</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Course & Branch:</span>
-                  <span className="p-val">{selectedStudent.course} ({selectedStudent.branch})</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Year & Semester:</span>
-                  <span className="p-val">Year {selectedStudent.year}, Semester {selectedStudent.semester}</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Assigned Hostel:</span>
-                  <span className="p-val hostel-highlight">{selectedStudent.hostel_name || 'Not Allocated'}</span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Room & Bed:</span>
-                  <span className="p-val">
-                    {selectedStudent.room_number 
-                      ? `Room ${selectedStudent.room_number}, Bed ${selectedStudent.bed_number}`
-                      : 'Unassigned'}
+            <div className="custom-modal-body">
+              <div className="profile-modal-grid">
+                <div className="profile-avatar-container">
+                  {selectedStudent.photo_url ? (
+                    <img 
+                      src={selectedStudent.photo_url} 
+                      alt={selectedStudent.full_name} 
+                      className="profile-avatar-img"
+                    />
+                  ) : (
+                    <div className="profile-avatar-placeholder">
+                      🎓
+                    </div>
+                  )}
+                  <span className={`hostel-gender-badge ${
+                    selectedStudent.status === 'ACTIVE' ? 'male' : 'female'
+                  }`} style={{ fontSize: '12px', padding: '6px 12px', textTransform: 'uppercase', borderRadius: '20px', fontWeight: 600 }}>
+                    ● {selectedStudent.status}
                   </span>
                 </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Admission Date:</span>
-                  <span className="p-val">{selectedStudent.admission_date ? new Date(selectedStudent.admission_date).toLocaleDateString() : 'N/A'}</span>
+
+                <div className="profile-info-list">
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Full Name</span>
+                    <span className="profile-info-value">{selectedStudent.full_name}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Student ID (Username)</span>
+                    <span className="profile-info-value"><code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#0284c7' }}>{selectedStudent.student_id}</code></span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Roll Number</span>
+                    <span className="profile-info-value">{selectedStudent.roll_number}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Email Address</span>
+                    <span className="profile-info-value">{selectedStudent.email}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Phone Number</span>
+                    <span className="profile-info-value">{selectedStudent.phone || 'N/A'}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Course & Branch</span>
+                    <span className="profile-info-value">{selectedStudent.course || 'N/A'} ({selectedStudent.branch || 'N/A'})</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Year & Semester</span>
+                    <span className="profile-info-value">Year {selectedStudent.year}, Semester {selectedStudent.semester}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Assigned Hostel</span>
+                    <span className="profile-info-value" style={{ color: '#2563eb' }}>{selectedStudent.hostel_name || 'Not Allocated'}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Room & Bed</span>
+                    <span className="profile-info-value">
+                      {selectedStudent.room_number 
+                        ? `Room ${selectedStudent.room_number}, Bed ${selectedStudent.bed_number}`
+                        : 'Unassigned'}
+                    </span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Admission Date</span>
+                    <span className="profile-info-value">{selectedStudent.admission_date ? new Date(selectedStudent.admission_date).toLocaleDateString() : 'N/A'}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+            <div className="custom-modal-footer">
               <Button onClick={() => setIsDetailsOpen(false)} variant="secondary">
                 Close Profile
               </Button>
@@ -709,261 +733,268 @@ const StudentsPage = () => {
 
       {/* MODAL 2: Register/Edit Student Profile */}
       {isAddEditOpen && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '95%', maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto', padding: '24px', margin: 'auto' }}>
-            <div className="login-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <h2 className="login-title">{modalMode === 'add' ? 'Register New Student' : 'Edit Student Details'}</h2>
-                <p className="login-subtitle">Provide information to register or update the student profile.</p>
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsAddEditOpen(false); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '680px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">
+                  {modalMode === 'add' ? '✨ Register New Student' : '✏️ Edit Student Details'}
+                </h2>
+                <p className="custom-modal-subtitle">Provide information to register or update the student profile.</p>
               </div>
               <button 
                 onClick={() => setIsAddEditOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '24px', cursor: 'pointer' }}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
               >
                 &times;
               </button>
             </div>
 
-            {formErrors.form && (
-              <div className="login-error-alert">
-                <span className="alert-icon">⚠️</span>
-                <span className="alert-text">{formErrors.form}</span>
-              </div>
-            )}
+            <form onSubmit={handleFormSubmit} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="custom-modal-body">
+                {formErrors.form && (
+                  <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-text">{formErrors.form}</span>
+                  </div>
+                )}
 
-            <form onSubmit={handleFormSubmit} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Input 
-                  label="Student ID (Username) *"
-                  id="student_id"
-                  name="student_id"
-                  value={formData.student_id}
-                  onChange={(e) => setFormData(prev => ({ ...prev, student_id: e.target.value }))}
-                  error={formErrors.student_id}
-                  disabled={modalMode === 'edit'}
-                  required
-                />
-                
-                <Input 
-                  label="Roll Number *"
-                  id="roll_number"
-                  name="roll_number"
-                  value={formData.roll_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, roll_number: e.target.value }))}
-                  error={formErrors.roll_number}
-                  disabled={modalMode === 'edit'}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Input 
-                  label="Full Name *"
-                  id="full_name"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                  error={formErrors.full_name}
-                  required
-                />
-
-                <Input 
-                  label="Email Address *"
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  error={formErrors.email}
-                  required
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Input 
-                  label="Phone Number"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                />
-
-                {modalMode === 'add' ? (
+                <div className="modal-form-grid-2">
                   <Input 
-                    label="Access Password (Min 6 chars) *"
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    error={formErrors.password}
+                    label="Student ID (Username) *"
+                    id="student_id"
+                    name="student_id"
+                    autoComplete="new-student-id"
+                    value={formData.student_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, student_id: e.target.value }))}
+                    error={formErrors.student_id}
+                    disabled={modalMode === 'edit'}
                     required
                   />
-                ) : (
-                  <div className="form-group">
-                    <label className="form-label" style={{ visibility: 'hidden' }}>Spacer</label>
-                    <div style={{ color: 'var(--text-light)', fontSize: '13px', paddingTop: '10px' }}>
-                      * Login password can be modified by the student or via administrative password resets.
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <Input 
-                  label="Course Title (e.g. B.Tech)"
-                  id="course"
-                  name="course"
-                  value={formData.course}
-                  onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value }))}
-                />
-
-                <Input 
-                  label="Academic Branch (e.g. CSE)"
-                  id="branch"
-                  name="branch"
-                  value={formData.branch}
-                  onChange={(e) => setFormData(prev => ({ ...prev, branch: e.target.value }))}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="year">Current Year</label>
-                  <select 
-                    id="year" 
-                    value={formData.year}
-                    onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
-                    className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                  >
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="semester">Current Semester</label>
-                  <select 
-                    id="semester" 
-                    value={formData.semester}
-                    onChange={(e) => setFormData(prev => ({ ...prev, semester: e.target.value }))}
-                    className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                      <option key={sem} value={sem}>Semester {sem}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Photo Upload input */}
-              <div className="form-group">
-                <label className="form-label">Profile Photo Uploader (Max 5MB)</label>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handlePhotoUpload}
-                  className="form-input"
-                  style={{ width: '100%', padding: '8px 12px' }}
-                />
-                {formErrors.base64Photo && <span className="form-error-msg">{formErrors.base64Photo}</span>}
-                {formData.base64Photo && (
-                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img 
-                      src={formData.base64Photo} 
-                      alt="Upload Preview" 
-                      style={{ width: '60px', height: '60px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-color)' }}
-                    />
-                    <span style={{ fontSize: '12px', color: 'var(--success-color)' }}>✓ Image ready for upload</span>
-                  </div>
-                )}
-              </div>
-
-              {/* BED ASSIGNMENT FLOW: Only visible on Student Creation */}
-              {modalMode === 'add' && (
-                <div style={{ border: '1px solid var(--border-color)', padding: '16px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.01)', marginTop: '8px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '12px', color: 'var(--primary-color)' }}>
-                    🏢 Core Hostel Bed Assignment
-                  </h3>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Select Hostel *</label>
-                      <select 
-                        value={formData.hostel_id} 
-                        onChange={(e) => handleHostelChange(e.target.value)}
-                        className="form-input"
-                        style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                      >
-                        <option value="">-- Choose Hostel --</option>
-                        {hostels.map(h => (
-                          <option key={h.id} value={h.id}>{h.name} ({h.gender})</option>
-                        ))}
-                      </select>
-                      {formErrors.hostel_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.hostel_id}</span>}
-                    </div>
+                  <Input 
+                    label="Roll Number *"
+                    id="roll_number"
+                    name="roll_number"
+                    value={formData.roll_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, roll_number: e.target.value }))}
+                    error={formErrors.roll_number}
+                    disabled={modalMode === 'edit'}
+                    required
+                  />
+                </div>
 
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Select Floor *</label>
-                      <select 
-                        value={formData.floor_id} 
-                        onChange={(e) => handleFloorChange(e.target.value)}
-                        disabled={!formData.hostel_id || floorsLoading}
-                        className="form-input"
-                        style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                      >
-                        <option value="">{floorsLoading ? 'Loading floors...' : '-- Choose Floor --'}</option>
-                        {floors.map(f => (
-                          <option key={f.id} value={f.id}>{f.floor_name} (Floor {f.floor_number})</option>
-                        ))}
-                      </select>
-                      {formErrors.floor_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.floor_id}</span>}
+                <div className="modal-form-grid-2">
+                  <Input 
+                    label="Full Name *"
+                    id="full_name"
+                    name="full_name"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                    error={formErrors.full_name}
+                    required
+                  />
+
+                  <Input 
+                    label="Email Address *"
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    error={formErrors.email}
+                    required
+                  />
+                </div>
+
+                <div className="modal-form-grid-2">
+                  <Input 
+                    label="Phone Number"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+
+                  {modalMode === 'add' ? (
+                    <Input 
+                      label="Access Password (Min 6 chars) *"
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={formData.password}
+                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      error={formErrors.password}
+                      required
+                    />
+                  ) : (
+                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <label className="form-label" style={{ color: '#64748b', fontSize: '13px' }}>Password Management</label>
+                      <div style={{ color: '#94a3b8', fontSize: '12px' }}>
+                        Password can be updated by the student or via user management.
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                <div className="modal-form-grid-2">
+                  <Input 
+                    label="Course Title (e.g. B.Tech)"
+                    id="course"
+                    name="course"
+                    value={formData.course}
+                    onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value }))}
+                  />
+
+                  <Input 
+                    label="Academic Branch (e.g. CSE)"
+                    id="branch"
+                    name="branch"
+                    value={formData.branch}
+                    onChange={(e) => setFormData(prev => ({ ...prev, branch: e.target.value }))}
+                  />
+                </div>
+
+                <div className="modal-form-grid-2">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="year">Current Year</label>
+                    <select 
+                      id="year" 
+                      value={formData.year}
+                      onChange={(e) => setFormData(prev => ({ ...prev, year: e.target.value }))}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      <option value="1">1st Year</option>
+                      <option value="2">2nd Year</option>
+                      <option value="3">3rd Year</option>
+                      <option value="4">4th Year</option>
+                    </select>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Select Room *</label>
-                      <select 
-                        value={formData.room_id} 
-                        onChange={(e) => handleRoomChange(e.target.value)}
-                        disabled={!formData.floor_id || roomsLoading}
-                        className="form-input"
-                        style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                      >
-                        <option value="">{roomsLoading ? 'Loading rooms...' : '-- Choose Room --'}</option>
-                        {rooms.map(r => (
-                          <option key={r.id} value={r.id}>Room {r.room_number} (Cap {r.capacity})</option>
-                        ))}
-                      </select>
-                      {formErrors.room_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.room_id}</span>}
-                    </div>
-
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Select Bed *</label>
-                      <select 
-                        value={formData.bed_id} 
-                        onChange={(e) => setFormData(prev => ({ ...prev, bed_id: e.target.value }))}
-                        disabled={!formData.room_id || bedsLoading}
-                        className="form-input"
-                        style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                      >
-                        <option value="">{bedsLoading ? 'Loading beds...' : '-- Choose Bed --'}</option>
-                        {beds.filter(b => b.status === 'AVAILABLE').map(b => (
-                          <option key={b.id} value={b.id}>Bed {b.bed_number}</option>
-                        ))}
-                      </select>
-                      {formErrors.bed_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.bed_id}</span>}
-                    </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="semester">Current Semester</label>
+                    <select 
+                      id="semester" 
+                      value={formData.semester}
+                      onChange={(e) => setFormData(prev => ({ ...prev, semester: e.target.value }))}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                        <option key={sem} value={sem}>Semester {sem}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              )}
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
+                {/* Photo Upload input */}
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label">Profile Photo (Max 5MB)</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handlePhotoUpload}
+                    className="form-input"
+                    style={{ width: '100%', padding: '8px 12px' }}
+                  />
+                  {formErrors.base64Photo && <span className="form-error-msg">{formErrors.base64Photo}</span>}
+                  {formData.base64Photo && (
+                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <img 
+                        src={formData.base64Photo} 
+                        alt="Upload Preview" 
+                        style={{ width: '54px', height: '54px', borderRadius: '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                      />
+                      <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>✓ Image ready for upload</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* BED ASSIGNMENT FLOW: Only visible on Student Creation */}
+                {modalMode === 'add' && (
+                  <div className="modal-allocation-card">
+                    <h3 className="modal-allocation-title">
+                      🏢 Core Hostel Bed Assignment
+                    </h3>
+                    
+                    <div className="modal-form-grid-2" style={{ marginBottom: '12px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>Select Hostel *</label>
+                        <select 
+                          value={formData.hostel_id} 
+                          onChange={(e) => handleHostelChange(e.target.value)}
+                          className="form-input"
+                          style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                        >
+                          <option value="">-- Choose Hostel --</option>
+                          {hostels.map(h => (
+                            <option key={h.id} value={h.id}>{h.name} ({h.gender})</option>
+                          ))}
+                        </select>
+                        {formErrors.hostel_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.hostel_id}</span>}
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>Select Floor (Optional)</label>
+                        <select 
+                          value={formData.floor_id} 
+                          onChange={(e) => handleFloorChange(e.target.value)}
+                          disabled={!formData.hostel_id || floorsLoading}
+                          className="form-input"
+                          style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                        >
+                          <option value="">{floorsLoading ? 'Loading floors...' : floors.length === 0 ? '-- No Floors / Single Floor --' : '-- Choose Floor (Optional) --'}</option>
+                          {floors.map(f => (
+                            <option key={f.id} value={f.id}>{f.floor_name} (Floor {f.floor_number})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="modal-form-grid-2" style={{ marginBottom: 0 }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>Select Room *</label>
+                        <select 
+                          value={formData.room_id} 
+                          onChange={(e) => handleRoomChange(e.target.value)}
+                          disabled={!formData.floor_id || roomsLoading}
+                          className="form-input"
+                          style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                        >
+                          <option value="">{roomsLoading ? 'Loading rooms...' : '-- Choose Room --'}</option>
+                          {rooms.map(r => (
+                            <option key={r.id} value={r.id}>Room {r.room_number} (Cap {r.capacity})</option>
+                          ))}
+                        </select>
+                        {formErrors.room_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.room_id}</span>}
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>Select Bed *</label>
+                        <select 
+                          value={formData.bed_id} 
+                          onChange={(e) => setFormData(prev => ({ ...prev, bed_id: e.target.value }))}
+                          disabled={!formData.room_id || bedsLoading}
+                          className="form-input"
+                          style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                        >
+                          <option value="">{bedsLoading ? 'Loading beds...' : '-- Choose Bed --'}</option>
+                          {beds.filter(b => b.status === 'AVAILABLE').map(b => (
+                            <option key={b.id} value={b.id}>Bed {b.bed_number}</option>
+                          ))}
+                        </select>
+                        {formErrors.bed_id && <span className="form-error-msg" style={{ fontSize: '11px' }}>{formErrors.bed_id}</span>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="custom-modal-footer">
                 <Button onClick={() => setIsAddEditOpen(false)} variant="secondary" type="button">
                   Cancel
                 </Button>
@@ -978,98 +1009,102 @@ const StudentsPage = () => {
 
       {/* MODAL 3: Transfer Bed Assignment */}
       {isTransferOpen && selectedStudent && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '500px', padding: '24px', margin: 'auto' }}>
-            <div className="login-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <h2 className="login-title">Transfer Student</h2>
-                <p className="login-subtitle">Allocate <strong>{selectedStudent.full_name}</strong> to a different bed vacancy.</p>
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsTransferOpen(false); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '520px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">🔄 Transfer Student Bed</h2>
+                <p className="custom-modal-subtitle">Allocate <strong>{selectedStudent.full_name}</strong> to a different bed vacancy.</p>
               </div>
               <button 
                 onClick={() => setIsTransferOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '24px', cursor: 'pointer' }}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
               >
                 &times;
               </button>
             </div>
 
-            {formErrors.form && (
-              <div className="login-error-alert">
-                <span className="alert-icon">⚠️</span>
-                <span className="alert-text">{formErrors.form}</span>
+            <form onSubmit={handleTransferSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="custom-modal-body">
+                {formErrors.form && (
+                  <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-text">{formErrors.form}</span>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '16px', fontSize: '13.5px', color: '#475569', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  Current: <strong style={{ color: '#2563eb' }}>{selectedStudent.hostel_name || 'Unassigned'}</strong>
+                  {selectedStudent.room_number ? ` (Room ${selectedStudent.room_number}, Bed ${selectedStudent.bed_number})` : ''}
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '12px' }}>
+                  <label className="form-label">Destination Hostel *</label>
+                  <select 
+                    value={transferData.new_hostel_id} 
+                    onChange={(e) => handleHostelChange(e.target.value, true)}
+                    className="form-input"
+                    style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                  >
+                    <option value="">-- Choose Hostel --</option>
+                    {hostels.map(h => (
+                      <option key={h.id} value={h.id}>{h.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '12px' }}>
+                  <label className="form-label">Destination Floor (Optional)</label>
+                  <select 
+                    value={transferData.new_floor_id} 
+                    onChange={(e) => handleFloorChange(e.target.value, true)}
+                    disabled={!transferData.new_hostel_id || floorsLoading}
+                    className="form-input"
+                    style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                  >
+                    <option value="">{floorsLoading ? 'Loading floors...' : floors.length === 0 ? '-- No Floors / Single Floor --' : '-- Choose Floor (Optional) --'}</option>
+                    {floors.map(f => (
+                      <option key={f.id} value={f.id}>{f.floor_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '12px' }}>
+                  <label className="form-label">Destination Room *</label>
+                  <select 
+                    value={transferData.new_room_id} 
+                    onChange={(e) => handleRoomChange(e.target.value, true)}
+                    disabled={!transferData.new_floor_id || roomsLoading}
+                    className="form-input"
+                    style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                  >
+                    <option value="">{roomsLoading ? 'Loading rooms...' : '-- Choose Room --'}</option>
+                    {rooms.map(r => (
+                      <option key={r.id} value={r.id}>Room {r.room_number}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Available Destination Bed *</label>
+                  <select 
+                    value={transferData.new_bed_id} 
+                    onChange={(e) => setTransferData(prev => ({ ...prev, new_bed_id: e.target.value }))}
+                    disabled={!transferData.new_room_id || bedsLoading}
+                    className="form-input"
+                    style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                  >
+                    <option value="">{bedsLoading ? 'Loading beds...' : '-- Choose Bed --'}</option>
+                    {beds.filter(b => b.status === 'AVAILABLE').map(b => (
+                      <option key={b.id} value={b.id}>Bed {b.bed_number}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            )}
 
-            <div style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-secondary)', padding: '10px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-              Current Assignment: <strong style={{ color: 'var(--primary-color)' }}>{selectedStudent.hostel_name || 'Unassigned'}</strong>
-              {selectedStudent.room_number ? ` (Room ${selectedStudent.room_number}, Bed ${selectedStudent.bed_number})` : ''}
-            </div>
-
-            <form onSubmit={handleTransferSubmit} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="form-group">
-                <label className="form-label">Destination Hostel *</label>
-                <select 
-                  value={transferData.new_hostel_id} 
-                  onChange={(e) => handleHostelChange(e.target.value, true)}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="">-- Choose Hostel --</option>
-                  {hostels.map(h => (
-                    <option key={h.id} value={h.id}>{h.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Destination Floor *</label>
-                <select 
-                  value={transferData.new_floor_id} 
-                  onChange={(e) => handleFloorChange(e.target.value, true)}
-                  disabled={!transferData.new_hostel_id || floorsLoading}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="">{floorsLoading ? 'Loading floors...' : '-- Choose Floor --'}</option>
-                  {floors.map(f => (
-                    <option key={f.id} value={f.id}>{f.floor_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Destination Room *</label>
-                <select 
-                  value={transferData.new_room_id} 
-                  onChange={(e) => handleRoomChange(e.target.value, true)}
-                  disabled={!transferData.new_floor_id || roomsLoading}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="">{roomsLoading ? 'Loading rooms...' : '-- Choose Room --'}</option>
-                  {rooms.map(r => (
-                    <option key={r.id} value={r.id}>Room {r.room_number}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Available Destination Bed *</label>
-                <select 
-                  value={transferData.new_bed_id} 
-                  onChange={(e) => setTransferData(prev => ({ ...prev, new_bed_id: e.target.value }))}
-                  disabled={!transferData.new_room_id || bedsLoading}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="">{bedsLoading ? 'Loading beds...' : '-- Choose Bed --'}</option>
-                  {beds.filter(b => b.status === 'AVAILABLE').map(b => (
-                    <option key={b.id} value={b.id}>Bed {b.bed_number}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <div className="custom-modal-footer">
                 <Button onClick={() => setIsTransferOpen(false)} variant="secondary" type="button">
                   Cancel
                 </Button>
@@ -1084,49 +1119,53 @@ const StudentsPage = () => {
 
       {/* MODAL 4: Deactivate/Archive Student Account */}
       {isStatusOpen && selectedStudent && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '450px', padding: '24px', margin: 'auto' }}>
-            <div className="login-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <h2 className="login-title">Update Status / Deactivate</h2>
-                <p className="login-subtitle">Alter the account and residency status of <strong>{selectedStudent.full_name}</strong>.</p>
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsStatusOpen(false); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '480px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">⚙️ Update Status / Deactivate</h2>
+                <p className="custom-modal-subtitle">Alter the account status of <strong>{selectedStudent.full_name}</strong>.</p>
               </div>
               <button 
                 onClick={() => setIsStatusOpen(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '24px', cursor: 'pointer' }}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
               >
                 &times;
               </button>
             </div>
 
-            {formErrors.form && (
-              <div className="login-error-alert">
-                <span className="alert-icon">⚠️</span>
-                <span className="alert-text">{formErrors.form}</span>
-              </div>
-            )}
+            <form onSubmit={handleStatusSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="custom-modal-body">
+                {formErrors.form && (
+                  <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-text">{formErrors.form}</span>
+                  </div>
+                )}
 
-            <form onSubmit={handleStatusSubmit} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="status-select">Select New Status *</label>
-                <select 
-                  id="status-select" 
-                  value={statusData.status}
-                  onChange={(e) => setStatusData({ status: e.target.value })}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="ACTIVE">ACTIVE (Re-activate or Restore account)</option>
-                  <option value="INACTIVE">INACTIVE (Deactivates access & releases assigned bed)</option>
-                  <option value="GRADUATED">GRADUATED (Archive student & releases assigned bed)</option>
-                </select>
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label className="form-label" htmlFor="status-select">Select New Status *</label>
+                  <select 
+                    id="status-select" 
+                    value={statusData.status}
+                    onChange={(e) => setStatusData({ status: e.target.value })}
+                    className="form-input"
+                    style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                  >
+                    <option value="ACTIVE">ACTIVE (Re-activate or Restore account)</option>
+                    <option value="INACTIVE">INACTIVE (Deactivates access & releases assigned bed)</option>
+                    <option value="GRADUATED">GRADUATED (Archive student & releases assigned bed)</option>
+                  </select>
+                </div>
+
+                <div style={{ color: '#64748b', fontSize: '13px', lineHeight: '1.5', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  💡 <strong>Important Note:</strong> Switching a student to <code>INACTIVE</code> or <code>GRADUATED</code> will instantly release their currently assigned bed back to the availability pool.
+                </div>
               </div>
 
-              <div style={{ color: 'var(--text-light)', fontSize: '13px', lineHeight: '1.4' }}>
-                💡 <strong>Important Note:</strong> Switching a student to <code>INACTIVE</code> or <code>GRADUATED</code> will instantly release their currently assigned bed back to the availability pool. Re-activating an account later will require configuring a brand new bed allocation.
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <div className="custom-modal-footer">
                 <Button onClick={() => setIsStatusOpen(false)} variant="secondary" type="button">
                   Cancel
                 </Button>

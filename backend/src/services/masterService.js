@@ -173,7 +173,7 @@ async function validateHostelDeactivation(hostelId) {
  */
 async function validateFloorDeactivation(floorId) {
   const [allocations] = await db.pool.query(
-    `SELECT COUNT(*) as cnt FROM student_allocations WHERE floor_id = ? AND status = 'ACTIVE'`,
+    `SELECT COUNT(*) as cnt FROM student_allocations sa JOIN rooms r ON sa.room_id = r.id WHERE r.floor_id = ? AND sa.status = 'ACTIVE'`,
     [floorId]
   );
   const activeCount = allocations[0]?.cnt || 0;

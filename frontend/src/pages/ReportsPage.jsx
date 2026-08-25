@@ -13,8 +13,6 @@ const TABS = [
   { id: 'occupancy', label: 'Occupancy', icon: '🛏️' },
   { id: 'complaints', label: 'Complaints', icon: '🛠️' },
   { id: 'visitors', label: 'Visitors', icon: '👥' },
-  { id: 'mess', label: 'Mess & Food', icon: '🍲' },
-  { id: 'fees', label: 'Fees & Dues', icon: '💳' },
 ];
 
 const ReportsPage = () => {
@@ -46,8 +44,6 @@ const ReportsPage = () => {
   const [occupancyData, setOccupancyData] = useState(null);
   const [complaintData, setComplaintData] = useState(null);
   const [visitorData, setVisitorData] = useState(null);
-  const [messData, setMessData] = useState(null);
-  const [feeData, setFeeData] = useState(null);
 
   // Fetch Hostels for Filter dropdown
   useEffect(() => {
@@ -86,12 +82,6 @@ const ReportsPage = () => {
       } else if (activeTab === 'visitors') {
         const res = await api.getVisitorReport(queryParams);
         if (res.success) setVisitorData(res.data);
-      } else if (activeTab === 'mess') {
-        const res = await api.getMessReport(queryParams);
-        if (res.success) setMessData(res.data);
-      } else if (activeTab === 'fees') {
-        const res = await api.getFeeReport(queryParams);
-        if (res.success) setFeeData(res.data);
       }
     } catch (err) {
       console.error(`Error loading ${activeTab} report:`, err);
@@ -210,14 +200,6 @@ const ReportsPage = () => {
                 subtitle={`${overviewData?.complaints?.urgentComplaints || 0} urgent unresolved`}
                 icon="🛠️"
                 color="danger"
-                loading={loading}
-              />
-              <ReportStatCard
-                title="Fee Collection Rate"
-                value={`${overviewData?.fees?.collectionRate ?? 0}%`}
-                subtitle={`Collected: ${formatCurrency(overviewData?.fees?.totalCollected || 0)}`}
-                icon="💳"
-                color="purple"
                 loading={loading}
               />
             </div>
@@ -565,125 +547,7 @@ const ReportsPage = () => {
           </div>
         )}
 
-        {/* 7. MESS REPORT */}
-        {activeTab === 'mess' && (
-          <div className="report-section">
-            <div className="report-stats-grid">
-              <ReportStatCard
-                title="Overall Participation"
-                value={`${messData?.summary?.overallParticipationPercentage ?? 0}%`}
-                subtitle={`${messData?.summary?.overallTaking || 0} / ${messData?.summary?.overallTotal || 0} meals opted`}
-                icon="🍲"
-                color="success"
-                loading={loading}
-              />
-            </div>
-
-            <div className="card report-table-card">
-              <h4 className="card-title">Meal Participation by Meal Type</h4>
-              <div className="table-responsive">
-                <table className="report-table">
-                  <thead>
-                    <tr>
-                      <th>Meal Type</th>
-                      <th>Taking</th>
-                      <th>Not Taking</th>
-                      <th>Total Responses</th>
-                      <th>Participation %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {messData?.byMealType?.map(m => (
-                      <tr key={m.meal_type}>
-                        <td><strong>{m.meal_type}</strong></td>
-                        <td className="text-success">{m.taking}</td>
-                        <td className="text-muted">{m.notTaking}</td>
-                        <td>{m.totalResponses}</td>
-                        <td><strong>{m.participationPercentage}%</strong></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 8. FEES REPORT */}
-        {activeTab === 'fees' && (
-          <div className="report-section">
-            <div className="report-stats-grid">
-              <ReportStatCard
-                title="Total Expected"
-                value={formatCurrency(feeData?.summary?.totalExpected || 0)}
-                subtitle="Gross assigned fees"
-                icon="💳"
-                color="primary"
-                loading={loading}
-              />
-              <ReportStatCard
-                title="Total Collected"
-                value={formatCurrency(feeData?.summary?.totalCollected || 0)}
-                subtitle={`Collection Rate: ${feeData?.summary?.collectionRate ?? 0}%`}
-                icon="💰"
-                color="success"
-                loading={loading}
-              />
-              <ReportStatCard
-                title="Pending Dues"
-                value={formatCurrency(feeData?.summary?.totalPending || 0)}
-                subtitle="Outstanding balances"
-                icon="⏳"
-                color="warning"
-                loading={loading}
-              />
-              <ReportStatCard
-                title="Overdue Balance"
-                value={formatCurrency(feeData?.summary?.totalOverdue || 0)}
-                subtitle="Past due date"
-                icon="🚨"
-                color="danger"
-                loading={loading}
-              />
-            </div>
-
-            <ReportChart
-              title="Daily Fee Collection Trend"
-              data={feeData?.dailyCollectionTrend || []}
-              xKey="date"
-              yKey="totalCollected"
-              label="Collection Amount"
-              color="#8B5CF6"
-              isCurrency={true}
-            />
-
-            <div className="card report-table-card">
-              <h4 className="card-title">Fee Collection by Fee Type</h4>
-              <div className="table-responsive">
-                <table className="report-table">
-                  <thead>
-                    <tr>
-                      <th>Fee Category</th>
-                      <th>Expected Amount</th>
-                      <th>Collected Amount</th>
-                      <th>Collection %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {feeData?.byFeeType?.map(f => (
-                      <tr key={f.fee_type}>
-                        <td><strong>{f.fee_type}</strong></td>
-                        <td>{formatCurrency(f.expected)}</td>
-                        <td className="text-success">{formatCurrency(f.collected)}</td>
-                        <td><strong>{f.collectionRate}%</strong></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* End of report sections */}
 
       </div>
     </div>

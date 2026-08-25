@@ -42,8 +42,6 @@ db.testConnection().then((connected) => {
 const noticeRoutes = require('./routes/noticeRoutes');
 const complaintRoutes = require('./routes/complaintRoutes');
 const visitorRoutes = require('./routes/visitorRoutes');
-const messRoutes = require('./routes/messRoutes');
-const feeRoutes = require('./routes/feeRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const allocationRoutes = require('./routes/allocationRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -66,8 +64,6 @@ app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/notices', noticeRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/visitors', visitorRoutes);
-app.use('/api/mess', messRoutes);
-app.use('/api/fees', feeRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/allocations', allocationRoutes);
 app.use('/api/activity', activityRoutes);

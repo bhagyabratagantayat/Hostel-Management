@@ -4,6 +4,7 @@ import api from '../services/api';
 import ComplaintCard from '../components/complaints/ComplaintCard';
 import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
 import ComplaintDetailsModal from '../components/complaints/ComplaintDetailsModal';
+import './ComplaintsPage.css';
 
 const CATEGORY_OPTIONS = [
   { value: 'ALL', label: 'All Categories' },

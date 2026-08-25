@@ -14,7 +14,14 @@ const getAllFloors = async (filters, user) => {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const offset = (pageNum - 1) * limitNum;
 
-  let query = 'SELECT f.*, h.name as hostel_name FROM floors f JOIN hostels h ON f.hostel_id = h.id';
+  let query = `
+    SELECT f.*, h.name as hostel_name,
+           (SELECT COUNT(*) FROM rooms r WHERE r.floor_id = f.id) as total_rooms,
+           (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.floor_id = f.id) as total_beds,
+           (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.floor_id = f.id AND b.status = 'OCCUPIED') as occupied_beds
+    FROM floors f 
+    JOIN hostels h ON f.hostel_id = h.id
+  `;
   let countQuery = 'SELECT COUNT(*) as total FROM floors f JOIN hostels h ON f.hostel_id = h.id';
   let queryParams = [];
   let whereClauses = [];
@@ -256,6 +263,8 @@ const updateFloor = async (floorId, floorData, user) => {
 const deleteFloor = async (floorId, user) => {
   masterService.assertSuperAdmin(user);
 
+  const currentFloor = await getFloorById(floorId, user);
+
   await masterService.validateFloorDeactivation(floorId);
 
   const [rooms] = await db.pool.query('SELECT id FROM rooms WHERE floor_id = ? LIMIT 1', [floorId]);
@@ -271,6 +280,17 @@ const deleteFloor = async (floorId, user) => {
     error.status = 404;
     throw error;
   }
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action: 'FLOOR_DELETED',
+    module: 'MASTER_DATA',
+    entityType: 'FLOOR',
+    entityId: floorId,
+    hostelId: currentFloor.hostel_id,
+    description: `Deleted floor "${currentFloor.floor_name}" (Floor #${currentFloor.floor_number})`,
+    metadata: { id: floorId, floor_name: currentFloor.floor_name, floor_number: currentFloor.floor_number, hostel_id: currentFloor.hostel_id }
+  });
 
   return { success: true };
 };

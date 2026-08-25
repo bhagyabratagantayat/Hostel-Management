@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Loading from '../components/Loading';
 import Error from '../components/Error';
+import './StudentsPage.css';
 
 const HostelDetailsPage = () => {
   const { hostelId } = useParams();
@@ -72,6 +73,17 @@ const HostelDetailsPage = () => {
     fetchData();
   }, [hostelId]);
 
+  // Keyboard shortcut (Escape) to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Floor CRUD handlers
   const handleOpenFloorModal = (mode, floor = null) => {
     setModalMode(mode);
@@ -135,7 +147,7 @@ const HostelDetailsPage = () => {
       });
     } else if (room) {
       setRoomForm({
-        floor_id: room.floor_id,
+        floor_id: room.floor_id || '',
         room_number: room.room_number,
         capacity: room.capacity.toString(),
         status: room.status
@@ -147,17 +159,22 @@ const HostelDetailsPage = () => {
 
   const handleRoomSubmit = async (e) => {
     e.preventDefault();
-    if (!roomForm.room_number.trim() || !roomForm.floor_id || roomForm.capacity === '') {
-      setModalError('All fields are required.');
+    if (!roomForm.room_number.trim() || roomForm.capacity === '') {
+      setModalError('Room number and capacity are required.');
       return;
     }
     setActionLoading(true);
     setModalError(null);
     try {
+      const payload = {
+        ...roomForm,
+        floor_id: roomForm.floor_id ? parseInt(roomForm.floor_id, 10) : null,
+        hostel_id: hostelId
+      };
       if (modalMode === 'add') {
-        await api.post('/rooms', { ...roomForm, hostel_id: hostelId });
+        await api.post('/rooms', payload);
       } else {
-        await api.put(`/rooms/${selectedEntityId}`, { ...roomForm, hostel_id: hostelId });
+        await api.put(`/rooms/${selectedEntityId}`, payload);
       }
       setActiveModal(null);
       fetchData();
@@ -545,48 +562,73 @@ const HostelDetailsPage = () => {
 
       {/* Floor Form Modal */}
       {activeModal === 'floor' && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '450px', padding: '24px', margin: 'auto' }}>
-            <h2 className="login-title">{modalMode === 'add' ? 'Add Floor' : 'Edit Floor'}</h2>
-            {modalError && <div className="login-error-alert"><span className="alert-text">{modalError}</span></div>}
-            
-            <form onSubmit={handleFloorSubmit} className="login-form">
-              <Input 
-                label="Floor Name"
-                id="floor_name"
-                name="floor_name"
-                value={floorForm.floor_name}
-                onChange={e => setFloorForm(prev => ({ ...prev, floor_name: e.target.value }))}
-                required
-              />
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setActiveModal(null); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '480px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">{modalMode === 'add' ? '🏢 Add Floor' : '✏️ Edit Floor'}</h2>
+                <p className="custom-modal-subtitle">Configure floor level and details for this hostel.</p>
+              </div>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
 
-              <Input 
-                label="Floor Number (Integer)"
-                id="floor_number"
-                name="floor_number"
-                type="number"
-                value={floorForm.floor_number}
-                onChange={e => setFloorForm(prev => ({ ...prev, floor_number: e.target.value }))}
-                required
-              />
+            <form onSubmit={handleFloorSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="custom-modal-body">
+                {modalError && (
+                  <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-text">{modalError}</span>
+                  </div>
+                )}
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <Input 
+                    label="Floor Name *"
+                    id="floor_name"
+                    name="floor_name"
+                    value={floorForm.floor_name}
+                    onChange={e => setFloorForm(prev => ({ ...prev, floor_name: e.target.value }))}
+                    placeholder="e.g. Ground Floor, 1st Floor"
+                    required
+                  />
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="floor_status">Floor Status *</label>
-                <select 
-                  id="floor_status" 
-                  value={floorForm.status}
-                  onChange={e => setFloorForm(prev => ({ ...prev, status: e.target.value }))}
-                  className="form-input"
-                  style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                >
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
+                  <Input 
+                    label="Floor Number (Integer) *"
+                    id="floor_number"
+                    name="floor_number"
+                    type="number"
+                    value={floorForm.floor_number}
+                    onChange={e => setFloorForm(prev => ({ ...prev, floor_number: e.target.value }))}
+                    placeholder="e.g. 0, 1, 2"
+                    required
+                  />
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="floor_status">Floor Status *</label>
+                    <select 
+                      id="floor_status" 
+                      value={floorForm.status}
+                      onChange={e => setFloorForm(prev => ({ ...prev, status: e.target.value }))}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
-                <Button onClick={() => setActiveModal(null)} variant="secondary">Cancel</Button>
-                <Button type="submit" variant="primary" isLoading={actionLoading}>Save</Button>
+              <div className="custom-modal-footer">
+                <Button onClick={() => setActiveModal(null)} variant="secondary" type="button">Cancel</Button>
+                <Button type="submit" variant="primary" isLoading={actionLoading}>Save Floor</Button>
               </div>
             </form>
           </div>
@@ -595,150 +637,193 @@ const HostelDetailsPage = () => {
 
       {/* Room Form Modal */}
       {activeModal === 'room' && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '450px', padding: '24px', margin: 'auto' }}>
-            <h2 className="login-title">{modalMode === 'add' ? 'Add Room' : 'Edit Room'}</h2>
-            {modalError && <div className="login-error-alert"><span className="alert-text">{modalError}</span></div>}
-
-            {floors.length === 0 ? (
-              <div style={{ margin: '16px 0', textAlign: 'center' }}>
-                <p style={{ color: 'var(--danger-color)' }}>Please create at least one floor before adding rooms.</p>
-                <Button onClick={() => setActiveModal(null)} variant="secondary" style={{ marginTop: '12px' }}>Close</Button>
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setActiveModal(null); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '500px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">{modalMode === 'add' ? '🛏️ Add Room' : '✏️ Edit Room'}</h2>
+                <p className="custom-modal-subtitle">Configure room number and bed capacity.</p>
               </div>
-            ) : (
-              <form onSubmit={handleRoomSubmit} className="login-form">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="room_floor_id">Select Floor *</label>
-                  <select 
-                    id="room_floor_id" 
-                    value={roomForm.floor_id}
-                    onChange={e => setRoomForm(prev => ({ ...prev, floor_id: e.target.value }))}
-                    className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                  >
-                    {floors.map(f => (
-                      <option key={f.id} value={f.id}>{f.floor_name}</option>
-                    ))}
-                  </select>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleRoomSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="custom-modal-body">
+                {modalError && (
+                  <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-text">{modalError}</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="room_floor_id">Select Floor (Optional)</label>
+                    <select 
+                      id="room_floor_id" 
+                      value={roomForm.floor_id}
+                      onChange={e => setRoomForm(prev => ({ ...prev, floor_id: e.target.value }))}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      <option value="">-- No Floor / Single Floor / Ground --</option>
+                      {floors.map(f => (
+                        <option key={f.id} value={f.id}>{f.floor_name} (Level {f.floor_number})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <Input 
+                    label="Room Number *"
+                    id="room_number"
+                    name="room_number"
+                    value={roomForm.room_number}
+                    onChange={e => setRoomForm(prev => ({ ...prev, room_number: e.target.value }))}
+                    placeholder="e.g. 101, A-102"
+                    required
+                  />
+
+                  <Input 
+                    label="Room Capacity (Beds Count) *"
+                    id="capacity"
+                    name="capacity"
+                    type="number"
+                    min="1"
+                    value={roomForm.capacity}
+                    onChange={e => setRoomForm(prev => ({ ...prev, capacity: e.target.value }))}
+                    required
+                  />
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="room_status">Room Status *</label>
+                    <select 
+                      id="room_status" 
+                      value={roomForm.status}
+                      onChange={e => setRoomForm(prev => ({ ...prev, status: e.target.value }))}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="MAINTENANCE">MAINTENANCE</option>
+                    </select>
+                  </div>
                 </div>
+              </div>
 
-                <Input 
-                  label="Room Number"
-                  id="room_number"
-                  name="room_number"
-                  value={roomForm.room_number}
-                  onChange={e => setRoomForm(prev => ({ ...prev, room_number: e.target.value }))}
-                  required
-                />
-
-                <Input 
-                  label="Room Capacity (Beds Count)"
-                  id="capacity"
-                  name="capacity"
-                  type="number"
-                  value={roomForm.capacity}
-                  onChange={e => setRoomForm(prev => ({ ...prev, capacity: e.target.value }))}
-                  required
-                />
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="room_status">Room Status *</label>
-                  <select 
-                    id="room_status" 
-                    value={roomForm.status}
-                    onChange={e => setRoomForm(prev => ({ ...prev, status: e.target.value }))}
-                    className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                  >
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
-                  <Button onClick={() => setActiveModal(null)} variant="secondary">Cancel</Button>
-                  <Button type="submit" variant="primary" isLoading={actionLoading}>Save</Button>
-                </div>
-              </form>
-            )}
+              <div className="custom-modal-footer">
+                <Button onClick={() => setActiveModal(null)} variant="secondary" type="button">Cancel</Button>
+                <Button type="submit" variant="primary" isLoading={actionLoading}>Save Room</Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Bed Form Modal */}
       {activeModal === 'bed' && (
-        <div className="sidebar-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="login-box" style={{ width: '90%', maxWidth: '450px', padding: '24px', margin: 'auto' }}>
-            <h2 className="login-title">{modalMode === 'add' ? 'Add Bed' : 'Edit Bed'}</h2>
-            {modalError && <div className="login-error-alert"><span className="alert-text">{modalError}</span></div>}
+        <div className="custom-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setActiveModal(null); }}>
+          <div className="custom-modal-container" style={{ maxWidth: '500px' }}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">{modalMode === 'add' ? '🛌 Add Bed' : '✏️ Edit Bed'}</h2>
+                <p className="custom-modal-subtitle">Configure bed slot and occupancy status.</p>
+              </div>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="custom-modal-close-btn"
+                aria-label="Close modal"
+                title="Close"
+              >
+                &times;
+              </button>
+            </div>
 
             {rooms.length === 0 ? (
-              <div style={{ margin: '16px 0', textAlign: 'center' }}>
-                <p style={{ color: 'var(--danger-color)' }}>Please create at least one room before adding beds.</p>
-                <Button onClick={() => setActiveModal(null)} variant="secondary" style={{ marginTop: '12px' }}>Close</Button>
+              <div className="custom-modal-body" style={{ textAlign: 'center', padding: '32px 24px' }}>
+                <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>⚠️ Please create at least one room before adding beds.</p>
+                <Button onClick={() => setActiveModal(null)} variant="secondary">Close</Button>
               </div>
             ) : (
-              <form onSubmit={handleBedSubmit} className="login-form">
-                {modalMode === 'add' && (
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="bed_room_id">Select Room *</label>
-                    <select 
-                      id="bed_room_id" 
-                      value={bedForm.room_id}
-                      onChange={e => setBedForm(prev => ({ ...prev, room_id: e.target.value }))}
-                      className="form-input"
-                      style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                    >
-                      {rooms.map(r => (
-                        <option key={r.id} value={r.id}>Room {r.room_number}</option>
-                      ))}
-                    </select>
+              <form onSubmit={handleBedSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                <div className="custom-modal-body">
+                  {modalError && (
+                    <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                      <span className="alert-icon">⚠️</span>
+                      <span className="alert-text">{modalError}</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {modalMode === 'add' && (
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="bed_room_id">Select Room *</label>
+                        <select 
+                          id="bed_room_id" 
+                          value={bedForm.room_id}
+                          onChange={e => setBedForm(prev => ({ ...prev, room_id: e.target.value }))}
+                          className="form-input"
+                          style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                        >
+                          {rooms.map(r => (
+                            <option key={r.id} value={r.id}>Room {r.room_number}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Capacity statistics details */}
+                    {modalMode === 'add' && roomStats && (
+                      <div style={{ padding: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div>Room Capacity: <strong>{roomStats.capacity}</strong></div>
+                        <div>Existing Beds: <strong>{roomStats.existingCount}</strong></div>
+                        <div>Remaining Slots: <strong style={{ color: roomStats.availableSlots > 0 ? '#16a34a' : '#ef4444' }}>{roomStats.availableSlots}</strong></div>
+                      </div>
+                    )}
+
+                    <Input 
+                      label="Bed Number / Label *"
+                      id="bed_number"
+                      name="bed_number"
+                      value={bedForm.bed_number}
+                      onChange={e => setBedForm(prev => ({ ...prev, bed_number: e.target.value }))}
+                      placeholder="e.g. 1, 2, Bed-A"
+                      required
+                    />
+
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="bed_status">Bed Status *</label>
+                      <select 
+                        id="bed_status" 
+                        value={bedForm.status}
+                        onChange={e => setBedForm(prev => ({ ...prev, status: e.target.value }))}
+                        className="form-input"
+                        style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                      >
+                        <option value="AVAILABLE">AVAILABLE</option>
+                        <option value="OCCUPIED">OCCUPIED</option>
+                        <option value="MAINTENANCE">MAINTENANCE</option>
+                      </select>
+                    </div>
                   </div>
-                )}
-
-                {/* Capacity statistics details */}
-                {modalMode === 'add' && roomStats && (
-                  <div style={{ padding: '12px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div>Room Capacity: <strong>{roomStats.capacity}</strong></div>
-                    <div>Existing Beds: <strong>{roomStats.existingCount}</strong></div>
-                    <div>Remaining Slots: <strong style={{ color: roomStats.availableSlots > 0 ? 'var(--success-color)' : 'var(--danger-color)' }}>{roomStats.availableSlots}</strong></div>
-                  </div>
-                )}
-
-                <Input 
-                  label="Bed Number / Label"
-                  id="bed_number"
-                  name="bed_number"
-                  value={bedForm.bed_number}
-                  onChange={e => setBedForm(prev => ({ ...prev, bed_number: e.target.value }))}
-                  required
-                />
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="bed_status">Bed Status *</label>
-                  <select 
-                    id="bed_status" 
-                    value={bedForm.status}
-                    onChange={e => setBedForm(prev => ({ ...prev, status: e.target.value }))}
-                    className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
-                  >
-                    <option value="AVAILABLE">AVAILABLE</option>
-                    <option value="OCCUPIED">OCCUPIED</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                  </select>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '16px' }}>
-                  <Button onClick={() => setActiveModal(null)} variant="secondary">Cancel</Button>
+                <div className="custom-modal-footer">
+                  <Button onClick={() => setActiveModal(null)} variant="secondary" type="button">Cancel</Button>
                   <Button 
                     type="submit" 
                     variant="primary" 
                     isLoading={actionLoading}
                     disabled={modalMode === 'add' && roomStats && roomStats.availableSlots <= 0}
                   >
-                    Save
+                    Save Bed
                   </Button>
                 </div>
               </form>

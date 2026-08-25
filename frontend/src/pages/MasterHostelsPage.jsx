@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import './MasterData.css';
 
 const MasterHostelsPage = () => {
   const [hostels, setHostels] = useState([]);
@@ -108,9 +109,7 @@ const MasterHostelsPage = () => {
   };
 
   const handleDeleteHostel = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete hostel "${name}"? This action requires no active allocations or dependencies.`)) {
-      return;
-    }
+    if (!window.confirm(`Are you sure you want to delete hostel "${name}"?`)) return;
 
     try {
       const res = await api.deleteHostel(id);
@@ -125,81 +124,118 @@ const MasterHostelsPage = () => {
   };
 
   return (
-    <div className="master-hostels-page">
-      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <div className="breadcrumbs text-sm text-gray-500 mb-1">
-            <Link to="/admin/master" className="hover:underline">Master Data</Link> / <span>Hostels</span>
+    <div className="master-page-container">
+      {/* Page Header */}
+      <div className="master-header">
+        <div className="master-header-left">
+          <div className="master-breadcrumbs">
+            <Link to="/admin/master">Master Data</Link>
+            <span className="master-breadcrumbs-separator">/</span>
+            <span>Hostels</span>
           </div>
-          <h1 className="page-heading">🏢 Hostels Administration</h1>
-          <p className="page-subheading">Manage core hostel entities, codes, types, and capacity limits.</p>
+          <h1 className="master-title">🏢 Hostels Administration</h1>
+          <p className="master-subtitle">Manage core hostel entities, codes, types, and capacity limits.</p>
         </div>
-        <button onClick={handleOpenCreateModal} className="btn btn-indigo flex items-center gap-2">
+        <button onClick={handleOpenCreateModal} className="master-btn-primary">
           <span>➕</span> Add New Hostel
         </button>
       </div>
 
       {/* Search Bar */}
-      <div className="search-bar-container bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <input
-            type="text"
-            className="form-input w-full pl-10 pr-4 py-2 border rounded-md"
-            placeholder="Search hostel name or code..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-          />
-          <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+      <div className="master-filter-card">
+        <div className="master-filter-group">
+          <div className="master-search-box" style={{ maxWidth: '400px', minWidth: '280px' }}>
+            <span className="master-search-icon">🔍</span>
+            <input
+              type="text"
+              className="master-search-input"
+              placeholder="Search hostel name or code..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
-        <div className="text-sm text-gray-500">
-          Total Hostels: <span className="font-semibold text-gray-800">{pagination.total}</span>
+        <div className="master-count-badge">
+          Total Hostels: <strong>{pagination.total || hostels.length}</strong>
         </div>
       </div>
 
-      {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
+      {error && (
+        <div className="master-alert-error">
+          <span>⚠️ {error}</span>
+        </div>
+      )}
 
-      {/* Loading state */}
+      {/* Hostels Table / Cards */}
       {loading ? (
         <Loading message="Loading hostels list..." />
       ) : hostels.length === 0 ? (
-        <div className="empty-state bg-white p-8 rounded-lg text-center border">
-          <span className="text-4xl">🏢</span>
-          <h3 className="font-bold text-gray-700 mt-2">No Hostels Found</h3>
-          <p className="text-sm text-gray-500 mt-1">Try adjusting your search filter or add a new hostel.</p>
+        <div className="master-empty-state">
+          <span className="master-empty-icon">🏢</span>
+          <h3 className="master-empty-title">No Hostels Found</h3>
+          <p className="master-empty-desc">Try adjusting your search filter or add a new hostel.</p>
         </div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
-            <table className="w-full text-left border-collapse">
+          <div className="master-table-card">
+            <table className="master-table">
               <thead>
-                <tr className="bg-gray-50 border-b text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  <th className="p-4">Hostel Name</th>
-                  <th className="p-4">Code</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Capacity</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                <tr>
+                  <th>Hostel Name</th>
+                  <th>Code</th>
+                  <th>Gender / Type</th>
+                  <th>Capacity Stats</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
+              <tbody>
                 {hostels.map((h) => (
-                  <tr key={h.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">{h.name}</td>
-                    <td className="p-4 text-gray-600"><span className="badge badge-gray">{h.code}</span></td>
-                    <td className="p-4 text-gray-600">{h.gender || h.type || 'BOYS'}</td>
-                    <td className="p-4 text-gray-600">{h.capacity} beds</td>
-                    <td className="p-4">
-                      <span className={`badge ${h.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
-                        {h.status}
+                  <tr key={h.id}>
+                    <td>
+                      <div className="master-cell-room">
+                        <span className="master-room-icon" style={{ background: '#e0e7ff', color: '#4338ca' }}>🏢</span>
+                        <span>{h.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge-status badge-available">{h.code}</span>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: '500', color: '#475569' }}>
+                        {h.gender || h.type || 'BOYS'}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
-                      <button onClick={() => handleOpenEditModal(h)} className="btn btn-sm btn-outline">Edit</button>
-                      <button onClick={() => handleDeleteHostel(h.id, h.name)} className="btn btn-sm btn-danger-outline">Delete</button>
+                    <td>
+                      <span style={{ fontSize: '13px', color: '#334155' }}>
+                        📑 <strong>{h.total_floors ?? 0}</strong> floors • 🚪 <strong>{h.total_rooms ?? 0}</strong> rooms • 🛏️ <strong>{h.total_beds ?? 0}</strong> beds
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge-status ${h.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
+                        <span className="badge-status-dot" />
+                        {h.status || 'ACTIVE'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="master-actions-group">
+                        <button
+                          onClick={() => handleOpenEditModal(h)}
+                          className="master-action-btn btn-action-edit"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteHostel(h.id, h.name)}
+                          className="master-action-btn btn-action-delete"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -208,26 +244,31 @@ const MasterHostelsPage = () => {
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid md:hidden grid-cols-1 gap-4 mb-6">
+          <div className="master-mobile-cards">
             {hostels.map((h) => (
-              <div key={h.id} className="bg-white p-4 rounded-lg shadow-sm border space-y-3">
-                <div className="flex justify-between items-start">
+              <div key={h.id} className="master-mobile-card">
+                <div className="master-mobile-card-header">
                   <div>
-                    <h3 className="font-bold text-gray-900">{h.name}</h3>
-                    <span className="badge badge-gray mt-1">{h.code}</span>
+                    <div className="master-mobile-card-title">{h.name}</div>
+                    <div className="master-mobile-card-subtitle">{h.code} • {h.gender || h.type || 'BOYS'}</div>
                   </div>
-                  <span className={`badge ${h.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
-                    {h.status}
+                  <span className={`badge-status ${h.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
+                    <span className="badge-status-dot" />
+                    {h.status || 'ACTIVE'}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <div><strong>Type:</strong> {h.gender || h.type || 'BOYS'}</div>
-                  <div><strong>Capacity:</strong> {h.capacity} beds</div>
-                  {h.address && <div><strong>Address:</strong> {h.address}</div>}
+                <div className="master-mobile-card-details">
+                  <span>Floors: <strong>{h.total_floors ?? 0}</strong></span>
+                  <span>Rooms: <strong>{h.total_rooms ?? 0}</strong></span>
+                  <span>Beds: <strong>{h.total_beds ?? 0}</strong></span>
                 </div>
-                <div className="flex justify-end gap-2 pt-2 border-t">
-                  <button onClick={() => handleOpenEditModal(h)} className="btn btn-sm btn-outline">Edit</button>
-                  <button onClick={() => handleDeleteHostel(h.id, h.name)} className="btn btn-sm btn-danger-outline">Delete</button>
+                <div className="master-mobile-card-actions">
+                  <button onClick={() => handleOpenEditModal(h)} className="master-action-btn btn-action-edit">
+                    ✏️ Edit
+                  </button>
+                  <button onClick={() => handleDeleteHostel(h.id, h.name)} className="master-action-btn btn-action-delete">
+                    🗑️ Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -235,10 +276,24 @@ const MasterHostelsPage = () => {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="pagination flex justify-center items-center gap-2 mb-6">
-              <button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn btn-sm btn-outline">Previous</button>
-              <span className="text-xs text-gray-600">Page {page} of {pagination.totalPages}</span>
-              <button disabled={page === pagination.totalPages} onClick={() => setPage(page + 1)} className="btn btn-sm btn-outline">Next</button>
+            <div className="master-pagination">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="master-page-btn"
+              >
+                ← Previous
+              </button>
+              <span className="master-page-info">
+                Page <strong>{page}</strong> of <strong>{pagination.totalPages}</strong>
+              </span>
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="master-page-btn"
+              >
+                Next →
+              </button>
             </div>
           )}
         </>
@@ -246,24 +301,27 @@ const MasterHostelsPage = () => {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', marginBottom: '20px' }}>
-              {editingHostel ? 'Edit Hostel' : 'Create New Hostel'}
-            </h2>
+        <div className="master-modal-overlay">
+          <div className="master-modal-content">
+            <div className="master-modal-header">
+              <h2 className="master-modal-title">
+                {editingHostel ? '✏️ Edit Hostel' : '➕ Create New Hostel'}
+              </h2>
+              <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
 
             {modalError && (
-              <div className="alert alert-error mb-4">
+              <div className="master-alert-error">
                 <span>⚠️ {modalError}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Hostel Name *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Hostel Name *</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="master-form-input"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -271,23 +329,23 @@ const MasterHostelsPage = () => {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                  <label className="form-label">Hostel Code *</label>
+              <div className="master-form-row">
+                <div className="master-form-group">
+                  <label className="master-form-label">Hostel Code *</label>
                   <input
                     type="text"
-                    className="form-input"
+                    className="master-form-input"
                     required
                     value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    placeholder="e.g. BBH1"
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="e.g. BH-01"
                   />
                 </div>
 
-                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                  <label className="form-label">Type / Gender *</label>
+                <div className="master-form-group">
+                  <label className="master-form-label">Hostel Type *</label>
                   <select
-                    className="form-select"
+                    className="master-form-select"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   >
@@ -298,23 +356,22 @@ const MasterHostelsPage = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                  <label className="form-label">Total Capacity *</label>
+              <div className="master-form-row">
+                <div className="master-form-group">
+                  <label className="master-form-label">Default Capacity</label>
                   <input
                     type="number"
                     min="1"
-                    className="form-input"
-                    required
+                    className="master-form-input"
                     value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value, 10) })}
                   />
                 </div>
 
-                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                  <label className="form-label">Status *</label>
+                <div className="master-form-group">
+                  <label className="master-form-label">Status *</label>
                   <select
-                    className="form-select"
+                    className="master-form-select"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   >
@@ -324,22 +381,22 @@ const MasterHostelsPage = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Address</label>
-                <textarea
-                  className="form-textarea"
-                  rows="3"
+              <div className="master-form-group">
+                <label className="master-form-label">Location / Address</label>
+                <input
+                  type="text"
+                  className="master-form-input"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Enter hostel address details..."
+                  placeholder="e.g. North Campus, Block B"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e5e7eb', marginTop: '20px' }}>
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">
+              <div className="master-modal-footer">
+                <button type="button" onClick={() => setShowModal(false)} className="master-btn-cancel">
                   Cancel
                 </button>
-                <button type="submit" disabled={submitting} className="btn btn-indigo">
+                <button type="submit" disabled={submitting} className="master-btn-primary">
                   {submitting ? 'Saving...' : (editingHostel ? 'Save Changes' : 'Create Hostel')}
                 </button>
               </div>

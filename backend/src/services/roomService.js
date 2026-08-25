@@ -15,16 +15,19 @@ const getAllRooms = async (filters, user) => {
   const offset = (pageNum - 1) * limitNum;
 
   let query = `
-    SELECT r.*, h.name as hostel_name, f.floor_name 
+    SELECT r.*, h.name as hostel_name, IFNULL(f.floor_name, 'No Floor') as floor_name,
+           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id) as total_beds,
+           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'OCCUPIED') as occupied_beds,
+           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'AVAILABLE') as available_beds
     FROM rooms r
     JOIN hostels h ON r.hostel_id = h.id
-    JOIN floors f ON r.floor_id = f.id
+    LEFT JOIN floors f ON r.floor_id = f.id
   `;
   let countQuery = `
     SELECT COUNT(*) as total
     FROM rooms r
     JOIN hostels h ON r.hostel_id = h.id
-    JOIN floors f ON r.floor_id = f.id
+    LEFT JOIN floors f ON r.floor_id = f.id
   `;
   let queryParams = [];
   let conditions = [];
@@ -99,10 +102,10 @@ const getRoomById = async (roomId, user) => {
   }
 
   const [rows] = await db.pool.query(
-    `SELECT r.*, h.name as hostel_name, f.floor_name 
+    `SELECT r.*, h.name as hostel_name, IFNULL(f.floor_name, 'No Floor') as floor_name 
      FROM rooms r 
      JOIN hostels h ON r.hostel_id = h.id 
-     JOIN floors f ON r.floor_id = f.id 
+     LEFT JOIN floors f ON r.floor_id = f.id 
      WHERE r.id = ?`,
     [roomId]
   );
@@ -120,32 +123,31 @@ const getRoomById = async (roomId, user) => {
 const createRoom = async (roomData, user) => {
   masterService.assertSuperAdmin(user);
 
-  const { hostel_id, floor_id, room_number, capacity, status = 'ACTIVE' } = roomData;
+  let { hostel_id, floor_id, room_number, capacity, status = 'ACTIVE' } = roomData;
 
   if (!hostel_id) {
     const error = new Error('Hostel ID is required.');
     error.status = 400;
     throw error;
   }
-  if (!floor_id) {
-    const error = new Error('Floor ID is required.');
-    error.status = 400;
-    throw error;
-  }
 
-  const [floorRow] = await db.pool.query(
-    'SELECT hostel_id FROM floors WHERE id = ?',
-    [floor_id]
-  );
-  if (floorRow.length === 0) {
-    const error = new Error('Selected floor does not exist.');
-    error.status = 400;
-    throw error;
-  }
-  if (parseInt(floorRow[0].hostel_id, 10) !== parseInt(hostel_id, 10)) {
-    const error = new Error('Selected floor does not belong to the selected hostel.');
-    error.status = 400;
-    throw error;
+  const cleanFloorId = floor_id ? parseInt(floor_id, 10) : null;
+
+  if (cleanFloorId) {
+    const [floorRow] = await db.pool.query(
+      'SELECT hostel_id FROM floors WHERE id = ?',
+      [cleanFloorId]
+    );
+    if (floorRow.length === 0) {
+      const error = new Error('Selected floor does not exist.');
+      error.status = 400;
+      throw error;
+    }
+    if (parseInt(floorRow[0].hostel_id, 10) !== parseInt(hostel_id, 10)) {
+      const error = new Error('Selected floor does not belong to the selected hostel.');
+      error.status = 400;
+      throw error;
+    }
   }
 
   if (!room_number || !room_number.trim()) {
@@ -167,22 +169,26 @@ const createRoom = async (roomData, user) => {
     throw error;
   }
 
-  const [duplicateRoom] = await db.pool.query(
-    'SELECT id FROM rooms WHERE floor_id = ? AND room_number = ?',
-    [floor_id, room_number.trim()]
-  );
+  const duplicateSql = cleanFloorId 
+    ? 'SELECT id FROM rooms WHERE hostel_id = ? AND floor_id = ? AND room_number = ?'
+    : 'SELECT id FROM rooms WHERE hostel_id = ? AND floor_id IS NULL AND room_number = ?';
+  const duplicateParams = cleanFloorId 
+    ? [hostel_id, cleanFloorId, room_number.trim()] 
+    : [hostel_id, room_number.trim()];
+
+  const [duplicateRoom] = await db.pool.query(duplicateSql, duplicateParams);
   if (duplicateRoom.length > 0) {
-    const error = new Error(`Room number "${room_number}" already exists in this floor.`);
+    const error = new Error(`Room number "${room_number}" already exists in this hostel/floor.`);
     error.status = 400;
     throw error;
   }
 
   const [result] = await db.pool.query(
     'INSERT INTO rooms (hostel_id, floor_id, room_number, capacity, status) VALUES (?, ?, ?, ?, ?)',
-    [hostel_id, floor_id, room_number.trim(), parsedCapacity, status]
+    [hostel_id, cleanFloorId, room_number.trim(), parsedCapacity, status]
   );
 
-  const createdRoom = { id: result.insertId, hostel_id, floor_id, room_number: room_number.trim(), capacity: parsedCapacity, status };
+  const createdRoom = { id: result.insertId, hostel_id, floor_id: cleanFloorId, room_number: room_number.trim(), capacity: parsedCapacity, status };
 
   await activityService.logActivity({
     actorId: user.id,
@@ -208,25 +214,29 @@ const updateRoom = async (roomId, roomData, user) => {
 
   const currentRoom = await getRoomById(roomId, user);
   const targetHostelId = hostel_id ? parseInt(hostel_id, 10) : currentRoom.hostel_id;
-  const targetFloorId = floor_id ? parseInt(floor_id, 10) : currentRoom.floor_id;
+  const targetFloorId = (floor_id !== undefined && floor_id !== null && floor_id !== '') 
+    ? parseInt(floor_id, 10) 
+    : (floor_id === '' || floor_id === null ? null : currentRoom.floor_id);
 
   if (status === 'INACTIVE') {
     await masterService.validateRoomDeactivation(roomId);
   }
 
-  const [floorRow] = await db.pool.query(
-    'SELECT hostel_id FROM floors WHERE id = ?',
-    [targetFloorId]
-  );
-  if (floorRow.length === 0) {
-    const error = new Error('Selected floor does not exist.');
-    error.status = 400;
-    throw error;
-  }
-  if (floorRow[0].hostel_id !== targetHostelId) {
-    const error = new Error('Selected floor does not belong to the selected hostel.');
-    error.status = 400;
-    throw error;
+  if (targetFloorId) {
+    const [floorRow] = await db.pool.query(
+      'SELECT hostel_id FROM floors WHERE id = ?',
+      [targetFloorId]
+    );
+    if (floorRow.length === 0) {
+      const error = new Error('Selected floor does not exist.');
+      error.status = 400;
+      throw error;
+    }
+    if (parseInt(floorRow[0].hostel_id, 10) !== parseInt(targetHostelId, 10)) {
+      const error = new Error('Selected floor does not belong to the selected hostel.');
+      error.status = 400;
+      throw error;
+    }
   }
 
   if (!room_number || !room_number.trim()) {
@@ -248,12 +258,16 @@ const updateRoom = async (roomId, roomData, user) => {
     throw error;
   }
 
-  const [duplicateRoom] = await db.pool.query(
-    'SELECT id FROM rooms WHERE floor_id = ? AND room_number = ? AND id != ?',
-    [targetFloorId, room_number.trim(), roomId]
-  );
+  const duplicateSql = targetFloorId 
+    ? 'SELECT id FROM rooms WHERE hostel_id = ? AND floor_id = ? AND room_number = ? AND id != ?'
+    : 'SELECT id FROM rooms WHERE hostel_id = ? AND floor_id IS NULL AND room_number = ? AND id != ?';
+  const duplicateParams = targetFloorId 
+    ? [targetHostelId, targetFloorId, room_number.trim(), roomId]
+    : [targetHostelId, room_number.trim(), roomId];
+
+  const [duplicateRoom] = await db.pool.query(duplicateSql, duplicateParams);
   if (duplicateRoom.length > 0) {
-    const error = new Error(`Room number "${room_number}" already exists in this floor.`);
+    const error = new Error(`Room number "${room_number}" already exists in this hostel/floor.`);
     error.status = 400;
     throw error;
   }

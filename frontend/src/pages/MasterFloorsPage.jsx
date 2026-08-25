@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import './MasterData.css';
 
 const MasterFloorsPage = () => {
   const [floors, setFloors] = useState([]);
@@ -121,8 +122,8 @@ const MasterFloorsPage = () => {
     }
   };
 
-  const handleDeleteFloor = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete floor "${name}"?`)) return;
+  const handleDeleteFloor = async (id, floorName) => {
+    if (!window.confirm(`Are you sure you want to delete "${floorName}"?`)) return;
 
     try {
       const res = await api.deleteFloor(id);
@@ -136,27 +137,73 @@ const MasterFloorsPage = () => {
     }
   };
 
+  const handleGenerateDefaultFloors = async () => {
+    if (!selectedHostelId) {
+      alert('Please select a specific hostel from the filter dropdown first.');
+      return;
+    }
+
+    if (!window.confirm('Auto-generate Ground Floor to 10th Floor for the selected hostel?')) return;
+
+    try {
+      const defaultFloors = [
+        { name: 'Ground Floor', number: 0 },
+        { name: '1st Floor', number: 1 },
+        { name: '2nd Floor', number: 2 },
+        { name: '3rd Floor', number: 3 },
+        { name: '4th Floor', number: 4 },
+        { name: '5th Floor', number: 5 },
+        { name: '6th Floor', number: 6 },
+        { name: '7th Floor', number: 7 },
+        { name: '8th Floor', number: 8 },
+        { name: '9th Floor', number: 9 },
+        { name: '10th Floor', number: 10 }
+      ];
+
+      for (const floor of defaultFloors) {
+        await api.createFloor({
+          hostel_id: selectedHostelId,
+          floor_name: floor.name,
+          floor_number: floor.number,
+          status: 'ACTIVE'
+        });
+      }
+      fetchFloors();
+    } catch (err) {
+      console.error('Error auto-generating floors:', err);
+      fetchFloors();
+    }
+  };
+
   return (
-    <div className="master-floors-page">
-      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <div className="breadcrumbs text-sm text-gray-500 mb-1">
-            <Link to="/admin/master" className="hover:underline">Master Data</Link> / <span>Floors</span>
+    <div className="master-page-container">
+      {/* Page Header */}
+      <div className="master-header">
+        <div className="master-header-left">
+          <div className="master-breadcrumbs">
+            <Link to="/admin/master">Master Data</Link>
+            <span className="master-breadcrumbs-separator">/</span>
+            <span>Floors</span>
           </div>
-          <h1 className="page-heading">📑 Floor Management</h1>
-          <p className="page-subheading">Manage hostel floor levels, floor numbers, and floor names.</p>
+          <h1 className="master-title">📑 Floor Management</h1>
+          <p className="master-subtitle">Manage hostel floor levels, floor numbers, and floor names.</p>
         </div>
-        <button onClick={handleOpenCreateModal} className="btn btn-indigo flex items-center gap-2">
-          <span>➕</span> Add New Floor
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button onClick={handleGenerateDefaultFloors} className="master-action-btn btn-action-edit">
+            <span>⚡</span> Generate Ground to 10th
+          </button>
+          <button onClick={handleOpenCreateModal} className="master-btn-primary">
+            <span>➕</span> Add New Floor
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="search-bar-container bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+      <div className="master-filter-card">
+        <div className="master-filter-group">
           {/* Hostel Filter Dropdown */}
           <select
-            className="form-select border rounded-md px-3 py-2 text-sm w-full sm:w-64"
+            className="master-select"
             value={selectedHostelId}
             onChange={(e) => {
               setSelectedHostelId(e.target.value);
@@ -170,10 +217,11 @@ const MasterFloorsPage = () => {
           </select>
 
           {/* Search Input */}
-          <div className="relative w-full sm:w-64">
+          <div className="master-search-box">
+            <span className="master-search-icon">🔍</span>
             <input
               type="text"
-              className="form-input w-full pl-9 pr-4 py-2 border rounded-md text-sm"
+              className="master-search-input"
               placeholder="Search floor name..."
               value={searchTerm}
               onChange={(e) => {
@@ -181,54 +229,92 @@ const MasterFloorsPage = () => {
                 setPage(1);
               }}
             />
-            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
           </div>
         </div>
 
-        <div className="text-sm text-gray-500">
-          Total Floors: <span className="font-semibold text-gray-800">{pagination.total}</span>
+        <div className="master-count-badge">
+          Total Floors: <strong>{pagination.total || floors.length}</strong>
         </div>
       </div>
 
-      {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
+      {error && (
+        <div className="master-alert-error">
+          <span>⚠️ {error}</span>
+        </div>
+      )}
 
       {/* Floors Table / Cards */}
       {loading ? (
         <Loading message="Loading floors list..." />
       ) : floors.length === 0 ? (
-        <div className="empty-state bg-white p-8 rounded-lg text-center border">
-          <span className="text-4xl">📑</span>
-          <h3 className="font-bold text-gray-700 mt-2">No Floors Found</h3>
-          <p className="text-sm text-gray-500 mt-1">Select another hostel filter or create a new floor.</p>
+        <div className="master-empty-state">
+          <span className="master-empty-icon">📑</span>
+          <h3 className="master-empty-title">No Floors Found</h3>
+          <p className="master-empty-desc">Select another hostel filter or generate default floors.</p>
+          <button
+            onClick={handleGenerateDefaultFloors}
+            className="master-btn-primary"
+            style={{ marginTop: '16px' }}
+          >
+            ⚡ Generate Ground to 10th Floor
+          </button>
         </div>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
-            <table className="w-full text-left border-collapse">
+          <div className="master-table-card">
+            <table className="master-table">
               <thead>
-                <tr className="bg-gray-50 border-b text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  <th className="p-4">Floor Name</th>
-                  <th className="p-4">Floor Number</th>
-                  <th className="p-4">Hostel</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                <tr>
+                  <th>Floor Name</th>
+                  <th>Floor Level</th>
+                  <th>Hostel</th>
+                  <th>Rooms & Beds</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
+              <tbody>
                 {floors.map((f) => (
-                  <tr key={f.id} className="hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-900">{f.floor_name}</td>
-                    <td className="p-4 text-gray-600"><span className="badge badge-gray">Level {f.floor_number}</span></td>
-                    <td className="p-4 text-gray-600">{f.hostel_name || 'Hostel'}</td>
-                    <td className="p-4">
-                      <span className={`badge ${f.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
-                        {f.status}
+                  <tr key={f.id}>
+                    <td>
+                      <div className="master-cell-room">
+                        <span className="master-room-icon" style={{ background: '#ede9fe', color: '#6d28d9' }}>📑</span>
+                        <span>{f.floor_name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge-status badge-available">
+                        Level {f.floor_number}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
-                      <button onClick={() => handleOpenEditModal(f)} className="btn btn-sm btn-outline">Edit</button>
-                      <button onClick={() => handleDeleteFloor(f.id, f.floor_name)} className="btn btn-sm btn-danger-outline">Delete</button>
+                    <td>{f.hostel_name || 'Hostel'}</td>
+                    <td>
+                      <span style={{ fontSize: '13px', color: '#475569' }}>
+                        🚪 <strong>{f.total_rooms ?? 0}</strong> rooms • 🛏️ <strong>{f.total_beds ?? 0}</strong> beds
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge-status ${f.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
+                        <span className="badge-status-dot" />
+                        {f.status || 'ACTIVE'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="master-actions-group">
+                        <button
+                          onClick={() => handleOpenEditModal(f)}
+                          className="master-action-btn btn-action-edit"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteFloor(f.id, f.floor_name)}
+                          className="master-action-btn btn-action-delete"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -237,24 +323,30 @@ const MasterFloorsPage = () => {
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid md:hidden grid-cols-1 gap-4 mb-6">
+          <div className="master-mobile-cards">
             {floors.map((f) => (
-              <div key={f.id} className="bg-white p-4 rounded-lg shadow-sm border space-y-3">
-                <div className="flex justify-between items-start">
+              <div key={f.id} className="master-mobile-card">
+                <div className="master-mobile-card-header">
                   <div>
-                    <h3 className="font-bold text-gray-900">{f.floor_name}</h3>
-                    <span className="badge badge-gray mt-1">Level {f.floor_number}</span>
+                    <div className="master-mobile-card-title">{f.floor_name}</div>
+                    <div className="master-mobile-card-subtitle">{f.hostel_name} • Level {f.floor_number}</div>
                   </div>
-                  <span className={`badge ${f.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'}`}>
-                    {f.status}
+                  <span className={`badge-status ${f.status === 'ACTIVE' ? 'badge-active' : 'badge-inactive'}`}>
+                    <span className="badge-status-dot" />
+                    {f.status || 'ACTIVE'}
                   </span>
                 </div>
-                <div className="text-xs text-gray-600">
-                  <div><strong>Hostel:</strong> {f.hostel_name || 'Hostel'}</div>
+                <div className="master-mobile-card-details">
+                  <span>Rooms: <strong>{f.total_rooms ?? 0}</strong></span>
+                  <span>Beds: <strong>{f.total_beds ?? 0}</strong></span>
                 </div>
-                <div className="flex justify-end gap-2 pt-2 border-t">
-                  <button onClick={() => handleOpenEditModal(f)} className="btn btn-sm btn-outline">Edit</button>
-                  <button onClick={() => handleDeleteFloor(f.id, f.floor_name)} className="btn btn-sm btn-danger-outline">Delete</button>
+                <div className="master-mobile-card-actions">
+                  <button onClick={() => handleOpenEditModal(f)} className="master-action-btn btn-action-edit">
+                    ✏️ Edit
+                  </button>
+                  <button onClick={() => handleDeleteFloor(f.id, f.floor_name)} className="master-action-btn btn-action-delete">
+                    🗑️ Delete
+                  </button>
                 </div>
               </div>
             ))}
@@ -262,10 +354,24 @@ const MasterFloorsPage = () => {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="pagination flex justify-center items-center gap-2 mb-6">
-              <button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn btn-sm btn-outline">Previous</button>
-              <span className="text-xs text-gray-600">Page {page} of {pagination.totalPages}</span>
-              <button disabled={page === pagination.totalPages} onClick={() => setPage(page + 1)} className="btn btn-sm btn-outline">Next</button>
+            <div className="master-pagination">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="master-page-btn"
+              >
+                ← Previous
+              </button>
+              <span className="master-page-info">
+                Page <strong>{page}</strong> of <strong>{pagination.totalPages}</strong>
+              </span>
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="master-page-btn"
+              >
+                Next →
+              </button>
             </div>
           )}
         </>
@@ -273,23 +379,26 @@ const MasterFloorsPage = () => {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="modal-content bg-white rounded-lg max-w-md w-full p-6 shadow-xl relative">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
-              {editingFloor ? 'Edit Floor' : 'Create New Floor'}
-            </h2>
+        <div className="master-modal-overlay">
+          <div className="master-modal-content">
+            <div className="master-modal-header">
+              <h2 className="master-modal-title">
+                {editingFloor ? '✏️ Edit Floor' : '➕ Create New Floor'}
+              </h2>
+              <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
 
             {modalError && (
-              <div className="alert alert-error text-xs mb-4">
+              <div className="master-alert-error">
                 <span>⚠️ {modalError}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="form-label">Select Hostel *</label>
+            <form onSubmit={handleSubmit}>
+              <div className="master-form-group">
+                <label className="master-form-label">Select Hostel *</label>
                 <select
-                  className="form-select w-full"
+                  className="master-form-select"
                   required
                   value={formData.hostel_id}
                   onChange={(e) => setFormData({ ...formData, hostel_id: e.target.value })}
@@ -301,34 +410,34 @@ const MasterFloorsPage = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="form-label">Floor Name *</label>
+              <div className="master-form-group">
+                <label className="master-form-label">Floor Name *</label>
                 <input
                   type="text"
-                  className="form-input w-full"
+                  className="master-form-input"
                   required
                   value={formData.floor_name}
                   onChange={(e) => setFormData({ ...formData, floor_name: e.target.value })}
-                  placeholder="e.g. First Floor / Wing A Ground"
+                  placeholder="e.g. Ground Floor / 1st Floor / 2nd Floor"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Floor Number *</label>
+              <div className="master-form-row">
+                <div className="master-form-group">
+                  <label className="master-form-label">Floor Level Number *</label>
                   <input
                     type="number"
-                    className="form-input w-full"
+                    className="master-form-input"
                     required
                     value={formData.floor_number}
                     onChange={(e) => setFormData({ ...formData, floor_number: parseInt(e.target.value, 10) })}
                   />
                 </div>
 
-                <div>
-                  <label className="form-label">Status *</label>
+                <div className="master-form-group">
+                  <label className="master-form-label">Status *</label>
                   <select
-                    className="form-select w-full"
+                    className="master-form-select"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   >
@@ -338,9 +447,11 @@ const MasterFloorsPage = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn btn-indigo">
+              <div className="master-modal-footer">
+                <button type="button" onClick={() => setShowModal(false)} className="master-btn-cancel">
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="master-btn-primary">
                   {submitting ? 'Saving...' : (editingFloor ? 'Save Changes' : 'Create Floor')}
                 </button>
               </div>

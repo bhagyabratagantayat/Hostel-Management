@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import './MasterData.css';
 
 const MasterOverviewPage = () => {
   const [summary, setSummary] = useState(null);
@@ -50,21 +51,26 @@ const MasterOverviewPage = () => {
   ];
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="master-page-container">
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#1e1b4b', margin: 0 }}>
-          🏛️ Master Data Hub
-        </h1>
-        <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
-          Centralized administration and infrastructure hierarchy management.
-        </p>
+      <div className="master-header">
+        <div className="master-header-left">
+          <h1 className="master-title">🏛️ Master Data Hub</h1>
+          <p className="master-subtitle">
+            Centralized administration and infrastructure hierarchy management.
+          </p>
+        </div>
+        <Link to="/admin/master/data-integrity" className="master-btn-primary" style={{ textDecoration: 'none' }}>
+          <span>🛡️</span> Data Integrity Center
+        </Link>
       </div>
 
       {error && (
-        <div className="alert alert-error mb-4">
+        <div className="master-alert-error">
           <span>⚠️ {error}</span>
-          <button className="btn btn-sm btn-outline ml-2" onClick={fetchSummary}>Retry</button>
+          <button className="master-action-btn btn-action-edit" style={{ marginLeft: '12px' }} onClick={fetchSummary}>
+            Retry
+          </button>
         </div>
       )}
 
@@ -78,17 +84,18 @@ const MasterOverviewPage = () => {
         {metricItems.map((item, idx) => (
           <div key={idx} style={{
             background: '#ffffff',
-            border: '1px solid #e5e7eb',
+            border: '1px solid #e2e8f0',
             borderRadius: '12px',
-            padding: '16px 20px',
+            padding: '18px 20px',
             display: 'flex',
             alignItems: 'center',
             gap: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
           }}>
             <div style={{
-              width: '46px',
-              height: '46px',
+              width: '48px',
+              height: '48px',
               borderRadius: '10px',
               backgroundColor: item.bg,
               color: item.color,
@@ -101,10 +108,10 @@ const MasterOverviewPage = () => {
               {item.icon}
             </div>
             <div>
-              <div style={{ fontSize: '12px', fontWeight: '500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {item.label}
               </div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#111827', marginTop: '2px' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#0f172a', marginTop: '2px' }}>
                 {item.value}
               </div>
             </div>
@@ -113,13 +120,13 @@ const MasterOverviewPage = () => {
       </div>
 
       {/* Infrastructure Hierarchy Cards */}
-      <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', marginBottom: '16px' }}>
+      <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>
         Infrastructure Hierarchy Management
       </h2>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
         gap: '20px',
         marginBottom: '32px'
       }}>
@@ -127,34 +134,34 @@ const MasterOverviewPage = () => {
           <Link key={idx} to={s.path} style={{
             textDecoration: 'none',
             background: '#ffffff',
-            border: '1px solid #e5e7eb',
+            border: '1px solid #e2e8f0',
             borderRadius: '12px',
-            padding: '20px',
+            padding: '22px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+            gap: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
             transition: 'all 0.2s ease'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = '#6366f1';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(99,102,241,0.12)';
+            e.currentTarget.style.boxShadow = '0 8px 20px rgba(99,102,241,0.12)';
             e.currentTarget.style.transform = 'translateY(-2px)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e5e7eb';
-            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.04)';
+            e.currentTarget.style.borderColor = '#e2e8f0';
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
             e.currentTarget.style.transform = 'none';
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '28px' }}>{s.icon}</span>
-              <span className="badge badge-indigo">{s.step}</span>
+              <span className="badge-status badge-available">{s.step}</span>
             </div>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '4px 0' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: '4px 0' }}>
                 {s.title}
               </h3>
-              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.4' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: '1.5' }}>
                 {s.desc}
               </p>
             </div>
@@ -170,9 +177,9 @@ const MasterOverviewPage = () => {
         padding: '16px 20px',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px'
+        gap: '14px'
       }}>
-        <span style={{ fontSize: '22px' }}>🛡️</span>
+        <span style={{ fontSize: '24px' }}>🛡️</span>
         <div>
           <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#3730a3', margin: 0 }}>
             Safety & Infrastructure Hierarchy Active

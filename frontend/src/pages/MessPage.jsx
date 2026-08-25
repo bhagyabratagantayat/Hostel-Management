@@ -5,6 +5,7 @@ import WeeklyMenu from '../components/mess/WeeklyMenu';
 import MenuFormModal from '../components/mess/MenuFormModal';
 import MessAnalyticsCard from '../components/mess/MessAnalyticsCard';
 import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
+import './MessPage.css';
 
 const MessPage = ({ userRole = 'STUDENT' }) => {
   const [activeTab, setActiveTab] = useState('TODAY'); // TODAY, WEEKLY, ROSTER, ANALYTICS

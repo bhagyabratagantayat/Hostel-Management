@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import Loading from '../components/Loading';
+import './MasterData.css';
 
 const DataIntegrityPage = () => {
   const [integrityData, setIntegrityData] = useState(null);
@@ -73,97 +74,106 @@ const DataIntegrityPage = () => {
     : issues.filter(i => i.severity === activeSeverity);
 
   return (
-    <div className="data-integrity-page">
-      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <div className="breadcrumbs text-sm text-gray-500 mb-1">
-            <Link to="/admin/master" className="hover:underline">Master Data</Link> / <span>Data Integrity</span>
+    <div className="master-page-container">
+      {/* Header */}
+      <div className="master-header">
+        <div className="master-header-left">
+          <div className="master-breadcrumbs">
+            <Link to="/admin/master">Master Data</Link>
+            <span className="master-breadcrumbs-separator">/</span>
+            <span>Data Integrity</span>
           </div>
-          <h1 className="page-heading">🛡️ Data Integrity Diagnostic Center</h1>
-          <p className="page-subheading">
+          <h1 className="master-title">🛡️ Data Integrity Diagnostic Center</h1>
+          <p className="master-subtitle">
             Scan and detect relational inconsistencies, ghost allocations, orphaned records, and schema gaps.
           </p>
         </div>
         <button
           onClick={runDiagnosticCheck}
           disabled={scanning}
-          className="btn btn-indigo flex items-center gap-2"
+          className="master-btn-primary"
         >
           <span>{scanning ? '🔄' : '🔍'}</span>
           {scanning ? 'Scanning System...' : 'Run Integrity Scan'}
         </button>
       </div>
 
-      {error && <div className="alert alert-error mb-4">⚠️ {error}</div>}
-      {repairSuccessMsg && <div className="alert alert-success mb-4">{repairSuccessMsg}</div>}
+      {error && (
+        <div className="master-alert-error">
+          <span>⚠️ {error}</span>
+        </div>
+      )}
+      {repairSuccessMsg && (
+        <div className="alert alert-success mb-4" style={{ borderRadius: '8px', padding: '12px 16px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46' }}>
+          {repairSuccessMsg}
+        </div>
+      )}
 
       {/* Severity Breakdown Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="severity-card-grid">
         <div
           onClick={() => setActiveSeverity('ALL')}
-          className={`cursor-pointer border rounded-lg p-5 bg-white shadow-sm transition ${
-            activeSeverity === 'ALL' ? 'border-indigo-600 ring-2 ring-indigo-100' : ''
-          }`}
+          className={`severity-card ${activeSeverity === 'ALL' ? 'active' : ''}`}
         >
-          <div className="text-xs font-semibold text-gray-500 uppercase">Total Issues Detected</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{summary.totalIssues}</div>
-          <div className="text-xs text-gray-400 mt-1">Across 15 integrity rules</div>
+          <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>
+            Total Issues Detected
+          </div>
+          <div style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', margin: '4px 0' }}>
+            {summary.totalIssues}
+          </div>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Across 15 integrity rules</div>
         </div>
 
         <div
           onClick={() => setActiveSeverity('CRITICAL')}
-          className={`cursor-pointer border rounded-lg p-5 bg-white shadow-sm transition ${
-            activeSeverity === 'CRITICAL' ? 'border-rose-600 ring-2 ring-rose-100' : ''
-          }`}
+          className={`severity-card ${activeSeverity === 'CRITICAL' ? 'active' : ''}`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-rose-600 uppercase">CRITICAL</span>
-            <span className="badge badge-danger">High Risk</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#e11d48', textTransform: 'uppercase' }}>CRITICAL</span>
+            <span className="badge-status badge-inactive">High Risk</span>
           </div>
-          <div className="text-2xl font-bold text-rose-600 mt-1">{summary.critical}</div>
-          <div className="text-xs text-gray-400 mt-1">Allocation / Occupancy mismatches</div>
+          <div style={{ fontSize: '26px', fontWeight: '700', color: '#e11d48', margin: '4px 0' }}>
+            {summary.critical}
+          </div>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Allocation / Occupancy mismatches</div>
         </div>
 
         <div
           onClick={() => setActiveSeverity('WARNING')}
-          className={`cursor-pointer border rounded-lg p-5 bg-white shadow-sm transition ${
-            activeSeverity === 'WARNING' ? 'border-amber-600 ring-2 ring-amber-100' : ''
-          }`}
+          className={`severity-card ${activeSeverity === 'WARNING' ? 'active' : ''}`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-amber-600 uppercase">WARNING</span>
-            <span className="badge badge-warning">Medium Risk</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#d97706', textTransform: 'uppercase' }}>WARNING</span>
+            <span className="badge-status badge-maintenance">Medium Risk</span>
           </div>
-          <div className="text-2xl font-bold text-amber-600 mt-1">{summary.warning}</div>
-          <div className="text-xs text-gray-400 mt-1">Status inconsistencies & duplicates</div>
+          <div style={{ fontSize: '26px', fontWeight: '700', color: '#d97706', margin: '4px 0' }}>
+            {summary.warning}
+          </div>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Status inconsistencies & duplicates</div>
         </div>
 
         <div
           onClick={() => setActiveSeverity('INFO')}
-          className={`cursor-pointer border rounded-lg p-5 bg-white shadow-sm transition ${
-            activeSeverity === 'INFO' ? 'border-blue-600 ring-2 ring-blue-100' : ''
-          }`}
+          className={`severity-card ${activeSeverity === 'INFO' ? 'active' : ''}`}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-blue-600 uppercase">INFO</span>
-            <span className="badge badge-info">Low Risk</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#2563eb', textTransform: 'uppercase' }}>INFO</span>
+            <span className="badge-status badge-available">Low Risk</span>
           </div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">{summary.info}</div>
-          <div className="text-xs text-gray-400 mt-1">Missing metadata / optional fields</div>
+          <div style={{ fontSize: '26px', fontWeight: '700', color: '#2563eb', margin: '4px 0' }}>
+            {summary.info}
+          </div>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Missing metadata / optional fields</div>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b mb-6 pb-2 overflow-x-auto">
+      <div className="filter-tab-bar">
         {['ALL', 'CRITICAL', 'WARNING', 'INFO'].map((sev) => (
           <button
             key={sev}
             onClick={() => setActiveSeverity(sev)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-md transition whitespace-nowrap ${
-              activeSeverity === sev
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className={`filter-tab-btn ${activeSeverity === sev ? 'active' : ''}`}
           >
             {sev} ({sev === 'ALL' ? summary.totalIssues : (summary[sev.toLowerCase()] || 0)})
           </button>
@@ -172,60 +182,59 @@ const DataIntegrityPage = () => {
 
       {/* Issues List */}
       {filteredIssues.length === 0 ? (
-        <div className="bg-white p-8 rounded-lg text-center border">
-          <span className="text-4xl">🎉</span>
-          <h3 className="font-bold text-gray-800 mt-2">Zero Integrity Issues Found</h3>
-          <p className="text-sm text-gray-500 mt-1">
+        <div className="master-empty-state">
+          <span className="master-empty-icon">🎉</span>
+          <h3 className="master-empty-title">Zero Integrity Issues Found</h3>
+          <p className="master-empty-desc">
             All master data relationships, room allocations, and bed occupancy states are 100% healthy.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredIssues.map((issue, idx) => (
-            <div
-              key={idx}
-              className={`bg-white p-5 rounded-lg border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
-                issue.severity === 'CRITICAL' ? 'border-l-4 border-l-rose-500' :
-                (issue.severity === 'WARNING' ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-blue-500')
-              }`}
-            >
-              <div className="space-y-1 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <span className={`badge ${
-                    issue.severity === 'CRITICAL' ? 'badge-danger' :
-                    (issue.severity === 'WARNING' ? 'badge-warning' : 'badge-info')
-                  }`}>
-                    {issue.severity}
-                  </span>
-                  <h3 className="font-bold text-gray-900">{issue.title}</h3>
+        <div>
+          {filteredIssues.map((issue, idx) => {
+            const badgeClass = issue.severity === 'CRITICAL'
+              ? 'badge-inactive'
+              : (issue.severity === 'WARNING' ? 'badge-maintenance' : 'badge-available');
+
+            return (
+              <div key={idx} className="diagnostic-issue-card">
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span className={`badge-status ${badgeClass}`}>
+                      <span className="badge-status-dot" />
+                      {issue.severity}
+                    </span>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', margin: 0 }}>
+                      {issue.title}
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '13.5px', color: '#475569', margin: '4px 0 8px 0' }}>
+                    {issue.description}
+                  </p>
+                  {issue.recommendation && (
+                    <div style={{ fontSize: '12.5px', color: '#4f46e5', fontWeight: '500' }}>
+                      💡 Recommended Action: {issue.recommendation}
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600">{issue.description}</p>
-                {issue.location && (
-                  <div className="text-xs text-gray-400 font-mono">
-                    Entity: {issue.entity} | ID: {issue.target_id || 'N/A'} | Location: {issue.location}
+
+                {issue.repair_actions && issue.repair_actions.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {issue.repair_actions.map((act, aIdx) => (
+                      <button
+                        key={aIdx}
+                        disabled={repairing}
+                        onClick={() => handleExecuteRepair(issue, act.action)}
+                        className="master-action-btn btn-action-edit"
+                      >
+                        ⚡ {act.label || act.action}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {/* Controlled Individual Repair Actions */}
-              <div className="flex flex-wrap gap-2 pt-2 md:pt-0 border-t md:border-t-0 w-full md:w-auto justify-end">
-                {issue.repair_actions && issue.repair_actions.length > 0 ? (
-                  issue.repair_actions.map((act, aIdx) => (
-                    <button
-                      key={aIdx}
-                      disabled={repairing}
-                      onClick={() => handleExecuteRepair(issue, act.action)}
-                      className="btn btn-sm btn-indigo text-xs whitespace-nowrap"
-                    >
-                      {act.label}
-                    </button>
-                  ))
-                ) : (
-                  <span className="text-xs text-gray-400 italic">Manual Review Required</span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -13,8 +13,6 @@ import SuperintendentDashboard from './pages/SuperintendentDashboard';
 import NoticesPage from './pages/NoticesPage';
 import ComplaintsPage from './pages/ComplaintsPage';
 import VisitorsPage from './pages/VisitorsPage';
-import MessPage from './pages/MessPage';
-import FeeManagementPage from './pages/FeeManagementPage';
 import ReportsPage from './pages/ReportsPage';
 import AllocationsPage from './pages/AllocationsPage';
 import StudentAccommodationPage from './pages/StudentAccommodationPage';
@@ -108,8 +106,6 @@ function App() {
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
-                    <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
-                    <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPER_ADMIN" />} />
                     <Route path="maintenance"         element={<MaintenancePage role="SUPER_ADMIN" />} />
@@ -145,8 +141,6 @@ function App() {
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
-                    <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
-                    <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPERINTENDENT" />} />
                     <Route path="maintenance"         element={<MaintenancePage role="SUPERINTENDENT" />} />
@@ -171,8 +165,6 @@ function App() {
                     <Route path="notices/:noticeId" element={<NoticesPage />} />
                     <Route path="complaints"    element={<ComplaintsPage />} />
                     <Route path="visitors"      element={<VisitorsPage />} />
-                    <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
-                    <Route path="fees"          element={<FeeManagementPage />} />
                     <Route path="maintenance"   element={<MaintenancePage role="STUDENT" />} />
                     <Route path="profile"       element={<Navigate to="/profile" replace />} />
                     <Route path="attendance"    element={<RoutePlaceholder title="My Attendance" />} />
