@@ -31,7 +31,6 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'Master Data Hub', icon: '🏛️', path: '/admin/master' },
           { label: 'Maintenance Requests', icon: '🔧', path: '/admin/maintenance' },
-          { label: 'Room Inspections', icon: '🔍', path: '/admin/inspections' },
           { label: 'User Directory', icon: '👥', path: '/admin/users' },
           { label: 'Activity Log', icon: '📋', path: '/admin/activity' },
           { label: 'Security Audit', icon: '🛡️', path: '/admin/security-audit' },
@@ -51,7 +50,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
           { label: 'Maintenance Requests', icon: '🔧', path: '/superintendent/maintenance' },
-          { label: 'Room Inspections', icon: '🔍', path: '/superintendent/inspections' },
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
           { label: 'Students', icon: '🎓', path: '/superintendent/students' },
           { label: 'Allocations & Transfers', icon: '🛏️', path: '/superintendent/allocations' },
