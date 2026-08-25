@@ -59,14 +59,14 @@ CREATE TABLE IF NOT EXISTS `floors` (
 CREATE TABLE IF NOT EXISTS `rooms` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `hostel_id` INT NOT NULL,
-    `floor_id` INT NOT NULL,
+    `floor_id` INT NULL DEFAULT NULL,
     `room_number` VARCHAR(20) NOT NULL,
     `capacity` INT NOT NULL DEFAULT 4,
     `status` ENUM('ACTIVE', 'INACTIVE', 'MAINTENANCE') DEFAULT 'ACTIVE',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`hostel_id`) REFERENCES `hostels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (`floor_id`) REFERENCES `floors` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (`floor_id`) REFERENCES `floors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
     UNIQUE KEY `unique_hostel_room` (`hostel_id`, `room_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
