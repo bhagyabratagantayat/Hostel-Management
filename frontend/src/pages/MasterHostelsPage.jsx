@@ -246,48 +246,48 @@ const MasterHostelsPage = () => {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="modal-content bg-white rounded-lg max-w-md w-full p-6 shadow-xl relative">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#111827', marginBottom: '20px' }}>
               {editingHostel ? 'Edit Hostel' : 'Create New Hostel'}
             </h2>
 
             {modalError && (
-              <div className="alert alert-error text-xs mb-4">
+              <div className="alert alert-error mb-4">
                 <span>⚠️ {modalError}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
                 <label className="form-label">Hostel Name *</label>
                 <input
                   type="text"
-                  className="form-input w-full"
+                  className="form-input"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. BEC Boys Hostel"
+                  placeholder="e.g. BEC Boys Hostel 1"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label className="form-label">Hostel Code *</label>
                   <input
                     type="text"
-                    className="form-input w-full"
+                    className="form-input"
                     required
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    placeholder="e.g. MBH"
+                    placeholder="e.g. BBH1"
                   />
                 </div>
 
-                <div>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label className="form-label">Type / Gender *</label>
                   <select
-                    className="form-select w-full"
+                    className="form-select"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   >
@@ -298,23 +298,23 @@ const MasterHostelsPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label className="form-label">Total Capacity *</label>
                   <input
                     type="number"
                     min="1"
-                    className="form-input w-full"
+                    className="form-input"
                     required
                     value={formData.capacity}
                     onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                   />
                 </div>
 
-                <div>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label className="form-label">Status *</label>
                   <select
-                    className="form-select w-full"
+                    className="form-select"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   >
@@ -324,19 +324,21 @@ const MasterHostelsPage = () => {
                 </div>
               </div>
 
-              <div>
+              <div className="form-group">
                 <label className="form-label">Address</label>
                 <textarea
-                  className="form-textarea w-full"
-                  rows="2"
+                  className="form-textarea"
+                  rows="3"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Hostel address details..."
+                  placeholder="Enter hostel address details..."
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">Cancel</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', paddingTop: '16px', borderTop: '1px solid #e5e7eb', marginTop: '20px' }}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline">
+                  Cancel
+                </button>
                 <button type="submit" disabled={submitting} className="btn btn-indigo">
                   {submitting ? 'Saving...' : (editingHostel ? 'Save Changes' : 'Create Hostel')}
                 </button>
