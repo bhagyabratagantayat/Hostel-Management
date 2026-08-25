@@ -30,7 +30,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
           { label: 'Master Data Hub', icon: '🏛️', path: '/admin/master' },
-          { label: 'Operations Hub', icon: '⚙️', path: '/admin/operations' },
           { label: 'Maintenance Requests', icon: '🔧', path: '/admin/maintenance' },
           { label: 'Room Inspections', icon: '🔍', path: '/admin/inspections' },
           { label: 'User Directory', icon: '👥', path: '/admin/users' },
@@ -51,7 +50,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'SUPERINTENDENT':
         return [
           { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
-          { label: 'Operations Hub', icon: '⚙️', path: '/superintendent/operations' },
           { label: 'Maintenance Requests', icon: '🔧', path: '/superintendent/maintenance' },
           { label: 'Room Inspections', icon: '🔍', path: '/superintendent/inspections' },
           { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
