@@ -23,6 +23,9 @@ const UserManagementPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [hostelsList, setHostelsList] = useState([]);
 
+  const [modalError, setModalError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
   // Form states
   const [formData, setFormData] = useState({
     username: '',
@@ -56,7 +59,7 @@ const UserManagementPage = () => {
       setTotalPages(totalP);
       setTotalUsers(totalCount);
     } catch (err) {
-      setError(err.message || err.response?.data?.message || 'Failed to fetch user directory.');
+      setError(err.message || err.data?.message || err.response?.data?.message || 'Failed to fetch user directory.');
     } finally {
       setLoading(false);
     }
@@ -91,12 +94,14 @@ const UserManagementPage = () => {
       showSuccessMsg(`Account '${user.username}' status changed to ${newStatus}.`);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update account status.');
+      setError(err.message || err.data?.message || err.response?.data?.message || 'Failed to update account status.');
     }
   };
 
   // Open Create User Modal
   const openCreateModal = () => {
+    setModalError('');
+    setShowPassword(false);
     setFormData({
       username: '',
       email: '',
@@ -111,6 +116,7 @@ const UserManagementPage = () => {
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setModalLoading(true);
+    setModalError('');
     setError('');
 
     try {
@@ -119,7 +125,9 @@ const UserManagementPage = () => {
       setActiveModal(null);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create user account.');
+      const errMsg = err.message || err.data?.message || err.response?.data?.message || 'Failed to create user account.';
+      setModalError(errMsg);
+      setError(errMsg);
     } finally {
       setModalLoading(false);
     }
@@ -128,6 +136,7 @@ const UserManagementPage = () => {
   // Open Superintendent Hostels Assignment Modal
   const openHostelModal = (user) => {
     setSelectedUser(user);
+    setModalError('');
     // Parse assigned hostels if any
     const existing = user.assigned_hostels ? hostelsList.filter(h => user.assigned_hostels.includes(h.name)).map(h => h.id) : [];
     setSelectedHostels(existing);
@@ -137,6 +146,7 @@ const UserManagementPage = () => {
   const handleHostelSubmit = async (e) => {
     e.preventDefault();
     setModalLoading(true);
+    setModalError('');
     setError('');
 
     try {
@@ -145,7 +155,9 @@ const UserManagementPage = () => {
       setActiveModal(null);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update hostel assignments.');
+      const errMsg = err.message || err.data?.message || err.response?.data?.message || 'Failed to update hostel assignments.';
+      setModalError(errMsg);
+      setError(errMsg);
     } finally {
       setModalLoading(false);
     }
@@ -154,6 +166,8 @@ const UserManagementPage = () => {
   // Open Password Reset Modal
   const openResetModal = (user) => {
     setSelectedUser(user);
+    setModalError('');
+    setShowPassword(false);
     setNewPasswordVal('');
     setActiveModal('RESET');
   };
@@ -161,6 +175,7 @@ const UserManagementPage = () => {
   const handleResetSubmit = async (e) => {
     e.preventDefault();
     setModalLoading(true);
+    setModalError('');
     setError('');
 
     try {
@@ -168,7 +183,9 @@ const UserManagementPage = () => {
       showSuccessMsg(`Password reset successfully for '${selectedUser.username}'.`);
       setActiveModal(null);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password.');
+      const errMsg = err.message || err.data?.message || err.response?.data?.message || 'Failed to reset password.';
+      setModalError(errMsg);
+      setError(errMsg);
     } finally {
       setModalLoading(false);
     }
@@ -177,6 +194,7 @@ const UserManagementPage = () => {
   // Open Role Change Modal
   const openRoleModal = (user) => {
     setSelectedUser(user);
+    setModalError('');
     setNewRoleVal(user.role);
     setActiveModal('ROLE');
   };
@@ -184,6 +202,7 @@ const UserManagementPage = () => {
   const handleRoleSubmit = async (e) => {
     e.preventDefault();
     setModalLoading(true);
+    setModalError('');
     setError('');
 
     try {
@@ -192,7 +211,9 @@ const UserManagementPage = () => {
       setActiveModal(null);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update user role.');
+      const errMsg = err.message || err.data?.message || err.response?.data?.message || 'Failed to update user role.';
+      setModalError(errMsg);
+      setError(errMsg);
     } finally {
       setModalLoading(false);
     }
@@ -377,12 +398,14 @@ const UserManagementPage = () => {
             </div>
             <form onSubmit={handleCreateSubmit}>
               <div className="modal-body">
+                {modalError && <div className="alert alert-danger" style={{ marginBottom: '1rem', padding: '0.75rem 1rem', borderRadius: '6px' }}>{modalError}</div>}
                 <div className="form-group">
                   <label>Username *</label>
                   <input
                     type="text"
                     className="form-control"
                     required
+                    placeholder="e.g. john_doe"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   />
@@ -393,20 +416,43 @@ const UserManagementPage = () => {
                     type="email"
                     className="form-control"
                     required
+                    placeholder="e.g. john@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
                   <label>Initial Temporary Password *</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    required
-                    placeholder="Must meet complexity requirements"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      className="form-control"
+                      required
+                      placeholder="e.g. Pass1234"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        color: '#666'
+                      }}
+                    >
+                      {showPassword ? '👁️ Hide' : '👁️ Show'}
+                    </button>
+                  </div>
+                  <small style={{ display: 'block', marginTop: '0.35rem', color: '#6b7280', fontSize: '0.82rem' }}>
+                    🔒 Must be at least 8 characters long, with 1 uppercase letter (A-Z), 1 lowercase letter (a-z), and 1 number (0-9).
+                  </small>
                 </div>
                 <div className="form-group">
                   <label>User Role *</label>
@@ -465,6 +511,7 @@ const UserManagementPage = () => {
             </div>
             <form onSubmit={handleHostelSubmit}>
               <div className="modal-body">
+                {modalError && <div className="alert alert-danger" style={{ marginBottom: '1rem', padding: '0.75rem 1rem', borderRadius: '6px' }}>{modalError}</div>}
                 <p className="text-muted mb-3">Select the hostels this superintendent is authorized to manage:</p>
                 <div className="hostel-checkboxes">
                   {hostelsList.map(h => (
@@ -505,17 +552,40 @@ const UserManagementPage = () => {
             </div>
             <form onSubmit={handleResetSubmit}>
               <div className="modal-body">
+                {modalError && <div className="alert alert-danger" style={{ marginBottom: '1rem', padding: '0.75rem 1rem', borderRadius: '6px' }}>{modalError}</div>}
                 <p className="text-muted mb-3">Set a new temporary password for <strong>{selectedUser.username}</strong>. The user will be required to change it upon next login.</p>
                 <div className="form-group">
                   <label>New Temporary Password *</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    required
-                    placeholder="Enter strong temporary password"
-                    value={newPasswordVal}
-                    onChange={(e) => setNewPasswordVal(e.target.value)}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      className="form-control"
+                      required
+                      placeholder="Enter strong temporary password"
+                      value={newPasswordVal}
+                      onChange={(e) => setNewPasswordVal(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        color: '#666'
+                      }}
+                    >
+                      {showPassword ? '👁️ Hide' : '👁️ Show'}
+                    </button>
+                  </div>
+                  <small style={{ display: 'block', marginTop: '0.35rem', color: '#6b7280', fontSize: '0.82rem' }}>
+                    🔒 Must be at least 8 characters long, with 1 uppercase letter (A-Z), 1 lowercase letter (a-z), and 1 number (0-9).
+                  </small>
                 </div>
               </div>
               <div className="modal-footer">
@@ -539,6 +609,7 @@ const UserManagementPage = () => {
             </div>
             <form onSubmit={handleRoleSubmit}>
               <div className="modal-body">
+                {modalError && <div className="alert alert-danger" style={{ marginBottom: '1rem', padding: '0.75rem 1rem', borderRadius: '6px' }}>{modalError}</div>}
                 <p className="text-muted mb-3">Select the new role for <strong>{selectedUser.username}</strong>:</p>
                 <div className="form-group">
                   <label>Role *</label>

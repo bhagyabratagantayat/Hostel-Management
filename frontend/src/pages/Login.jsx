@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import becLogo from '../assets/BEC LOGO FINAL.png';
 
 const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -40,8 +41,10 @@ const Login = () => {
     <div className="login-page-container">
       <div className="login-box">
         <div className="login-header">
-          <span className="login-logo-icon">🏢</span>
-          <h1 className="login-title">College Hostel Portal</h1>
+          <div className="login-logo-container">
+            <img src={becLogo} alt="BEC College Logo" className="login-college-logo" />
+          </div>
+          <h1 className="login-title">BEC Hostel Portal</h1>
           <p className="login-subtitle">Sign in to manage room bookings, view profile and check notices</p>
         </div>
 

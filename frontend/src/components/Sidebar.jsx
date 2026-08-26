@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import becLogo from '../assets/BEC LOGO FINAL.png';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
@@ -91,7 +92,10 @@ const Sidebar = ({ isOpen, onClose }) => {
       
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <span className="sidebar-logo">🏨 CHMS</span>
+          <div className="sidebar-brand">
+            <img src={becLogo} alt="BEC Logo" className="sidebar-brand-logo" />
+            <span className="sidebar-logo">BEC CHMS</span>
+          </div>
           <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

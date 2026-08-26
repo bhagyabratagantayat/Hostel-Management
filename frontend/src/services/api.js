@@ -33,7 +33,8 @@ api.interceptors.response.use(
     const customError = {
       message: error.response?.data?.message || 'An error occurred while communicating with the server.',
       status: error.response?.status || 500,
-      data: error.response?.data || null
+      data: error.response?.data || null,
+      response: error.response
     };
     
     // Log error for debugging

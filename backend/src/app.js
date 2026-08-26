@@ -20,10 +20,28 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:3000',
+  'https://bechostels.web.app',
+  'https://bechostels.firebaseapp.com'
+];
+
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
-  origin: env.NODE_ENV === 'production' 
-    ? false // Set your production domain here when ready
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'], // Vite default and common local ports
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, server-to-server) or in development
+    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS Error: Origin ${origin} is not allowed`));
+    }
+  },
   credentials: true
 }));
 

@@ -137,6 +137,51 @@ body {
   gap: 12px;
 }
 
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-brand-logo {
+  height: 38px;
+  width: auto;
+  max-width: 48px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-brand-logo {
+  height: 34px;
+  width: auto;
+  max-width: 42px;
+  object-fit: contain;
+  background-color: #ffffff;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.login-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.login-college-logo {
+  height: 75px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
+}
+
 .navbar-logo-text {
   font-size: 20px;
   font-weight: 700;

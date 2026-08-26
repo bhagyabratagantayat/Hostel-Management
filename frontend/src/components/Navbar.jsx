@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import becLogo from '../assets/BEC LOGO FINAL.png';
 
 const Navbar = ({ onToggleSidebar }) => {
   const { user } = useAuth();
@@ -26,7 +27,10 @@ const Navbar = ({ onToggleSidebar }) => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
           </svg>
         </button>
-        <span className="navbar-logo-text">BEC Portal</span>
+        <div className="navbar-brand">
+          <img src={becLogo} alt="BEC Logo" className="navbar-brand-logo" />
+          <span className="navbar-logo-text">BEC Portal</span>
+        </div>
       </div>
       
       <div className="navbar-right">

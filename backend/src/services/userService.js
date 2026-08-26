@@ -118,16 +118,28 @@ const getUserById = async (targetId) => {
 const createUser = async ({ username, email, password, role, student_id, hostel_ids }, actor, reqContext = {}) => {
   const { ip_address = null, user_agent = null } = reqContext;
 
-  if (!username || !email || !role || !password) {
+  const cleanUsername = username ? String(username).trim() : '';
+  const cleanEmail = email ? String(email).trim().toLowerCase() : '';
+  const cleanRole = role ? String(role).trim() : '';
+
+  if (!cleanUsername || !cleanEmail || !cleanRole || !password) {
     const err = new Error('Username, email, role, and password are required.');
     err.status = 400;
     throw err;
   }
 
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    const err = new Error('Please enter a valid email address.');
+    err.status = 400;
+    throw err;
+  }
+
   // Validate role
-  const [roles] = await db.pool.query('SELECT id, name FROM roles WHERE name = ?', [role]);
+  const [roles] = await db.pool.query('SELECT id, name FROM roles WHERE name = ?', [cleanRole]);
   if (roles.length === 0) {
-    const err = new Error(`Invalid role '${role}'. Must be SUPER_ADMIN, SUPERINTENDENT, or STUDENT.`);
+    const err = new Error(`Invalid role '${cleanRole}'. Must be SUPER_ADMIN, SUPERINTENDENT, or STUDENT.`);
     err.status = 400;
     throw err;
   }
@@ -141,13 +153,18 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
     throw err;
   }
 
-  // Check unique username & email
-  const [existing] = await db.pool.query(
-    'SELECT id FROM users WHERE username = ? OR email = ?',
-    [username, email]
-  );
-  if (existing.length > 0) {
-    const err = new Error('Username or email already exists.');
+  // Check unique username
+  const [existingUser] = await db.pool.query('SELECT id FROM users WHERE username = ?', [cleanUsername]);
+  if (existingUser.length > 0) {
+    const err = new Error(`Username '${cleanUsername}' is already taken.`);
+    err.status = 409;
+    throw err;
+  }
+
+  // Check unique email
+  const [existingEmail] = await db.pool.query('SELECT id FROM users WHERE email = ?', [cleanEmail]);
+  if (existingEmail.length > 0) {
+    const err = new Error(`Email '${cleanEmail}' is already registered.`);
     err.status = 409;
     throw err;
   }
@@ -161,17 +178,17 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
     const [insertRes] = await conn.query(
       `INSERT INTO users (role_id, username, email, password_hash, status, must_change_password)
        VALUES (?, ?, ?, ?, 'ACTIVE', 1)`,
-      [roleId, username, email, hash]
+      [roleId, cleanUsername, cleanEmail, hash]
     );
     const newUserId = insertRes.insertId;
 
     // Link student if provided
-    if (role === 'STUDENT' && student_id) {
+    if (cleanRole === 'STUDENT' && student_id) {
       await conn.query('UPDATE students SET user_id = ? WHERE id = ?', [newUserId, student_id]);
     }
 
     // Assign hostels if superintendent
-    if (role === 'SUPERINTENDENT' && Array.isArray(hostel_ids) && hostel_ids.length > 0) {
+    if (cleanRole === 'SUPERINTENDENT' && Array.isArray(hostel_ids) && hostel_ids.length > 0) {
       for (const hId of hostel_ids) {
         await conn.query(
           'INSERT INTO superintendent_hostels (user_id, hostel_id) VALUES (?, ?)',
@@ -188,7 +205,7 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
       actor_id: actor.id,
       ip_address,
       user_agent,
-      metadata: { username, email, role }
+      metadata: { username: cleanUsername, email: cleanEmail, role: cleanRole }
     });
 
     await activityService.logActivity({
@@ -197,11 +214,11 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
       module: 'USERS',
       entityType: 'USER',
       entityId: newUserId,
-      description: `Created new user account '${username}' with role '${role}'`,
-      metadata: { username, email, role }
+      description: `Created new user account '${cleanUsername}' with role '${cleanRole}'`,
+      metadata: { username: cleanUsername, email: cleanEmail, role: cleanRole }
     }, conn);
 
-    return { id: newUserId, username, email, role, must_change_password: true };
+    return { id: newUserId, username: cleanUsername, email: cleanEmail, role: cleanRole, must_change_password: true };
   } catch (error) {
     await conn.rollback();
     throw error;
