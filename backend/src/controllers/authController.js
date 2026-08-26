@@ -48,10 +48,11 @@ const login = async (req, res, next) => {
     const token = authService.generateToken(result);
 
     // 4. Set HttpOnly Cookie
+    const isProd = env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days matching JWT expiration
     };
 
@@ -60,6 +61,7 @@ const login = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: 'Login successful.',
+      token,
       user: {
         id: result.id,
         username: result.username,
@@ -112,10 +114,11 @@ const changePassword = async (req, res, next) => {
  */
 const logout = async (req, res, next) => {
   try {
+    const isProd = env.NODE_ENV === 'production';
     res.clearCookie('token', {
       httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax'
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax'
     });
 
     return res.status(200).json({

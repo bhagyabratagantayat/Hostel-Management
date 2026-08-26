@@ -16,10 +16,12 @@ export const AuthProvider = ({ children }) => {
         setUser(response.user);
         setIsAuthenticated(true);
       } else {
+        localStorage.removeItem('authToken');
         setUser(null);
         setIsAuthenticated(false);
       }
     } catch (error) {
+      localStorage.removeItem('authToken');
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -36,6 +38,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { loginIdentifier, password });
       if (response.success && response.user) {
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
         setUser(response.user);
         setIsAuthenticated(true);
         return { success: true };
@@ -58,6 +63,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout request failed:', error);
     } finally {
+      localStorage.removeItem('authToken');
       setUser(null);
       setIsAuthenticated(false);
       setIsLoading(false);

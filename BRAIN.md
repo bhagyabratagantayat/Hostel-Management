@@ -465,8 +465,11 @@ Precision: 2 decimal places
 * **2026-08-26 (Phase 18) — Cloud Deployment & Institutional Branding**
   * **Objective**: Successfully set up multi-cloud production deployment (Firebase Hosting for Frontend, Render for Backend, Hostinger for MySQL) and applied official BEC College branding across the entire portal.
   * **Frontend Cloud Hosting (Firebase)**: Configured `frontend/firebase.json` with SPA catch-all rewrite (`**` → `/index.html`) and `frontend/.firebaserc` pointing to project `bechostels`. Live at `https://bechostels.web.app`.
-  * **Backend Cloud Service (Render)**: Set up Node.js service targeting `backend/` directory with `npm install` build step and `node src/app.js` entrypoint. Cloud database connection to Hostinger MySQL (`srv1334.hstgr.io:3306`).
-  * **Security & CORS Enforcement**: Updated `backend/src/app.js` to whitelist `https://bechostels.web.app`, `https://bechostels.firebaseapp.com`, and `FRONTEND_URL` in production while preserving local Vite dev ports.
+  * **Backend Cloud Service (Render)**: Set up Node.js service targeting `backend/` directory with `npm install` build step and `node src/app.js` entrypoint. Cloud database connection to Hostinger MySQL (`srv1334.hstgr.io:3306`). Service live at `https://bec-hostel-backend.onrender.com`.
+  * **Cross-Domain Authentication (CORS & Dual-Token)**:
+    * Whitelisted `https://bechostels.web.app` and `https://bechostels.firebaseapp.com` in `app.js` CORS configuration.
+    * Implemented dual-token transport in `authMiddleware.js` and `authController.js`: supports both SameSite: None HttpOnly cookies AND `Authorization: Bearer <token>` from `localStorage` to completely bypass cross-site cookie restrictions on modern browsers (Safari, Chrome Incognito, iOS).
+  * **Render Keep-Alive Strategy**: Endpoint `/api/health` monitored via external cron ping (e.g. cron-job.org / UptimeRobot every 10-14 mins) to prevent Render free tier cold starts.
   * **Institutional Branding**: Integrated official `BEC LOGO FINAL.png` into `Navbar.jsx`, `Sidebar.jsx`, `Login.jsx`, and as browser tab favicon in `frontend/index.html` via `favicon.png`.
   * **Status**: Complete & Live.
 
