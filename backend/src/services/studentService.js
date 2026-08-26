@@ -232,12 +232,13 @@ const getStudentById = async (studentId, user) => {
 const createStudent = async (studentData, creator) => {
   const {
     student_id, roll_number, full_name, phone, email, branch, course, year, semester,
-    hostel_id, floor_id, room_id, bed_id, admission_date, password, base64Photo
+    hostel_id, floor_id, room_id, bed_id, admission_date, password, base64Photo,
+    date_of_birth
   } = studentData;
 
   // 1. Inputs validation
   if (!student_id || !student_id.trim()) {
-    const error = new Error('Student ID is required.');
+    const error = new Error('Student ID / Registration Number is required.');
     error.status = 400;
     throw error;
   }
@@ -283,7 +284,7 @@ const createStudent = async (studentData, creator) => {
     [student_id.trim(), email.trim()]
   );
   if (existingUser.length > 0) {
-    const error = new Error('Student ID already exists.');
+    const error = new Error('Student Registration Number or Email already exists.');
     error.status = 400;
     throw error;
   }
@@ -293,7 +294,7 @@ const createStudent = async (studentData, creator) => {
     [student_id.trim()]
   );
   if (existingStudentId.length > 0) {
-    const error = new Error('Student ID already exists.');
+    const error = new Error('Student Registration Number already exists.');
     error.status = 400;
     throw error;
   }
@@ -365,25 +366,26 @@ const createStudent = async (studentData, creator) => {
   try {
     await connection.beginTransaction();
 
-    // A. Hash password
+    // A. Hash password (defaults to DOB e.g. 15082005)
     const passwordHash = await passwordUtil.hashPassword(password);
 
     // B. Create account in users table (role_id 3 is STUDENT)
     const [userInsertResult] = await connection.query(
-      `INSERT INTO users (role_id, username, email, password_hash, status) 
-       VALUES (3, ?, ?, ?, 'ACTIVE')`,
-      [student_id.trim(), email.trim(), passwordHash]
+      `INSERT INTO users (role_id, username, email, full_name, phone, password_hash, status, must_change_password) 
+       VALUES (3, ?, ?, ?, ?, ?, 'ACTIVE', 0)`,
+      [student_id.trim(), email.trim(), full_name.trim(), phone ? phone.trim() : null, passwordHash]
     );
     const newUserId = userInsertResult.insertId;
 
     // C. Create student record
     const [studentInsertResult] = await connection.query(
       `INSERT INTO students (
-        user_id, student_id, roll_number, full_name, photo_url, cloudinary_public_id,
+        user_id, student_id, roll_number, full_name, date_of_birth, photo_url, cloudinary_public_id,
         phone, email, branch, course, year, semester, bed_id, admission_date, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
       [
-        newUserId, student_id.trim(), roll_number.trim(), full_name.trim(), photoUrl, cloudinaryPublicId,
+        newUserId, student_id.trim(), roll_number.trim(), full_name.trim(),
+        date_of_birth || null, photoUrl, cloudinaryPublicId,
         phone || '', email.trim(), branch || '', course || '', parseInt(year, 10), parseInt(semester, 10),
         bed_id, admission_date || new Date().toISOString().slice(0, 10)
       ]
@@ -396,7 +398,7 @@ const createStudent = async (studentData, creator) => {
     );
 
     await connection.commit();
-    return { id: studentInsertResult.insertId, student_id, full_name, email };
+    return { id: studentInsertResult.insertId, student_id, full_name, email, date_of_birth: date_of_birth || null };
   } catch (err) {
     await connection.rollback();
     // Clean up Cloudinary file if created
@@ -423,7 +425,7 @@ const updateStudent = async (studentId, updateData, user) => {
   const currentStudent = await getStudentById(studentId, user);
 
   const {
-    full_name, phone, email, branch, course, year, semester, status, base64Photo
+    full_name, date_of_birth, phone, email, branch, course, year, semester, status, base64Photo
   } = updateData;
 
   // Validate email unique constraint if changing
@@ -458,11 +460,12 @@ const updateStudent = async (studentId, updateData, user) => {
     // A. Update student details
     await connection.query(
       `UPDATE students 
-       SET full_name = ?, phone = ?, email = ?, branch = ?, course = ?, 
+       SET full_name = ?, date_of_birth = ?, phone = ?, email = ?, branch = ?, course = ?, 
            year = ?, semester = ?, status = ?, photo_url = ?, cloudinary_public_id = ?
        WHERE id = ?`,
       [
         full_name ? full_name.trim() : currentStudent.full_name,
+        date_of_birth !== undefined ? date_of_birth : currentStudent.date_of_birth,
         phone !== undefined ? phone : currentStudent.phone,
         email ? email.trim() : currentStudent.email,
         branch !== undefined ? branch : currentStudent.branch,
@@ -476,12 +479,15 @@ const updateStudent = async (studentId, updateData, user) => {
       ]
     );
 
-    // B. Keep user account email in sync
-    if (email && email.trim() !== currentStudent.email) {
-      await connection.query(
-        'UPDATE users SET email = ? WHERE id = ?',
-        [email.trim(), currentStudent.user_id]
-      );
+    // B. Keep user account in sync
+    let userUpdates = [];
+    let userParams = [];
+    if (full_name) { userUpdates.push('full_name = ?'); userParams.push(full_name.trim()); }
+    if (phone !== undefined) { userUpdates.push('phone = ?'); userParams.push(phone); }
+    if (email && email.trim() !== currentStudent.email) { userUpdates.push('email = ?'); userParams.push(email.trim()); }
+    if (userUpdates.length > 0) {
+      userParams.push(currentStudent.user_id);
+      await connection.query(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`, userParams);
     }
 
     // C. Keep user status in sync if student status is changing

@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS `students` (
     `student_id` VARCHAR(50) NOT NULL UNIQUE,
     `roll_number` VARCHAR(50) NOT NULL UNIQUE,
     `full_name` VARCHAR(150) NOT NULL,
+    `date_of_birth` DATE NULL DEFAULT NULL,
     `photo_url` VARCHAR(255) DEFAULT NULL,
     `cloudinary_public_id` VARCHAR(100) DEFAULT NULL,
     `phone` VARCHAR(20) NOT NULL,

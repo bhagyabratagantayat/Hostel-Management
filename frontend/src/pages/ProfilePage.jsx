@@ -199,8 +199,12 @@ const ProfilePage = () => {
             <>
               <h3 className="mt-4">Accommodation & Academic Profile</h3>
               <div className="info-row">
-                <span className="info-label">Student ID</span>
+                <span className="info-label">Registration No. (User ID)</span>
                 <span className="info-val">{st.student_code}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Date of Birth</span>
+                <span className="info-val">{st.date_of_birth ? new Date(st.date_of_birth).toLocaleDateString('en-GB') : 'Not Specified'}</span>
               </div>
               <div className="info-row">
                 <span className="info-label">Roll Number</span>

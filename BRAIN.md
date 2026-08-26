@@ -462,6 +462,25 @@ Precision: 2 decimal places
     * `GET /api/reports/mess`: Meal participation rates by meal type (Breakfast, Lunch, Snacks, Dinner).
     * `GET /api/reports/fees`: Expected, collected, pending, overdue, waived totals, collection rates, and daily revenue trends.
   * **Frontend UI Components**:
+* **2026-08-27 (Phase 20) — Course & Branch Dropdowns, Student DOB & Automated Credentials**
+  * **Objective**: Streamlined student registration data entry using institutional course and branch dropdowns, added student Date of Birth (DOB) tracking, and established standard login credentials where Registration Number is the User ID and DOB is the default Password.
+  * **Database Architecture**: Added `date_of_birth DATE NULL DEFAULT NULL` to the `students` table across Hostinger Production MySQL, `schema.sql`, and `hostinger_production_schema.sql`.
+  * **Backend Enhancements**:
+    * `studentService.createStudent`: Accepted `date_of_birth`, stored in `students`, synchronized `users.full_name`, and hashed default password derived from student DOB (`DDMMYYYY`).
+    * `studentService.updateStudent`: Enabled updating `date_of_birth` and keeping `users` credentials in sync.
+    * `studentService.getStudents`: Supported filtering by `course` parameter and returned `date_of_birth` across all student queries.
+    * `authService.getUserProfile`: Selected and returned `s.date_of_birth` in `student_profile`.
+  * **Frontend UI Enhancements**:
+    * `StudentsPage.jsx`:
+      * Implemented `COURSE_PROGRAMS` (`B.Tech`, `Diploma`, `MBA`) and `COURSE_BRANCH_MAP` dynamically linking branches (e.g. Aeronautical, AME, Civil, Electrical, Mechanical for Diploma; Marketing, Finance, HR, Agri-Business for MBA; CSE, ECE, EE, CE, ME, AME, Aero, Agri for B.Tech) with custom branch fallback.
+      * Labeled `Registration Number (User ID) *` with instructional copy.
+      * Added `Date of Birth *` picker that automatically generates default password in `DDMMYYYY` format (e.g. `15082005`) with show/hide toggle.
+      * Added `Filter by Course` dropdown in top toolbar for fast categorization.
+      * Displayed Date of Birth in Student Profile Details drawer.
+    * `ProfilePage.jsx`: Displayed Date of Birth under student accommodation & academic section.
+  * **Verification**: Executed migration on live Hostinger MySQL; verified with `backend/src/scripts/test_student_dob_login.js` (User registration, DOB hashing, and login authentication passed 100%). Verified production build (`npm run build`).
+  * **Status**: Complete & Live.
+
 * **2026-08-27 (Phase 19) — Warden Gender & Self-Service Profile Management**
   * **Objective**: Added institutional gender tracking (MALE / FEMALE / OTHER) for wardens and system users, enabled wardens to view and edit their profile details directly, and added assigned hostel oversight to the profile page.
   * **Database Architecture**: Added `full_name VARCHAR(150)`, `gender ENUM('MALE', 'FEMALE', 'OTHER')`, and `phone VARCHAR(20)` columns to the `users` table across Hostinger Production MySQL, `schema.sql`, and `hostinger_production_schema.sql`.

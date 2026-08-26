@@ -8,6 +8,34 @@ import Loading from '../components/Loading';
 import Error from '../components/Error';
 import './StudentsPage.css';
 
+export const COURSE_PROGRAMS = ['B.Tech', 'Diploma', 'MBA'];
+
+export const COURSE_BRANCH_MAP = {
+  'B.Tech': [
+    'Computer Science & Engineering (CSE)',
+    'Aeronautical Engineering',
+    'Aircraft Maintenance Engineering (AME)',
+    'Civil Engineering',
+    'Electrical Engineering',
+    'Electronics & Communication Engineering (ECE)',
+    'Mechanical Engineering',
+    'Agriculture Engineering'
+  ],
+  'Diploma': [
+    'Aeronautical Engineering',
+    'Aircraft Maintenance Engineering (AME)',
+    'Civil Engineering',
+    'Electrical Engineering',
+    'Mechanical Engineering'
+  ],
+  'MBA': [
+    'Marketing',
+    'Finance',
+    'Human Resource',
+    'Agri-Business'
+  ]
+};
+
 const StudentsPage = () => {
   const { user } = useAuth();
   
@@ -20,6 +48,7 @@ const StudentsPage = () => {
   const [search, setSearch] = useState('');
   const [hostelFilter, setHostelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [courseFilter, setCourseFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -35,6 +64,8 @@ const StudentsPage = () => {
   const [modalMode, setModalMode] = useState('add'); // 'add' | 'edit'
   const [actionLoading, setActionLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [isCustomBranch, setIsCustomBranch] = useState(false);
 
   // Dynamic cascading option states for dropdowns
   const [floors, setFloors] = useState([]);
@@ -50,10 +81,11 @@ const StudentsPage = () => {
     student_id: '',
     roll_number: '',
     full_name: '',
+    date_of_birth: '',
     email: '',
     phone: '',
     branch: '',
-    course: '',
+    course: 'B.Tech',
     year: '1',
     semester: '1',
     password: '',
@@ -63,6 +95,42 @@ const StudentsPage = () => {
     bed_id: '',
     base64Photo: ''
   });
+
+  // Automatically convert DOB (YYYY-MM-DD) into default DDMMYYYY password
+  const handleDobChange = (dobString) => {
+    let autoPassword = '';
+    if (dobString && /^\d{4}-\d{2}-\d{2}$/.test(dobString)) {
+      const [yyyy, mm, dd] = dobString.split('-');
+      autoPassword = `${dd}${mm}${yyyy}`;
+    }
+    setFormData(prev => ({
+      ...prev,
+      date_of_birth: dobString,
+      password: modalMode === 'add' ? autoPassword : prev.password
+    }));
+  };
+
+  // Dynamically switch course and reset branch selection
+  const handleCourseChange = (newCourse) => {
+    const defaultBranch = COURSE_BRANCH_MAP[newCourse]?.[0] || '';
+    setFormData(prev => ({
+      ...prev,
+      course: newCourse,
+      branch: defaultBranch
+    }));
+    setIsCustomBranch(false);
+  };
+
+  // Branch selection handler with custom branch support
+  const handleBranchChange = (newBranch) => {
+    if (newBranch === 'OTHER') {
+      setIsCustomBranch(true);
+      setFormData(prev => ({ ...prev, branch: '' }));
+    } else {
+      setIsCustomBranch(false);
+      setFormData(prev => ({ ...prev, branch: newBranch }));
+    }
+  };
 
   // Transfer Fields State
   const [transferData, setTransferData] = useState({
@@ -102,7 +170,8 @@ const StudentsPage = () => {
           limit,
           search: search.trim() || undefined,
           hostel_id: hostelFilter || undefined,
-          status: statusFilter || undefined
+          status: statusFilter || undefined,
+          course: courseFilter || undefined
         }
       });
       setStudents(res.data.students || []);
@@ -131,7 +200,7 @@ const StudentsPage = () => {
 
   useEffect(() => {
     fetchStudents();
-  }, [currentPage, hostelFilter, statusFilter]);
+  }, [currentPage, hostelFilter, statusFilter, courseFilter]);
 
   // Handle live search execution
   const handleSearchSubmit = (e) => {
@@ -239,14 +308,17 @@ const StudentsPage = () => {
 
   // Open creation modal
   const handleOpenAddModal = () => {
+    const defaultCourse = 'B.Tech';
+    const defaultBranch = COURSE_BRANCH_MAP['B.Tech'][0];
     setFormData({
       student_id: '',
       roll_number: '',
       full_name: '',
+      date_of_birth: '',
       email: '',
       phone: '',
-      branch: '',
-      course: '',
+      branch: defaultBranch,
+      course: defaultCourse,
       year: '1',
       semester: '1',
       password: '',
@@ -260,20 +332,39 @@ const StudentsPage = () => {
     setFloors([]);
     setRooms([]);
     setBeds([]);
+    setIsCustomBranch(false);
+    setShowPassword(false);
     setModalMode('add');
     setIsAddEditOpen(true);
   };
 
   // Open edit details modal
   const handleOpenEditModal = (student) => {
+    const currentCourse = student.course || 'B.Tech';
+    const currentBranch = student.branch || '';
+    const branchesForCourse = COURSE_BRANCH_MAP[currentCourse] || [];
+    const isOther = currentBranch && !branchesForCourse.includes(currentBranch);
+    setIsCustomBranch(Boolean(isOther));
+    setShowPassword(false);
+
+    let dobFormatted = '';
+    if (student.date_of_birth) {
+      try {
+        dobFormatted = new Date(student.date_of_birth).toISOString().split('T')[0];
+      } catch (e) {
+        dobFormatted = student.date_of_birth;
+      }
+    }
+
     setFormData({
       student_id: student.student_id,
       roll_number: student.roll_number,
       full_name: student.full_name,
+      date_of_birth: dobFormatted,
       email: student.email,
       phone: student.phone || '',
-      branch: student.branch || '',
-      course: student.course || '',
+      branch: currentBranch,
+      course: currentCourse,
       year: student.year?.toString() || '1',
       semester: student.semester?.toString() || '1',
       password: '', // Password is not modified here
@@ -319,14 +410,15 @@ const StudentsPage = () => {
     
     // Validations
     const errors = {};
-    if (!formData.student_id.trim()) errors.student_id = 'Student ID is required.';
+    if (!formData.student_id.trim()) errors.student_id = 'Registration Number (User ID) is required.';
     if (!formData.roll_number.trim()) errors.roll_number = 'Roll number is required.';
     if (!formData.full_name.trim()) errors.full_name = 'Full name is required.';
     if (!formData.email.trim()) errors.email = 'Email address is required.';
+    if (!formData.date_of_birth) errors.date_of_birth = 'Date of Birth is required.';
     
     if (modalMode === 'add') {
       if (!formData.password || formData.password.length < 6) {
-        errors.password = 'Password must be at least 6 characters.';
+        errors.password = 'Password must be at least 6 characters (enter Date of Birth).';
       }
       if (!formData.hostel_id) errors.hostel_id = 'Hostel assignment is required.';
       if (!formData.room_id) errors.room_id = 'Room assignment is required.';
@@ -341,11 +433,15 @@ const StudentsPage = () => {
     setActionLoading(true);
     try {
       if (modalMode === 'add') {
-        await api.post('/students', formData);
+        await api.post('/students', {
+          ...formData,
+          date_of_birth: formData.date_of_birth || null
+        });
       } else {
         // Prepare update fields (filter out empty password / photo)
         const updatePayload = {
           full_name: formData.full_name,
+          date_of_birth: formData.date_of_birth || null,
           phone: formData.phone,
           email: formData.email,
           branch: formData.branch,
@@ -361,7 +457,7 @@ const StudentsPage = () => {
       setIsAddEditOpen(false);
       fetchStudents();
     } catch (err) {
-      setFormErrors({ form: err.message || 'Operation failed.' });
+      setFormErrors({ form: err.response?.data?.message || err.message || 'Operation failed.' });
     } finally {
       setActionLoading(false);
     }
@@ -440,6 +536,21 @@ const StudentsPage = () => {
             />
           </div>
 
+          <div style={{ width: '160px' }}>
+            <label className="form-label" style={{ fontSize: '13px' }}>Filter by Course</label>
+            <select
+              value={courseFilter}
+              onChange={(e) => { setCourseFilter(e.target.value); setCurrentPage(1); }}
+              className="form-input"
+              style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+            >
+              <option value="">All Courses</option>
+              {COURSE_PROGRAMS.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
           <div style={{ width: '200px' }}>
             <label className="form-label" style={{ fontSize: '13px' }}>Filter by Hostel</label>
             <select
@@ -479,6 +590,7 @@ const StudentsPage = () => {
                 setSearch('');
                 setHostelFilter('');
                 setStatusFilter('');
+                setCourseFilter('');
                 setCurrentPage(1);
               }}
             >
@@ -679,8 +791,14 @@ const StudentsPage = () => {
                     <span className="profile-info-value">{selectedStudent.full_name}</span>
                   </div>
                   <div className="profile-info-row">
-                    <span className="profile-info-label">Student ID (Username)</span>
+                    <span className="profile-info-label">Registration No. (User ID)</span>
                     <span className="profile-info-value"><code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#0284c7' }}>{selectedStudent.student_id}</code></span>
+                  </div>
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Date of Birth</span>
+                    <span className="profile-info-value">
+                      {selectedStudent.date_of_birth ? new Date(selectedStudent.date_of_birth).toLocaleDateString('en-GB') : 'Not Specified'}
+                    </span>
                   </div>
                   <div className="profile-info-row">
                     <span className="profile-info-label">Roll Number</span>
@@ -762,22 +880,29 @@ const StudentsPage = () => {
                 )}
 
                 <div className="modal-form-grid-2">
-                  <Input 
-                    label="Student ID (Username) *"
-                    id="student_id"
-                    name="student_id"
-                    autoComplete="new-student-id"
-                    value={formData.student_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, student_id: e.target.value }))}
-                    error={formErrors.student_id}
-                    disabled={modalMode === 'edit'}
-                    required
-                  />
+                  <div>
+                    <Input 
+                      label="Registration Number (User ID) *"
+                      id="student_id"
+                      name="student_id"
+                      placeholder="e.g. 2301316095"
+                      autoComplete="new-student-id"
+                      value={formData.student_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, student_id: e.target.value }))}
+                      error={formErrors.student_id}
+                      disabled={modalMode === 'edit'}
+                      required
+                    />
+                    <small style={{ display: 'block', marginTop: '-8px', marginBottom: '12px', fontSize: '11px', color: '#64748b' }}>
+                      🔑 Official registration number used for student portal login.
+                    </small>
+                  </div>
                   
                   <Input 
-                    label="Roll Number *"
+                    label="College Roll Number *"
                     id="roll_number"
                     name="roll_number"
+                    placeholder="e.g. CSE-042"
                     value={formData.roll_number}
                     onChange={(e) => setFormData(prev => ({ ...prev, roll_number: e.target.value }))}
                     error={formErrors.roll_number}
@@ -788,74 +913,157 @@ const StudentsPage = () => {
 
                 <div className="modal-form-grid-2">
                   <Input 
-                    label="Full Name *"
+                    label="Student Full Name *"
                     id="full_name"
                     name="full_name"
+                    placeholder="e.g. Soumya Ranjan Panda"
                     value={formData.full_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                     error={formErrors.full_name}
                     required
                   />
 
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label" htmlFor="date_of_birth">
+                      Date of Birth *
+                    </label>
+                    <input 
+                      type="date"
+                      id="date_of_birth"
+                      name="date_of_birth"
+                      value={formData.date_of_birth}
+                      onChange={(e) => handleDobChange(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                      required
+                    />
+                    {formErrors.date_of_birth && <span className="form-error-msg">{formErrors.date_of_birth}</span>}
+                    <small style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#64748b' }}>
+                      📅 Used as the default login password (format DDMMYYYY).
+                    </small>
+                  </div>
+                </div>
+
+                <div className="modal-form-grid-2">
                   <Input 
                     label="Email Address *"
                     id="email"
                     name="email"
                     type="email"
+                    placeholder="e.g. student@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     error={formErrors.email}
                     required
                   />
-                </div>
 
-                <div className="modal-form-grid-2">
                   <Input 
                     label="Phone Number"
                     id="phone"
                     name="phone"
+                    placeholder="e.g. 9876543210"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   />
-
-                  {modalMode === 'add' ? (
-                    <Input 
-                      label="Access Password (Min 6 chars) *"
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      error={formErrors.password}
-                      required
-                    />
-                  ) : (
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <label className="form-label" style={{ color: '#64748b', fontSize: '13px' }}>Password Management</label>
-                      <div style={{ color: '#94a3b8', fontSize: '12px' }}>
-                        Password can be updated by the student or via user management.
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="modal-form-grid-2">
-                  <Input 
-                    label="Course Title (e.g. B.Tech)"
-                    id="course"
-                    name="course"
-                    value={formData.course}
-                    onChange={(e) => setFormData(prev => ({ ...prev, course: e.target.value }))}
-                  />
+                {modalMode === 'add' ? (
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label" htmlFor="password">
+                      Access Password (Auto-set from DOB) *
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type={showPassword ? 'text' : 'password'}
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        className="form-input"
+                        placeholder="Select DOB to auto-generate password"
+                        style={{ width: '100%', height: '42px', padding: '8px 40px 8px 12px' }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '15px',
+                          color: '#64748b'
+                        }}
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? '👁️' : '🙈'}
+                      </button>
+                    </div>
+                    {formErrors.password && <span className="form-error-msg">{formErrors.password}</span>}
+                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#0369a1', background: '#f0f9ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                      💡 <strong>Student Login Credentials:</strong><br />
+                      • <strong>User ID:</strong> <code>{formData.student_id || 'Enter Registration No.'}</code><br />
+                      • <strong>Default Password:</strong> <code>{formData.password || 'Select Date of Birth (DDMMYYYY)'}</code>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label className="form-label" style={{ color: '#64748b', fontSize: '13px' }}>Password Management</label>
+                    <div style={{ color: '#94a3b8', fontSize: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      Password is kept secure. Can be reset via User Management by Super Admin.
+                    </div>
+                  </div>
+                )}
 
-                  <Input 
-                    label="Academic Branch (e.g. CSE)"
-                    id="branch"
-                    name="branch"
-                    value={formData.branch}
-                    onChange={(e) => setFormData(prev => ({ ...prev, branch: e.target.value }))}
-                  />
+                <div className="modal-form-grid-2">
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="course">Course / Program *</label>
+                    <select
+                      id="course"
+                      value={formData.course}
+                      onChange={(e) => handleCourseChange(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                      required
+                    >
+                      {COURSE_PROGRAMS.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="branch">Academic Branch / Department *</label>
+                    <select
+                      id="branch"
+                      value={isCustomBranch ? 'OTHER' : formData.branch}
+                      onChange={(e) => handleBranchChange(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', height: '42px', padding: '8px 12px' }}
+                      required={!isCustomBranch}
+                    >
+                      {(COURSE_BRANCH_MAP[formData.course] || []).map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                      <option value="OTHER">Other / Custom Branch...</option>
+                    </select>
+
+                    {isCustomBranch && (
+                      <input
+                        type="text"
+                        placeholder="Type custom branch name"
+                        value={formData.branch}
+                        onChange={(e) => setFormData(prev => ({ ...prev, branch: e.target.value }))}
+                        className="form-input"
+                        style={{ width: '100%', height: '38px', marginTop: '6px', padding: '6px 10px' }}
+                        required
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="modal-form-grid-2">
