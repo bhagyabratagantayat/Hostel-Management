@@ -11,6 +11,8 @@ const ProfilePage = () => {
   const [success, setSuccess] = useState('');
 
   // Edit Profile Form State
+  const [fullNameVal, setFullNameVal] = useState('');
+  const [genderVal, setGenderVal] = useState('');
   const [emailVal, setEmailVal] = useState('');
   const [phoneVal, setPhoneVal] = useState('');
   const [updatingProfile, setUpdatingProfile] = useState(false);
@@ -38,12 +40,12 @@ const ProfilePage = () => {
       const res = await api.getMe();
       const userData = res.user || res.data?.user || res.data;
       setProfile(userData);
+      setFullNameVal(userData?.full_name || userData?.student_profile?.full_name || '');
+      setGenderVal(userData?.gender || '');
       setEmailVal(userData?.email || '');
-      if (userData?.student_profile) {
-        setPhoneVal(userData.student_profile.phone_number || '');
-      }
+      setPhoneVal(userData?.phone || userData?.student_profile?.phone_number || '');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load profile details.');
+      setError(err.response?.data?.message || err.message || 'Failed to load profile details.');
     } finally {
       setLoading(false);
     }
@@ -61,13 +63,16 @@ const ProfilePage = () => {
 
     try {
       await api.updateSelfProfile({
+        full_name: fullNameVal,
+        gender: genderVal || null,
         email: emailVal,
-        phone_number: phoneVal
+        phone_number: phoneVal,
+        phone: phoneVal
       });
       setSuccess('Profile information updated successfully.');
       fetchProfile();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile.');
+      setError(err.response?.data?.message || err.message || 'Failed to update profile.');
     } finally {
       setUpdatingProfile(false);
     }
@@ -91,7 +96,7 @@ const ProfilePage = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to change password.');
+      setError(err.response?.data?.message || err.message || 'Failed to change password.');
     } finally {
       setChangingPass(false);
     }
@@ -102,6 +107,8 @@ const ProfilePage = () => {
   }
 
   const st = profile?.student_profile;
+  const displayName = profile?.full_name || st?.full_name || profile?.username;
+  const initials = displayName ? displayName.substring(0, 2).toUpperCase() : 'U';
 
   return (
     <div className="profile-container">
@@ -110,16 +117,23 @@ const ProfilePage = () => {
           {st?.photo_url ? (
             <img src={st.photo_url} alt="Profile Avatar" />
           ) : (
-            <div className="avatar-placeholder">{profile?.username?.charAt(0).toUpperCase()}</div>
+            <div className="avatar-placeholder">{initials}</div>
           )}
         </div>
         <div className="profile-title-area">
-          <h2>{st?.full_name || profile?.username}</h2>
+          <h2>{displayName}</h2>
           <div className="profile-badges">
             <span className={`role-badge role-${profile?.role?.toLowerCase()}`}>{profile?.role}</span>
             <span className={`status-badge status-${profile?.status?.toLowerCase()}`}>{profile?.status}</span>
+            {profile?.gender && (
+              <span className={`gender-badge gender-${profile.gender.toLowerCase()}`}>
+                {profile.gender === 'MALE' ? '👨 Male' : profile.gender === 'FEMALE' ? '👩 Female' : '👤 Other'}
+              </span>
+            )}
           </div>
-          <p className="profile-meta">Account ID: #{profile?.id} • Created: {new Date(profile?.created_at).toLocaleDateString()}</p>
+          <p className="profile-meta">
+            Account ID: #{profile?.id} • Username: <strong>{profile?.username}</strong> • Created: {new Date(profile?.created_at).toLocaleDateString()}
+          </p>
         </div>
       </div>
 
@@ -127,13 +141,20 @@ const ProfilePage = () => {
       {success && <div className="alert alert-success my-3">{success}</div>}
 
       <div className="profile-grid">
-        {/* Account & Accommodation Information */}
+        {/* Account & Details Information */}
         <div className="card profile-info-card">
           <h3>Account & Identity Details</h3>
           
           <div className="info-row">
-            <span className="info-label">Username</span>
-            <span className="info-val">{profile?.username}</span>
+            <span className="info-label">Full Name</span>
+            <span className="info-val">{profile?.full_name || st?.full_name || 'Not set'}</span>
+          </div>
+
+          <div className="info-row">
+            <span className="info-label">Gender</span>
+            <span className="info-val">
+              {profile?.gender ? (profile.gender === 'MALE' ? 'Male (👨)' : profile.gender === 'FEMALE' ? 'Female (👩)' : 'Other (👤)') : 'Not Specified'}
+            </span>
           </div>
 
           <div className="info-row">
@@ -142,10 +163,38 @@ const ProfilePage = () => {
           </div>
 
           <div className="info-row">
+            <span className="info-label">Contact Phone</span>
+            <span className="info-val">{profile?.phone || st?.phone_number || 'Not Provided'}</span>
+          </div>
+
+          <div className="info-row">
             <span className="info-label">Last Login</span>
             <span className="info-val">{profile?.last_login_at ? new Date(profile.last_login_at).toLocaleString() : 'First Session'}</span>
           </div>
 
+          {/* Assigned Hostels for Superintendents / Wardens */}
+          {profile?.role === 'SUPERINTENDENT' && (
+            <div className="superintendent-hostels-section mt-4">
+              <h3>Assigned Hostels Management</h3>
+              {profile?.assigned_hostels && profile.assigned_hostels.length > 0 ? (
+                <div className="assigned-hostels-grid">
+                  {profile.assigned_hostels.map(h => (
+                    <div key={h.id} className="assigned-hostel-pill">
+                      <span className="hostel-pill-icon">🏢</span>
+                      <div className="hostel-pill-info">
+                        <span className="hostel-pill-name">{h.name}</span>
+                        <span className="hostel-pill-meta">{h.code} • {h.hostel_type || 'Hostel'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted text-sm mt-1">No specific hostels assigned currently. (Contact Super Admin)</p>
+              )}
+            </div>
+          )}
+
+          {/* Student Profile Info */}
           {profile?.role === 'STUDENT' && st && (
             <>
               <h3 className="mt-4">Accommodation & Academic Profile</h3>
@@ -169,10 +218,46 @@ const ProfilePage = () => {
           )}
 
           {/* Edit Profile Form */}
-          <h3 className="mt-4">Update Contact Information</h3>
+          <h3 className="mt-4">Edit Profile Information</h3>
           <form onSubmit={handleProfileUpdate} className="mt-2">
             <div className="form-group">
-              <label>Email Address</label>
+              <label>Full Name</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Dr. Ramesh Kumar"
+                value={fullNameVal}
+                onChange={(e) => setFullNameVal(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Gender</label>
+              <select
+                className="form-control"
+                value={genderVal}
+                onChange={(e) => setGenderVal(e.target.value)}
+              >
+                <option value="">-- Select Gender --</option>
+                <option value="MALE">Male (👨)</option>
+                <option value="FEMALE">Female (👩)</option>
+                <option value="OTHER">Other (👤)</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Phone / Contact Number</label>
+              <input
+                type="tel"
+                className="form-control"
+                placeholder="e.g. 9876543210"
+                value={phoneVal}
+                onChange={(e) => setPhoneVal(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Email Address *</label>
               <input
                 type="email"
                 className="form-control"
@@ -182,20 +267,8 @@ const ProfilePage = () => {
               />
             </div>
 
-            {profile?.role === 'STUDENT' && (
-              <div className="form-group">
-                <label>Phone Number</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={phoneVal}
-                  onChange={(e) => setPhoneVal(e.target.value)}
-                />
-              </div>
-            )}
-
-            <button type="submit" className="btn btn-secondary mt-2" disabled={updatingProfile}>
-              {updatingProfile ? 'Saving...' : 'Save Profile Changes'}
+            <button type="submit" className="btn btn-primary mt-2" disabled={updatingProfile}>
+              {updatingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
             </button>
           </form>
         </div>

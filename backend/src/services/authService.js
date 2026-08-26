@@ -179,7 +179,7 @@ const changePassword = async (userId, currentPassword, newPassword, reqContext =
  */
 const getUserProfile = async (userId) => {
   const [users] = await db.pool.query(
-    `SELECT u.id, u.username, u.email, u.status, u.must_change_password, u.last_login_at, u.created_at, r.name as role
+    `SELECT u.id, u.username, u.email, u.full_name, u.gender, u.phone, u.status, u.must_change_password, u.last_login_at, u.created_at, r.name as role
      FROM users u
      JOIN roles r ON u.role_id = r.id
      WHERE u.id = ?`,
@@ -193,6 +193,17 @@ const getUserProfile = async (userId) => {
   }
 
   const user = users[0];
+
+  if (user.role === 'SUPERINTENDENT') {
+    const [assigned] = await db.pool.query(
+      `SELECT h.id, h.name, h.code, h.gender as hostel_type, h.location
+       FROM superintendent_hostels sh
+       JOIN hostels h ON sh.hostel_id = h.id
+       WHERE sh.user_id = ?`,
+      [userId]
+    );
+    user.assigned_hostels = assigned;
+  }
 
   if (user.role === 'STUDENT') {
     const [students] = await db.pool.query(

@@ -462,6 +462,19 @@ Precision: 2 decimal places
     * `GET /api/reports/mess`: Meal participation rates by meal type (Breakfast, Lunch, Snacks, Dinner).
     * `GET /api/reports/fees`: Expected, collected, pending, overdue, waived totals, collection rates, and daily revenue trends.
   * **Frontend UI Components**:
+* **2026-08-27 (Phase 19) — Warden Gender & Self-Service Profile Management**
+  * **Objective**: Added institutional gender tracking (MALE / FEMALE / OTHER) for wardens and system users, enabled wardens to view and edit their profile details directly, and added assigned hostel oversight to the profile page.
+  * **Database Architecture**: Added `full_name VARCHAR(150)`, `gender ENUM('MALE', 'FEMALE', 'OTHER')`, and `phone VARCHAR(20)` columns to the `users` table across Hostinger Production MySQL, `schema.sql`, and `hostinger_production_schema.sql`.
+  * **Backend Enhancements**:
+    * `authService.getUserProfile`: Selected `u.full_name`, `u.gender`, `u.phone`; for `SUPERINTENDENT`, attached `assigned_hostels` with hostel name, code, type, and location.
+    * `userService.updateSelfProfile`: Whitelisted and validated `full_name`, `gender` ('MALE', 'FEMALE', 'OTHER'), `phone`/`phone_number`, and unique `email`. Maintained student profile sync.
+    * `userService.createUser` & `getUsers`: Supported `full_name`, `gender`, and `phone` in user management directory.
+  * **Frontend UI Enhancements**:
+    * `ProfilePage.jsx`: Added editable inputs for Full Name, Gender dropdown (Male 👨 / Female 👩 / Other 👤), Contact Phone, and Email Address. Added dynamic Gender badge in header and assigned hostels management cards for Superintendents.
+    * `UserManagementPage.jsx`: Added Gender column to user directory and gender input in user creation modal.
+  * **Verification**: Executed migration on live Hostinger MySQL; authored and verified `backend/src/scripts/test_warden_profile.js`. Verified production Vite build.
+  * **Status**: Complete & Live.
+
 * **2026-08-26 (Phase 18) — Cloud Deployment & Institutional Branding**
   * **Objective**: Successfully set up multi-cloud production deployment (Firebase Hosting for Frontend, Render for Backend, Hostinger for MySQL) and applied official BEC College branding across the entire portal.
   * **Frontend Cloud Hosting (Firebase)**: Configured `frontend/firebase.json` with SPA catch-all rewrite (`**` → `/index.html`) and `frontend/.firebaserc` pointing to project `bechostels`. Live at `https://bechostels.web.app`.

@@ -43,7 +43,7 @@ const getUsers = async ({ page = 1, limit = 20, role, status, search }) => {
   const total = countRows[0]?.total || 0;
 
   const [users] = await db.pool.query(
-    `SELECT u.id, u.username, u.email, u.status, u.must_change_password, u.last_login_at, u.created_at, u.updated_at,
+    `SELECT u.id, u.username, u.email, u.full_name, u.gender, u.phone, u.status, u.must_change_password, u.last_login_at, u.created_at, u.updated_at,
             r.name as role,
             s.id as student_record_id, s.full_name as student_name, s.student_id as student_code, s.roll_number,
             (SELECT GROUP_CONCAT(h.name SEPARATOR ', ')
@@ -73,7 +73,7 @@ const getUsers = async ({ page = 1, limit = 20, role, status, search }) => {
  */
 const getUserById = async (targetId) => {
   const [users] = await db.pool.query(
-    `SELECT u.id, u.username, u.email, u.status, u.must_change_password, u.last_login_at, u.created_at, u.updated_at,
+    `SELECT u.id, u.username, u.email, u.full_name, u.gender, u.phone, u.status, u.must_change_password, u.last_login_at, u.created_at, u.updated_at,
             r.name as role
      FROM users u
      JOIN roles r ON u.role_id = r.id
@@ -115,18 +115,19 @@ const getUserById = async (targetId) => {
 /**
  * Creates a new user account (SUPER_ADMIN only).
  */
-const createUser = async ({ username, email, password, role, student_id, hostel_ids }, actor, reqContext = {}) => {
+const createUser = async (userData, actor, reqContext = {}) => {
+  const { username, email, password, role = 'STUDENT', student_id = null, hostel_ids = [], full_name = null, gender = null, phone = null } = userData;
   const { ip_address = null, user_agent = null } = reqContext;
 
-  const cleanUsername = username ? String(username).trim() : '';
-  const cleanEmail = email ? String(email).trim().toLowerCase() : '';
-  const cleanRole = role ? String(role).trim() : '';
-
-  if (!cleanUsername || !cleanEmail || !cleanRole || !password) {
-    const err = new Error('Username, email, role, and password are required.');
+  if (!username || !email || !password) {
+    const err = new Error('Username, email, and password are required.');
     err.status = 400;
     throw err;
   }
+
+  const cleanUsername = username.trim();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanRole = role.trim().toUpperCase();
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -169,6 +170,11 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
     throw err;
   }
 
+  let validGender = null;
+  if (gender && ['MALE', 'FEMALE', 'OTHER'].includes(gender.toUpperCase())) {
+    validGender = gender.toUpperCase();
+  }
+
   const hash = await passwordUtil.hashPassword(password);
 
   const conn = await db.pool.getConnection();
@@ -176,9 +182,9 @@ const createUser = async ({ username, email, password, role, student_id, hostel_
     await conn.beginTransaction();
 
     const [insertRes] = await conn.query(
-      `INSERT INTO users (role_id, username, email, password_hash, status, must_change_password)
-       VALUES (?, ?, ?, ?, 'ACTIVE', 1)`,
-      [roleId, cleanUsername, cleanEmail, hash]
+      `INSERT INTO users (role_id, username, email, full_name, gender, phone, password_hash, status, must_change_password)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', 1)`,
+      [roleId, cleanUsername, cleanEmail, full_name ? full_name.trim() : null, validGender, phone ? phone.trim() : null, hash]
     );
     const newUserId = insertRes.insertId;
 
@@ -519,10 +525,55 @@ const updateSelfProfile = async (userId, updates, reqContext = {}) => {
   let userFields = [];
   let userParams = [];
 
-  // Whitelisted fields for user table
+  // Whitelisted fields for user table: email
   if (updates.email && typeof updates.email === 'string') {
+    const cleanEmail = updates.email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      const err = new Error('Please provide a valid email address.');
+      err.status = 400;
+      throw err;
+    }
+    const [existing] = await db.pool.query('SELECT id FROM users WHERE email = ? AND id != ?', [cleanEmail, userId]);
+    if (existing.length > 0) {
+      const err = new Error('Email address is already in use by another account.');
+      err.status = 409;
+      throw err;
+    }
     userFields.push('email = ?');
-    userParams.push(updates.email.trim());
+    userParams.push(cleanEmail);
+  }
+
+  // full_name
+  if (updates.full_name !== undefined) {
+    const nameVal = typeof updates.full_name === 'string' ? updates.full_name.trim() : null;
+    userFields.push('full_name = ?');
+    userParams.push(nameVal);
+  }
+
+  // gender ('MALE', 'FEMALE', 'OTHER')
+  if (updates.gender !== undefined) {
+    const validGenders = ['MALE', 'FEMALE', 'OTHER'];
+    const g = typeof updates.gender === 'string' ? updates.gender.toUpperCase().trim() : null;
+    if (g && validGenders.includes(g)) {
+      userFields.push('gender = ?');
+      userParams.push(g);
+    } else if (g === null || g === '') {
+      userFields.push('gender = ?');
+      userParams.push(null);
+    } else {
+      const err = new Error("Invalid gender. Must be 'MALE', 'FEMALE', or 'OTHER'.");
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  // phone / phone_number
+  const phoneInput = updates.phone !== undefined ? updates.phone : updates.phone_number;
+  if (phoneInput !== undefined) {
+    const cleanPhone = typeof phoneInput === 'string' ? phoneInput.trim() : null;
+    userFields.push('phone = ?');
+    userParams.push(cleanPhone);
   }
 
   if (userFields.length > 0) {
@@ -533,13 +584,25 @@ const updateSelfProfile = async (userId, updates, reqContext = {}) => {
     );
   }
 
-  // If student role, check student-specific whitelisted fields
-  if (role === 'STUDENT' && (updates.phone_number || updates.phone)) {
-    const phoneVal = updates.phone_number || updates.phone;
-    await db.pool.query(
-      'UPDATE students SET phone = ? WHERE user_id = ?',
-      [phoneVal, userId]
-    );
+  // If student role, keep student table fields in sync
+  if (role === 'STUDENT') {
+    let studentFields = [];
+    let studentParams = [];
+    if (phoneInput !== undefined && typeof phoneInput === 'string') {
+      studentFields.push('phone = ?');
+      studentParams.push(phoneInput.trim());
+    }
+    if (updates.full_name !== undefined && typeof updates.full_name === 'string' && updates.full_name.trim()) {
+      studentFields.push('full_name = ?');
+      studentParams.push(updates.full_name.trim());
+    }
+    if (studentFields.length > 0) {
+      studentParams.push(userId);
+      await db.pool.query(
+        `UPDATE students SET ${studentFields.join(', ')} WHERE user_id = ?`,
+        studentParams
+      );
+    }
   }
 
   await securityService.logSecurityEvent({

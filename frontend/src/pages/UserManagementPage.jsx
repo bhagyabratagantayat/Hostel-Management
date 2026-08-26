@@ -30,6 +30,9 @@ const UserManagementPage = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    full_name: '',
+    gender: '',
+    phone: '',
     password: '',
     role: 'STUDENT',
     student_id: '',
@@ -105,6 +108,9 @@ const UserManagementPage = () => {
     setFormData({
       username: '',
       email: '',
+      full_name: '',
+      gender: '',
+      phone: '',
       password: '',
       role: 'STUDENT',
       student_id: '',
@@ -283,6 +289,7 @@ const UserManagementPage = () => {
             <tr>
               <th>ID</th>
               <th>User / Identifier</th>
+              <th>Gender</th>
               <th>Email</th>
               <th>Role</th>
               <th>Status</th>
@@ -294,11 +301,11 @@ const UserManagementPage = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="text-center py-4">Loading user accounts...</td>
+                <td colSpan="9" className="text-center py-4">Loading user accounts...</td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="8" className="text-center py-4 text-muted">No user accounts found matching current filters.</td>
+                <td colSpan="9" className="text-center py-4 text-muted">No user accounts found matching current filters.</td>
               </tr>
             ) : (
               users.map(u => (
@@ -307,8 +314,28 @@ const UserManagementPage = () => {
                   <td>
                     <div className="user-cell">
                       <span className="username">{u.username}</span>
-                      {u.student_name && <span className="subtext">{u.student_name} ({u.student_code})</span>}
+                      {u.full_name && <span className="subtext">{u.full_name}</span>}
+                      {u.student_name && !u.full_name && <span className="subtext">{u.student_name} ({u.student_code})</span>}
                     </div>
+                  </td>
+                  <td>
+                    {u.gender ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '3px',
+                        padding: '2px 8px',
+                        borderRadius: '9999px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        backgroundColor: u.gender === 'MALE' ? '#dbeafe' : u.gender === 'FEMALE' ? '#fce7f3' : '#f3e8ff',
+                        color: u.gender === 'MALE' ? '#1e40af' : u.gender === 'FEMALE' ? '#9d174d' : '#6b21a8'
+                      }}>
+                        {u.gender === 'MALE' ? '👨 Male' : u.gender === 'FEMALE' ? '👩 Female' : '👤 Other'}
+                      </span>
+                    ) : (
+                      <span className="text-muted text-sm">—</span>
+                    )}
                   </td>
                   <td>{u.email}</td>
                   <td>
@@ -419,6 +446,39 @@ const UserManagementPage = () => {
                     placeholder="e.g. john@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Dr. Ramesh Kumar"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Gender</label>
+                  <select
+                    className="form-control"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  >
+                    <option value="">-- Select Gender --</option>
+                    <option value="MALE">Male (👨)</option>
+                    <option value="FEMALE">Female (👩)</option>
+                    <option value="OTHER">Other (👤)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Contact Phone</label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    placeholder="e.g. 9876543210"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
