@@ -33,13 +33,28 @@ This file serves as the permanent project memory, architecture specification, an
 
 ### Database
 * **Engine**: MySQL
-* **Port**: 3307 (local dev)
+* **Cloud Host**: Hostinger Cloud MySQL (`srv1334.hstgr.io:3306`)
+* **Local Dev Port**: 3307 / 3306
 * **Architecture**: Fully normalized relational design with foreign key constraints, unique validation, and indexing on search fields.
 
 ### File & Image Storage
 * **Provider**: Cloudinary
 * **Cloud Name**: qqv22ppu
 * **Usage**: Student profile photo upload, update, and deletion
+
+### Cloud Deployment Infrastructure
+* **Frontend Hosting**: Firebase Hosting (`https://bechostels.web.app`, `https://bechostels.firebaseapp.com`)
+  * SPA routing rewrites to `/index.html` configured via `frontend/firebase.json`
+  * Default project: `bechostels` in `frontend/.firebaserc`
+  * Build pipeline: Vite production build (`dist`)
+* **Backend Hosting**: Render Web Service
+  * Root Directory: `backend`
+  * Build Command: `npm install`
+  * Start Command: `node src/app.js`
+  * CORS: Configured in `backend/src/app.js` to whitelist `https://bechostels.web.app`, `https://bechostels.firebaseapp.com`, `process.env.FRONTEND_URL`, and local Vite dev ports.
+* **Branding & Assets**: 
+  * College Logo: `frontend/src/assets/BEC LOGO FINAL.png` embedded in Navbar, Sidebar, and Login screen.
+  * Favicon: `frontend/public/favicon.png` set in `frontend/index.html`.
 
 ---
 
@@ -447,6 +462,14 @@ Precision: 2 decimal places
     * `GET /api/reports/mess`: Meal participation rates by meal type (Breakfast, Lunch, Snacks, Dinner).
     * `GET /api/reports/fees`: Expected, collected, pending, overdue, waived totals, collection rates, and daily revenue trends.
   * **Frontend UI Components**:
+* **2026-08-26 (Phase 18) — Cloud Deployment & Institutional Branding**
+  * **Objective**: Successfully set up multi-cloud production deployment (Firebase Hosting for Frontend, Render for Backend, Hostinger for MySQL) and applied official BEC College branding across the entire portal.
+  * **Frontend Cloud Hosting (Firebase)**: Configured `frontend/firebase.json` with SPA catch-all rewrite (`**` → `/index.html`) and `frontend/.firebaserc` pointing to project `bechostels`. Live at `https://bechostels.web.app`.
+  * **Backend Cloud Service (Render)**: Set up Node.js service targeting `backend/` directory with `npm install` build step and `node src/app.js` entrypoint. Cloud database connection to Hostinger MySQL (`srv1334.hstgr.io:3306`).
+  * **Security & CORS Enforcement**: Updated `backend/src/app.js` to whitelist `https://bechostels.web.app`, `https://bechostels.firebaseapp.com`, and `FRONTEND_URL` in production while preserving local Vite dev ports.
+  * **Institutional Branding**: Integrated official `BEC LOGO FINAL.png` into `Navbar.jsx`, `Sidebar.jsx`, `Login.jsx`, and as browser tab favicon in `frontend/index.html` via `favicon.png`.
+  * **Status**: Complete & Live.
+
 * **2026-08-23 (Phase 16) — Hostel Operations, Maintenance & Daily Task Management**
   * **Objective**: Designed and implemented the complete daily hostel operations, maintenance ticket management, and room inspection tracking system with state-machine workflow enforcement and security audit logging.
   * **Database Architecture**: Created `maintenance_requests`, `maintenance_updates`, and `room_inspections` tables with index optimization on `(hostel_id, status)`, `(student_id, status)`, and `(room_id, inspection_date)`.
