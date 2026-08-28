@@ -30,6 +30,7 @@ import MasterFloorsPage from './pages/MasterFloorsPage';
 import MasterRoomsPage from './pages/MasterRoomsPage';
 import MasterBedsPage from './pages/MasterBedsPage';
 import DataIntegrityPage from './pages/DataIntegrityPage';
+import MessPage from './pages/MessPage';
 import Loading from './components/Loading';
 
 /**
@@ -166,6 +167,7 @@ function App() {
                     <Route path="complaints"    element={<ComplaintsPage />} />
                     <Route path="visitors"      element={<VisitorsPage />} />
                     <Route path="maintenance"   element={<MaintenancePage role="STUDENT" />} />
+                    <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
                     <Route path="profile"       element={<Navigate to="/profile" replace />} />
                     <Route path="attendance"    element={<RoutePlaceholder title="My Attendance" />} />
                     <Route path="*"             element={<Navigate to="/student/dashboard" replace />} />

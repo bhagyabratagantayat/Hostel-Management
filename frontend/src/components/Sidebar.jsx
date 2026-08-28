@@ -68,8 +68,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Visitors', icon: '👥', path: '/student/visitors' },
           { label: 'My Complaints', icon: '🛠️', path: '/student/complaints' },
           { label: 'Notices', icon: '📢', path: '/student/notices', badge: unreadCount },
-          { label: 'My Profile', icon: '👤', path: '/profile' },
+          { label: 'Mess Schedule', icon: '🍽️', path: '/student/mess' },
           { label: 'My Attendance', icon: '📝', path: '/student/attendance' },
+          { label: 'My Profile', icon: '👤', path: '/profile' },
         ];
       default:
         return [];

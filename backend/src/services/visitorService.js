@@ -264,7 +264,7 @@ async function getVisitById(visitId, user) {
       v.status,
       v.created_by,
       cb.username AS creator_name,
-      cb.role AS creator_role,
+      cbr.name AS creator_role,
       v.approved_by,
       ab.username AS approver_name,
       v.created_at,
@@ -279,6 +279,7 @@ async function getVisitById(visitId, user) {
     LEFT JOIN rooms r ON v.room_id = r.id
     LEFT JOIN beds b ON v.bed_id = b.id
     LEFT JOIN users cb ON v.created_by = cb.id
+    LEFT JOIN roles cbr ON cb.role_id = cbr.id
     LEFT JOIN users ab ON v.approved_by = ab.id
     WHERE v.id = ?
     LIMIT 1

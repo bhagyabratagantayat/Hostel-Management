@@ -33,9 +33,9 @@ async function getStudentAssignment(userId) {
       r.room_number,
       b.bed_number
     FROM students s
-    JOIN beds b ON s.bed_id = b.id
-    JOIN rooms r ON b.room_id = r.id
-    JOIN hostels h ON r.hostel_id = h.id
+    LEFT JOIN beds b ON s.bed_id = b.id
+    LEFT JOIN rooms r ON b.room_id = r.id
+    LEFT JOIN hostels h ON r.hostel_id = h.id
     WHERE s.user_id = ? AND s.status = 'ACTIVE'
     LIMIT 1
   `;
@@ -324,9 +324,10 @@ async function getComplaintById(id, user) {
       ch.comment,
       ch.created_at,
       u.username AS changed_by_name,
-      u.role AS changed_by_role
+      r.name AS changed_by_role
     FROM complaint_history ch
     JOIN users u ON ch.changed_by = u.id
+    LEFT JOIN roles r ON u.role_id = r.id
     WHERE ch.complaint_id = ?
     ORDER BY ch.created_at ASC
   `;
@@ -341,9 +342,10 @@ async function getComplaintById(id, user) {
       cc.is_internal,
       cc.created_at,
       u.username AS author_name,
-      u.role AS author_role
+      r.name AS author_role
     FROM complaint_comments cc
     JOIN users u ON cc.user_id = u.id
+    LEFT JOIN roles r ON u.role_id = r.id
     WHERE cc.complaint_id = ? ${isStudent ? 'AND cc.is_internal = 0' : ''}
     ORDER BY cc.created_at ASC
   `;
@@ -452,25 +454,27 @@ async function updateComplaintStatus(id, data, user) {
 
   // Authorization Scoping & Transition Checks
   if (user.role === 'STUDENT') {
-    if (targetStatus !== 'REOPENED') {
-      const err = new Error('Students can only reopen resolved complaints');
+    if (targetStatus !== 'REOPENED' && targetStatus !== 'CLOSED') {
+      const err = new Error('Students can only close or reopen their complaints');
       err.status = 403;
       throw err;
     }
-    if (currentStatus !== 'RESOLVED') {
-      const err = new Error('Only RESOLVED complaints can be reopened');
-      err.status = 400;
-      throw err;
-    }
-    if (!comment || comment.trim().length === 0) {
-      const err = new Error('Reason comment is required when reopening a complaint');
-      err.status = 400;
-      throw err;
+    if (targetStatus === 'REOPENED') {
+      if (currentStatus !== 'RESOLVED' && currentStatus !== 'CLOSED') {
+        const err = new Error('Only RESOLVED or CLOSED complaints can be reopened');
+        err.status = 400;
+        throw err;
+      }
+      if (!comment || comment.trim().length === 0) {
+        const err = new Error('Reason comment is required when reopening a complaint');
+        err.status = 400;
+        throw err;
+      }
     }
   } else if (user.role === 'SUPERINTENDENT') {
     const allowed = VALID_TRANSITIONS[currentStatus] || [];
-    // Allow Superintendent to close or resolve
-    if (!allowed.includes(targetStatus) && targetStatus !== 'CLOSED' && targetStatus !== 'IN_PROGRESS') {
+    // Allow Superintendent to close, resolve, reopen, or move to in progress
+    if (!allowed.includes(targetStatus) && targetStatus !== 'CLOSED' && targetStatus !== 'IN_PROGRESS' && targetStatus !== 'RESOLVED' && targetStatus !== 'REOPENED') {
       const err = new Error(`Invalid status transition from ${currentStatus} to ${targetStatus}`);
       err.status = 400;
       throw err;
@@ -534,6 +538,65 @@ async function updateComplaintStatus(id, data, user) {
 }
 
 /**
+ * Delete a complaint (with cascading removal of history and comments).
+ */
+async function deleteComplaint(id, user) {
+  const existing = await getComplaintById(id, user);
+
+  if (user.role === 'STUDENT') {
+    const studentAssignment = await getStudentAssignment(user.id);
+    if (existing.student_id !== studentAssignment.student_id) {
+      const err = new Error('Unauthorized to delete this complaint');
+      err.status = 403;
+      throw err;
+    }
+    // Students can cancel/delete their complaints if OPEN, REOPENED, or CLOSED
+    if (existing.status !== 'OPEN' && existing.status !== 'CLOSED' && existing.status !== 'REOPENED') {
+      const err = new Error('Cannot delete a complaint that is currently in progress or resolved. You can close it instead.');
+      err.status = 400;
+      throw err;
+    }
+  } else if (user.role === 'SUPERINTENDENT') {
+    const assigned = await getAssignedHostels(user.id);
+    if (existing.hostel_id && !assigned.includes(existing.hostel_id)) {
+      const err = new Error('Unauthorized: Complaint belongs to an unassigned hostel');
+      err.status = 403;
+      throw err;
+    }
+  }
+
+  const connection = await db.pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(`DELETE FROM complaint_comments WHERE complaint_id = ?`, [id]);
+    await connection.query(`DELETE FROM complaint_history WHERE complaint_id = ?`, [id]);
+    await connection.query(`DELETE FROM complaints WHERE id = ?`, [id]);
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'COMPLAINT_DELETED',
+      module: 'COMPLAINTS',
+      entityType: 'COMPLAINT',
+      entityId: id,
+      hostelId: existing.hostel_id,
+      studentId: existing.student_id,
+      description: `Deleted complaint #${id}: '${existing.title}'`,
+      metadata: { category: existing.category, priority: existing.priority, previous_status: existing.status }
+    }, connection);
+
+    await connection.commit();
+    connection.release();
+
+    return { success: true, message: `Complaint #${id} deleted successfully` };
+  } catch (err) {
+    await connection.rollback();
+    connection.release();
+    throw err;
+  }
+}
+
+/**
  * Assign complaint to warden / staff user.
  */
 async function assignComplaint(id, assignedToUserId, user) {
@@ -548,7 +611,10 @@ async function assignComplaint(id, assignedToUserId, user) {
   let targetUserId = null;
   if (assignedToUserId) {
     targetUserId = parseInt(assignedToUserId, 10);
-    const [uRows] = await db.pool.query(`SELECT id, username, role FROM users WHERE id = ?`, [targetUserId]);
+    const [uRows] = await db.pool.query(
+      `SELECT u.id, u.username, r.name as role FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?`,
+      [targetUserId]
+    );
     if (uRows.length === 0) {
       const err = new Error('Assigned user not found');
       err.status = 404;
@@ -622,6 +688,7 @@ module.exports = {
   getComplaintById,
   createComplaint,
   updateComplaintStatus,
+  deleteComplaint,
   assignComplaint,
   addComment
 };

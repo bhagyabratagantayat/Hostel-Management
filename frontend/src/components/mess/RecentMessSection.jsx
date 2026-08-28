@@ -69,7 +69,7 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
     }
   };
 
-  const mealTypes = ['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER'];
+  const mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER'];
 
   const getMessPath = () => {
     if (userRole === 'SUPER_ADMIN') return '/admin/mess';
@@ -81,11 +81,12 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
     return (
       <div className="card dashboard-section-card">
         <div className="card-header">
-          <h3>Today's Mess & Food</h3>
+          <h3>Today's Mess & Food Schedule</h3>
         </div>
         <div className="card-body">
           <div className="skeleton-line" style={{ width: '60%', height: '24px', marginBottom: '12px' }} />
           <div className="skeleton-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+            <div className="skeleton-card" style={{ height: '140px' }} />
             <div className="skeleton-card" style={{ height: '140px' }} />
             <div className="skeleton-card" style={{ height: '140px' }} />
           </div>
@@ -96,14 +97,14 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
 
   return (
     <div className="card dashboard-section-card mess-dashboard-widget">
-      <div className="card-header flex-between">
+      <div className="card-header flex-between align-center">
         <div>
-          <h3>Today's Mess Schedule</h3>
+          <h3>🍽️ Today's Food Schedule</h3>
           <span className="subtitle">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         </div>
-        <div className="widget-header-actions">
+        <div className="widget-header-actions flex-gap">
           {userRole === 'STUDENT' && onOpenMessComplaint && (
             <button
               type="button"
@@ -115,40 +116,18 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
           )}
           <button
             type="button"
-            className="btn btn-sm btn-outline-primary"
+            className="btn btn-sm btn-primary"
             onClick={() => navigate(getMessPath())}
           >
-            View Full Mess Dashboard →
+            📅 View Weekly Time-Table →
           </button>
         </div>
       </div>
 
       <div className="card-body">
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <div className="alert alert-danger">{error}</div>}
 
-        {/* Staff Overview Summary Cards */}
-        {(userRole === 'SUPER_ADMIN' || userRole === 'SUPERINTENDENT') && summary && (
-          <div className="mess-staff-summary-grid">
-            {mealTypes.map(type => {
-              const info = summary.meals[type] || {};
-              return (
-                <div key={type} className="staff-summary-card">
-                  <div className="type-tag">{type}</div>
-                  <div className="count-display">
-                    <span className="count-taking">{info.taking || 0}</span>
-                    <span className="count-label">Taking</span>
-                  </div>
-                  <div className="count-breakdown">
-                    <span>Opt Out: {info.notTaking || 0}</span>
-                    <span>Total Active: {info.totalActiveStudents || 0}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Meal Cards Grid */}
+        {/* Meal Cards Grid (Breakfast, Lunch, Dinner) */}
         <div className="mess-meals-grid">
           {mealTypes.map(mealType => {
             const menuItem = todayMenu.find(m => m.meal_type === mealType);

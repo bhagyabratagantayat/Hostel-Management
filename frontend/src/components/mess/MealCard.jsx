@@ -9,20 +9,26 @@ const MealCard = ({
   participation,
   onToggleParticipation,
   isStudent = false,
-  isUpdating = false
+  isUpdating = false,
+  onEdit = null,
+  canManage = false
 }) => {
   const mealIcons = {
     BREAKFAST: '🌅',
     LUNCH: '☀️',
-    SNACKS: '☕',
     DINNER: '🌙'
   };
 
   const mealTitles = {
     BREAKFAST: 'Breakfast',
     LUNCH: 'Lunch',
-    SNACKS: 'Snacks',
     DINNER: 'Dinner'
+  };
+
+  const mealTimings = {
+    BREAKFAST: '07:30 AM – 09:30 AM',
+    LUNCH: '12:30 PM – 02:30 PM',
+    DINNER: '07:30 PM – 09:30 PM'
   };
 
   const currentStatus = participation ? participation.status : 'TAKING'; // default opt-in
@@ -34,13 +40,19 @@ const MealCard = ({
           <span className="meal-icon">{mealIcons[mealType] || '🍲'}</span>
           <div>
             <h4 className="meal-type-title">{mealTitles[mealType] || mealType}</h4>
-            {menuItem && (
-              <span className={`availability-badge ${menuItem.is_available ? 'available' : 'unavailable'}`}>
-                {menuItem.is_available ? 'Available' : 'Unavailable'}
-              </span>
-            )}
+            <span className="meal-timing-pill">⏰ {mealTimings[mealType] || 'Service Hours'}</span>
           </div>
         </div>
+        {canManage && menuItem && onEdit && (
+          <button 
+            type="button" 
+            className="btn-edit-meal"
+            title="Edit this meal"
+            onClick={() => onEdit(menuItem)}
+          >
+            ✏️ Edit
+          </button>
+        )}
       </div>
 
       <div className="meal-card-body">
@@ -50,9 +62,14 @@ const MealCard = ({
             {menuItem.description && (
               <p className="meal-description">{menuItem.description}</p>
             )}
-            {menuItem.hostel_name && (
-              <span className="meal-hostel-tag">Scope: {menuItem.hostel_name}</span>
-            )}
+            <div className="meal-meta-row">
+              <span className={`availability-badge ${menuItem.is_available ? 'available' : 'unavailable'}`}>
+                {menuItem.is_available ? '✓ Serving Today' : '✕ Not Available'}
+              </span>
+              {menuItem.hostel_name && (
+                <span className="meal-hostel-tag">Hostel: {menuItem.hostel_name}</span>
+              )}
+            </div>
           </>
         ) : (
           <div className="empty-meal-state">
@@ -64,7 +81,7 @@ const MealCard = ({
       {isStudent && menuItem && menuItem.is_available !== 0 && (
         <div className="meal-card-footer">
           <div className="participation-toggle-container">
-            <span className="participation-label">My Response:</span>
+            <span className="participation-label">My Meal Status:</span>
             <div className="btn-group-toggle">
               <button
                 type="button"
@@ -80,7 +97,7 @@ const MealCard = ({
                 disabled={isUpdating}
                 onClick={() => onToggleParticipation && onToggleParticipation(mealType, 'NOT_TAKING')}
               >
-                ✕ Not Taking
+                ✕ Skipping
               </button>
             </div>
           </div>

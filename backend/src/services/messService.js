@@ -18,10 +18,9 @@ const isCutoffPassed = (mealDate, mealType) => {
   const targetDate = new Date(mealDate + 'T00:00:00');
   
   // Cutoff hour definitions (24h format)
-  const cutoffHours = {
+    const cutoffHours = {
     BREAKFAST: 7,
     LUNCH: 9,
-    SNACKS: 14,
     DINNER: 17
   };
 
@@ -76,7 +75,7 @@ class MessService {
       params.push(mealType);
     }
 
-    sql += ` ORDER BY m.menu_date ASC, FIELD(m.meal_type, 'BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER')`;
+    sql += ` ORDER BY m.menu_date ASC, FIELD(m.meal_type, 'BREAKFAST', 'LUNCH', 'DINNER')`;
 
     const [rows] = await pool.query(sql, params);
     return rows;
@@ -136,9 +135,9 @@ class MessService {
    * Validates duplicate (hostel_id, menu_date, meal_type).
    */
   static async createMenuItem({ hostelId, menuDate, mealType, mealName, description, isAvailable, createdBy }) {
-    const validMealTypes = ['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER'];
+    const validMealTypes = ['BREAKFAST', 'LUNCH', 'DINNER'];
     if (!validMealTypes.includes(mealType)) {
-      throw new Error(`Invalid meal type: ${mealType}. Must be one of BREAKFAST, LUNCH, SNACKS, DINNER.`);
+      throw new Error(`Invalid meal type: ${mealType}. Must be one of BREAKFAST, LUNCH, DINNER.`);
     }
 
     if (!mealName || !mealName.trim()) {
@@ -194,8 +193,8 @@ class MessService {
       throw new Error('Menu item not found.');
     }
 
-    // Scope check: Superintendents can only update menus for assigned hostels
-    if (user.role === 'SUPERINTENDENT') {
+    // Scope check: Superintendents can only update menus for assigned hostels (or general menus if assigned to at least one hostel)
+    if (user.role === 'SUPERINTENDENT' && existing.hostel_id) {
       const [sh] = await pool.query(
         'SELECT 1 FROM superintendent_hostels WHERE user_id = ? AND hostel_id = ?',
         [user.id, existing.hostel_id]

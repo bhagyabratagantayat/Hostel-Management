@@ -11,6 +11,7 @@ router.get('/summary', complaintController.getComplaintSummary);
 router.get('/:id', complaintController.getComplaintById);
 router.post('/', complaintController.createComplaint);
 router.patch('/:id/status', complaintController.updateComplaintStatus);
+router.delete('/:id', complaintController.deleteComplaint);
 router.post('/:id/assign', complaintController.assignComplaint);
 router.post('/:id/comments', complaintController.addComment);
 

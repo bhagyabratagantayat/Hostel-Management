@@ -162,12 +162,13 @@ const getStudentAllocationHistory = async (studentId, user) => {
   const [rows] = await db.pool.query(
     `SELECT sa.*, 
             h.name as hostel_name, h.code as hostel_code,
-            r.room_number,
+            r.room_number, f.floor_name,
             b.bed_number,
             u.username as allocated_by_username
      FROM student_allocations sa
      JOIN hostels h ON sa.hostel_id = h.id
      JOIN rooms r ON sa.room_id = r.id
+     LEFT JOIN floors f ON r.floor_id = f.id
      JOIN beds b ON sa.bed_id = b.id
      LEFT JOIN users u ON sa.allocated_by = u.id
      WHERE sa.student_id = ?
@@ -200,12 +201,69 @@ const getMyAllocation = async (user) => {
   }
 
   const student = studentRows[0];
-  const history = await getStudentAllocationHistory(student.id, user);
-  const activeAllocation = history.find(a => a.status === 'ACTIVE') || null;
+  let history = await getStudentAllocationHistory(student.id, user);
+  let activeAllocation = history.find(a => a.status === 'ACTIVE') || null;
+
+  // Auto-heal if student has bed_id in students table but lacks active allocation record
+  if (!activeAllocation && student.bed_id) {
+    const [bedDetails] = await db.pool.query(
+      `SELECT b.id as bed_id, b.bed_number, r.id as room_id, r.room_number, r.hostel_id,
+              h.name as hostel_name, h.code as hostel_code, f.floor_name
+       FROM beds b
+       JOIN rooms r ON b.room_id = r.id
+       JOIN hostels h ON r.hostel_id = h.id
+       LEFT JOIN floors f ON r.floor_id = f.id
+       WHERE b.id = ?`,
+      [student.bed_id]
+    );
+
+    if (bedDetails.length > 0) {
+      const b = bedDetails[0];
+      const allocDate = new Date().toISOString().slice(0, 10);
+      try {
+        const [insertRes] = await db.pool.query(
+          `INSERT INTO student_allocations (student_id, hostel_id, room_id, bed_id, allocated_from, status, allocated_by)
+           VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)`,
+          [student.id, b.hostel_id, b.room_id, b.bed_id, allocDate, user.id]
+        );
+        activeAllocation = {
+          id: insertRes.insertId,
+          student_id: student.id,
+          hostel_id: b.hostel_id,
+          room_id: b.room_id,
+          bed_id: b.bed_id,
+          allocated_from: allocDate,
+          status: 'ACTIVE',
+          hostel_name: b.hostel_name,
+          hostel_code: b.hostel_code,
+          room_number: b.room_number,
+          floor_name: b.floor_name,
+          bed_number: b.bed_number
+        };
+        history = [activeAllocation, ...history];
+      } catch (insertErr) {
+        console.warn('Auto-heal allocation insert warning:', insertErr.message);
+      }
+    }
+  }
+
+  // Fetch roommates in the same room
+  let roommates = [];
+  if (activeAllocation && activeAllocation.room_id) {
+    const [roommateRows] = await db.pool.query(
+      `SELECT s.id, s.full_name, s.student_id, s.roll_number, s.branch, s.year, s.photo_url, b.bed_number
+       FROM students s
+       JOIN beds b ON s.bed_id = b.id
+       WHERE b.room_id = ? AND s.id != ? AND s.status = 'ACTIVE'`,
+      [activeAllocation.room_id, student.id]
+    );
+    roommates = roommateRows;
+  }
 
   return {
     student,
     currentAllocation: activeAllocation,
+    roommates,
     history
   };
 };

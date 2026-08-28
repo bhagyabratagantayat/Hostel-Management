@@ -68,6 +68,8 @@ const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const inspectionRoutes = require('./routes/inspectionRoutes');
 const operationsRoutes = require('./routes/operationsRoutes');
 const masterRoutes = require('./routes/masterRoutes');
+const messRoutes = require('./routes/messRoutes');
+const feeRoutes = require('./routes/feeRoutes');
 
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
@@ -88,6 +90,8 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/inspections', inspectionRoutes);
 app.use('/api/operations', operationsRoutes);
+app.use('/api/mess', messRoutes);
+app.use('/api/fees', feeRoutes);
 app.use('/api/master', masterRoutes);
 app.use('/api/data-integrity', masterRoutes);
 app.use('/api', userRoutes);

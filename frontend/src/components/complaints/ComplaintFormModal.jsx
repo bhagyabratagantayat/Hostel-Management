@@ -23,7 +23,7 @@ const PRIORITIES = [
   { value: 'URGENT', label: 'URGENT (Safety / Infrastructure Emergency)' }
 ];
 
-const ComplaintFormModal = ({ isOpen, onClose, onSuccess }) => {
+const ComplaintFormModal = ({ isOpen, onClose, onSuccess, onSubmitSuccess }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -58,7 +58,8 @@ const ComplaintFormModal = ({ isOpen, onClose, onSuccess }) => {
       const res = await api.createComplaint(formData);
       if (res.success) {
         setFormData({ title: '', description: '', category: 'ROOM', priority: 'MEDIUM' });
-        onSuccess(res.data);
+        if (typeof onSuccess === 'function') onSuccess(res.data);
+        if (typeof onSubmitSuccess === 'function') onSubmitSuccess(res.data);
         onClose();
       }
     } catch (err) {

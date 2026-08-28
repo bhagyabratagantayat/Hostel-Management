@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 
-const STATUS_OPTIONS = [
-  { value: 'OPEN', label: 'OPEN' },
-  { value: 'IN_PROGRESS', label: 'IN PROGRESS' },
-  { value: 'RESOLVED', label: 'RESOLVED' },
-  { value: 'CLOSED', label: 'CLOSED' },
-  { value: 'REOPENED', label: 'REOPEN' }
-];
-
 const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate }) => {
   const [complaint, setComplaint] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +72,42 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
     }
   };
 
+  const handleQuickClose = async () => {
+    const reason = window.prompt('Please enter a closing note / confirmation:', 'Issue resolved / closed by user.');
+    if (reason === null) return;
+
+    try {
+      setIsUpdatingStatus(true);
+      setError(null);
+      const res = await api.updateComplaintStatus(complaintId, 'CLOSED', reason);
+      if (res.success) {
+        setComplaint(res.data);
+        if (onUpdate) onUpdate(res.data);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to close complaint');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleDeleteComplaint = async () => {
+    if (!window.confirm(`Are you sure you want to permanently delete Complaint #${complaintId}?`)) return;
+
+    try {
+      setIsUpdatingStatus(true);
+      setError(null);
+      const res = await api.deleteComplaint(complaintId);
+      if (res.success) {
+        if (onUpdate) onUpdate();
+        onClose();
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete complaint');
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -116,6 +144,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
 
   const isStudent = user?.role === 'STUDENT';
   const isStaff = user?.role === 'SUPERINTENDENT' || user?.role === 'SUPER_ADMIN';
+  const canDelete = isStaff || (isStudent && (complaint?.status === 'OPEN' || complaint?.status === 'CLOSED'));
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -215,7 +244,31 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
 
             {/* Actions Panel */}
             <div className="complaint-actions-panel mb-4">
-              <h4 className="section-title">⚡ Manage Status</h4>
+              <div className="flex-between align-center mb-3">
+                <h4 className="section-title m-0">⚡ Manage Complaint</h4>
+                <div className="flex-gap">
+                  {complaint.status !== 'CLOSED' && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={handleQuickClose}
+                      disabled={isUpdatingStatus}
+                    >
+                      🔒 Close Complaint
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={handleDeleteComplaint}
+                      disabled={isUpdatingStatus}
+                    >
+                      🗑️ Delete Complaint
+                    </button>
+                  )}
+                </div>
+              </div>
 
               {isStaff && !complaint.assigned_to && (
                 <button 
@@ -238,9 +291,12 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
                       <option value="">-- Select Status Transition --</option>
                       {isStaff && complaint.status === 'OPEN' && <option value="IN_PROGRESS">IN PROGRESS</option>}
                       {isStaff && complaint.status === 'IN_PROGRESS' && <option value="RESOLVED">RESOLVED</option>}
-                      {isStaff && (complaint.status === 'RESOLVED' || complaint.status === 'IN_PROGRESS') && <option value="CLOSED">CLOSED</option>}
-                      {isStudent && complaint.status === 'RESOLVED' && <option value="REOPENED">REOPEN COMPLAINT</option>}
-                      {isStaff && complaint.status === 'REOPENED' && <option value="IN_PROGRESS">IN PROGRESS</option>}
+                      {isStaff && complaint.status !== 'CLOSED' && <option value="CLOSED">CLOSED</option>}
+                      {isStaff && (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') && <option value="REOPENED">REOPEN</option>}
+                      
+                      {/* Student Options */}
+                      {isStudent && complaint.status !== 'CLOSED' && <option value="CLOSED">CLOSE COMPLAINT (Issue Resolved / Cancel)</option>}
+                      {isStudent && (complaint.status === 'RESOLVED' || complaint.status === 'CLOSED') && <option value="REOPENED">REOPEN COMPLAINT</option>}
                     </select>
                   </div>
                 </div>

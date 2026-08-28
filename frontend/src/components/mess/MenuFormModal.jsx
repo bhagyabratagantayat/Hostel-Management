@@ -1,9 +1,44 @@
 import React, { useState, useEffect } from 'react';
 
+const MEAL_OPTIONS = [
+  { value: 'BREAKFAST', label: '🌅 Breakfast (07:30 AM – 09:30 AM)' },
+  { value: 'LUNCH', label: '☀️ Lunch (12:30 PM – 02:30 PM)' },
+  { value: 'DINNER', label: '🌙 Dinner (07:30 PM – 09:30 PM)' }
+];
+
+const DISH_PRESETS = [
+  'Puri Sabzi & Boiled Egg / Banana',
+  'Idli Sambar & Coconut Chutney',
+  'Aloo Paratha with Curd & Pickle',
+  'Uttapam / Masala Dosa with Sambar',
+  'Poha with Peanuts & Sev',
+  'Bread Butter Jam & Veg Cutlet / Omelette',
+  'Chole Bhature & Masala Chai',
+  'Steamed Rice, Dal Tadka & Mix Veg',
+  'Rice, Dal Fry, Aloo Gobhi Matar & Salad',
+  'Rice, Odia Dalma & Bhindi Kurkuri',
+  'Rice, Chana Dal & Aloo Baingan',
+  'Rice, Dal Makhani & Kashmiri Aloo Dum',
+  'Tawa Roti, Egg Curry / Paneer Butter Masala',
+  'Roti, Veg Pulao, Dal Makhani & Sweet Kheer',
+  'Roti, Chicken Curry / Shahi Paneer & Rice',
+  'Roti, Jeera Rice, Kadai Sabzi & Gulab Jamun',
+  'Roti, Veg Fried Rice & Manchurian / Chilli Paneer'
+];
+
 /**
- * MenuFormModal - Modal dialog for adding or editing mess menu items.
+ * MenuFormModal - Warden & Admin modal to create or update hostel mess meals.
  */
-const MenuFormModal = ({ isOpen, onClose, onSubmit, editItem = null, hostels = [], userRole = 'SUPER_ADMIN' }) => {
+const MenuFormModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  editItem = null,
+  initialDate = null,
+  initialMealType = null,
+  hostels = [],
+  userRole = 'SUPER_ADMIN'
+}) => {
   const [formData, setFormData] = useState({
     hostel_id: '',
     menu_date: new Date().toISOString().split('T')[0],
@@ -29,15 +64,15 @@ const MenuFormModal = ({ isOpen, onClose, onSubmit, editItem = null, hostels = [
     } else {
       setFormData({
         hostel_id: hostels.length === 1 ? hostels[0].id : '',
-        menu_date: new Date().toISOString().split('T')[0],
-        meal_type: 'BREAKFAST',
+        menu_date: initialDate || new Date().toISOString().split('T')[0],
+        meal_type: initialMealType || 'BREAKFAST',
         meal_name: '',
         description: '',
         is_available: true
       });
     }
     setError('');
-  }, [editItem, isOpen, hostels]);
+  }, [editItem, initialDate, initialMealType, isOpen, hostels]);
 
   if (!isOpen) return null;
 
@@ -49,10 +84,17 @@ const MenuFormModal = ({ isOpen, onClose, onSubmit, editItem = null, hostels = [
     }));
   };
 
+  const handleSelectPreset = (presetName) => {
+    setFormData(prev => ({
+      ...prev,
+      meal_name: presetName
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.meal_name.trim()) {
-      setError('Please enter a meal name.');
+      setError('Please enter a meal / dish name.');
       return;
     }
 
@@ -72,109 +114,111 @@ const MenuFormModal = ({ isOpen, onClose, onSubmit, editItem = null, hostels = [
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content mess-form-modal" onClick={e => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-container modal-md mess-form-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>{editItem ? 'Edit Mess Menu Item' : 'Add Mess Menu Item'}</h3>
-          <button type="button" className="close-btn" onClick={onClose}>×</button>
+          <div>
+            <h3 className="modal-title">{editItem ? '✏️ Update Mess Food / Time-Table' : '➕ Add Meal to Time-Table'}</h3>
+            <p className="modal-sub">Update hostel mess food menu for breakfast, lunch, or dinner</p>
+          </div>
+          <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {error && <div className="alert alert-error">{error}</div>}
+          <div className="modal-body">
+            {error && <div className="alert alert-danger mb-3">{error}</div>}
 
-          {!editItem && (
-            <div className="form-group">
-              <label>Hostel Scope</label>
-              <select
-                name="hostel_id"
-                value={formData.hostel_id}
-                onChange={handleChange}
-                className="form-control"
-              >
-                {userRole === 'SUPER_ADMIN' && (
-                  <option value="">All Hostels (Common Menu)</option>
-                )}
-                {hostels.map(h => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
-                ))}
-              </select>
+            <div className="form-row mb-3">
+              <div className="form-group col-half">
+                <label className="form-label required">Schedule Date</label>
+                <input
+                  type="date"
+                  name="menu_date"
+                  value={formData.menu_date}
+                  onChange={handleChange}
+                  required
+                  disabled={!!editItem}
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group col-half">
+                <label className="form-label required">Meal Time</label>
+                <select
+                  name="meal_type"
+                  value={formData.meal_type}
+                  onChange={handleChange}
+                  disabled={!!editItem}
+                  className="form-select"
+                >
+                  {MEAL_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-          )}
 
-          <div className="form-row">
-            <div className="form-group col-6">
-              <label>Menu Date *</label>
+            <div className="form-group mb-3">
+              <label className="form-label required">Dish / Menu Items</label>
               <input
-                type="date"
-                name="menu_date"
-                value={formData.menu_date}
+                type="text"
+                name="meal_name"
+                placeholder="e.g. Puri Sabzi & Boiled Egg / Chai"
+                value={formData.meal_name}
                 onChange={handleChange}
                 required
-                disabled={!!editItem}
+                className="form-control"
+              />
+              
+              {/* Quick Preset Chips */}
+              <div className="preset-chips-container mt-2">
+                <span className="preset-label">Quick Suggestions:</span>
+                <div className="preset-chips-grid">
+                  {DISH_PRESETS.slice(0, 6).map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="preset-chip-btn"
+                      onClick={() => handleSelectPreset(preset)}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group mb-3">
+              <label className="form-label">Detailed Description / Ingredients (Optional)</label>
+              <textarea
+                name="description"
+                placeholder="e.g. Served with hot spicy chana sabzi, banana or boiled egg, tea/coffee"
+                value={formData.description}
+                onChange={handleChange}
+                rows={3}
                 className="form-control"
               />
             </div>
 
-            <div className="form-group col-6">
-              <label>Meal Type *</label>
-              <select
-                name="meal_type"
-                value={formData.meal_type}
-                onChange={handleChange}
-                disabled={!!editItem}
-                className="form-control"
-              >
-                <option value="BREAKFAST">BREAKFAST</option>
-                <option value="LUNCH">LUNCH</option>
-                <option value="SNACKS">SNACKS</option>
-                <option value="DINNER">DINNER</option>
-              </select>
+            <div className="form-group mb-3">
+              <label className="checkbox-label flex-gap align-center">
+                <input
+                  type="checkbox"
+                  name="is_available"
+                  checked={formData.is_available}
+                  onChange={handleChange}
+                />
+                <span>Dish is currently served & available in mess</span>
+              </label>
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Meal Name *</label>
-            <input
-              type="text"
-              name="meal_name"
-              placeholder="e.g. Idli, Sambar & Chutney"
-              value={formData.meal_name}
-              onChange={handleChange}
-              required
-              className="form-control"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Description (Optional)</label>
-            <textarea
-              name="description"
-              placeholder="e.g. Served hot with fresh coconut chutney"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              className="form-control"
-            />
-          </div>
-
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                name="is_available"
-                checked={formData.is_available}
-                onChange={handleChange}
-              />
-              <span>Meal is available for service</span>
-            </label>
-          </div>
-
-          <div className="modal-actions">
+          <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Saving...' : (editItem ? 'Update Menu Item' : 'Create Menu Item')}
+              {submitting ? 'Saving Menu...' : (editItem ? '✓ Save Changes' : '✓ Add Meal')}
             </button>
           </div>
         </form>

@@ -8,7 +8,7 @@ import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
 import './MessPage.css';
 
 const MessPage = ({ userRole = 'STUDENT' }) => {
-  const [activeTab, setActiveTab] = useState('TODAY'); // TODAY, WEEKLY, ROSTER, ANALYTICS
+  const [activeTab, setActiveTab] = useState('WEEKLY'); // Default to WEEKLY time-table view
   const [hostels, setHostels] = useState([]);
   const [selectedHostelId, setSelectedHostelId] = useState('');
   
@@ -24,9 +24,11 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Modals
+  // Modals & form state
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [modalInitialDate, setModalInitialDate] = useState(null);
+  const [modalInitialMealType, setModalInitialMealType] = useState(null);
   const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
   const [updatingMeal, setUpdatingMeal] = useState(null);
 
@@ -115,12 +117,31 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
 
   // Staff Menu CRUD handlers
   const handleCreateOrUpdateMenu = async (formData) => {
-    if (editingMenuItem) {
-      await api.updateMessMenuItem(editingMenuItem.id, formData);
-    } else {
-      await api.createMessMenuItem(formData);
+    try {
+      if (editingMenuItem && editingMenuItem.id) {
+        await api.updateMessMenuItem(editingMenuItem.id, formData);
+      } else {
+        // If creating, try to find existing for same date & meal_type to update, or create new
+        try {
+          await api.createMessMenuItem(formData);
+        } catch (err) {
+          // If already exists, find and update
+          const existingItem = (weeklyData?.items || []).find(
+            item => String(item.menu_date).substring(0, 10) === formData.menu_date && item.meal_type === formData.meal_type
+          );
+          if (existingItem) {
+            await api.updateMessMenuItem(existingItem.id, formData);
+          } else {
+            throw err;
+          }
+        }
+      }
+      setIsMenuModalOpen(false);
+      setEditingMenuItem(null);
+      await loadData();
+    } catch (err) {
+      throw err;
     }
-    await loadData();
   };
 
   const handleDeleteMenuItem = async (id) => {
@@ -133,119 +154,160 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
     }
   };
 
-  const mealTypes = ['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER'];
+  const handleOpenAddForDay = (dayName, dateStr, mealType = 'BREAKFAST') => {
+    setEditingMenuItem(null);
+    setModalInitialDate(dateStr);
+    setModalInitialMealType(mealType);
+    setIsMenuModalOpen(true);
+  };
+
+  const mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER'];
+  const canManage = userRole === 'SUPER_ADMIN' || userRole === 'SUPERINTENDENT';
 
   return (
-    <div className="mess-page container">
-      <div className="page-header flex-between align-center">
+    <div className="mess-page-container">
+      {/* Page Banner Header */}
+      <div className="mess-header flex-between align-center">
         <div>
-          <h2>Hostel Mess & Food Management</h2>
-          <p className="subtitle">Daily menus, meal participation schedules, and mess analytics</p>
+          <div className="mess-badge-row">
+            <span className="mess-portal-badge">🍽️ HOSTEL MESS TIMETABLE</span>
+            {canManage && <span className="warden-status-pill">🛡️ Warden Editing Enabled</span>}
+          </div>
+          <h2 className="mess-main-title">Hostel Mess & Food Schedule</h2>
+          <p className="mess-subtitle">Weekly meal time-table for Breakfast, Lunch & Dinner</p>
         </div>
 
         <div className="header-action-group flex-gap">
           {userRole === 'STUDENT' && (
             <button
               type="button"
-              className="btn btn-warning"
+              className="btn btn-outline-warning"
               onClick={() => setIsComplaintModalOpen(true)}
             >
-              ⚠️ Submit Mess Complaint
+              ⚠️ Report Mess Issue
             </button>
           )}
 
-          {userRole !== 'STUDENT' && (
+          {canManage && (
             <button
               type="button"
               className="btn btn-primary"
               onClick={() => {
                 setEditingMenuItem(null);
+                setModalInitialDate(new Date().toISOString().split('T')[0]);
+                setModalInitialMealType('BREAKFAST');
                 setIsMenuModalOpen(true);
               }}
             >
-              + Add Menu Item
+              ✏️ Update Mess Menu
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter Toolbar */}
-      {userRole !== 'STUDENT' && hostels.length > 0 && (
+      {/* Filter Toolbar for Admin/Warden */}
+      {canManage && hostels.length > 0 && (
         <div className="card toolbar-card margin-bottom">
           <div className="toolbar-row flex-between align-center">
             <div className="filter-group flex-gap align-center">
-              <label htmlFor="hostel-filter">Filter Hostel:</label>
+              <label htmlFor="hostel-filter" className="filter-label">Filter Hostel Menu:</label>
               <select
                 id="hostel-filter"
                 value={selectedHostelId}
                 onChange={(e) => setSelectedHostelId(e.target.value)}
-                className="form-control"
+                className="form-select form-select-sm"
               >
-                {userRole === 'SUPER_ADMIN' && <option value="">All Hostels</option>}
+                {userRole === 'SUPER_ADMIN' && <option value="">All Hostels (Common Time-Table)</option>}
                 {hostels.map(h => (
                   <option key={h.id} value={h.id}>{h.name}</option>
                 ))}
               </select>
             </div>
+            <span className="timetable-info-text">
+              ✨ Updates made here reflect immediately on students' dashboards
+            </span>
           </div>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="tabs-nav margin-bottom">
+      <div className="mess-tabs-nav margin-bottom">
         <button
           type="button"
-          className={`tab-item ${activeTab === 'TODAY' ? 'active' : ''}`}
-          onClick={() => setActiveTab('TODAY')}
-        >
-          🍲 Today's Menu
-        </button>
-        <button
-          type="button"
-          className={`tab-item ${activeTab === 'WEEKLY' ? 'active' : ''}`}
+          className={`mess-tab-btn ${activeTab === 'WEEKLY' ? 'active' : ''}`}
           onClick={() => setActiveTab('WEEKLY')}
         >
-          📅 Weekly Schedule
+          📅 Weekly Time-Table
         </button>
-        {userRole !== 'STUDENT' && (
+        <button
+          type="button"
+          className={`mess-tab-btn ${activeTab === 'TODAY' ? 'active' : ''}`}
+          onClick={() => setActiveTab('TODAY')}
+        >
+          🍲 Today's Food ({new Date().toLocaleDateString('en-US', { weekday: 'short' })})
+        </button>
+        {canManage && (
           <>
             <button
               type="button"
-              className={`tab-item ${activeTab === 'ROSTER' ? 'active' : ''}`}
+              className={`mess-tab-btn ${activeTab === 'ROSTER' ? 'active' : ''}`}
               onClick={() => setActiveTab('ROSTER')}
             >
-              📋 Student Roster
+              📋 Student Opt-in Roster
             </button>
             <button
               type="button"
-              className={`tab-item ${activeTab === 'ANALYTICS' ? 'active' : ''}`}
+              className={`mess-tab-btn ${activeTab === 'ANALYTICS' ? 'active' : ''}`}
               onClick={() => setActiveTab('ANALYTICS')}
             >
-              📊 Mess Analytics
+              📊 Consumption Analytics
             </button>
           </>
         )}
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <div className="alert alert-danger mb-4">{error}</div>}
 
-      {/* TAB CONTENT 1: TODAY'S MENU */}
+      {/* TAB CONTENT 1: WEEKLY TIME-TABLE */}
+      {activeTab === 'WEEKLY' && (
+        <div className="tab-content">
+          <WeeklyMenu
+            weeklyData={weeklyData}
+            onEditItem={(item) => {
+              setEditingMenuItem(item);
+              setIsMenuModalOpen(true);
+            }}
+            onDeleteItem={handleDeleteMenuItem}
+            onAddForDay={handleOpenAddForDay}
+            canManage={canManage}
+          />
+        </div>
+      )}
+
+      {/* TAB CONTENT 2: TODAY'S MENU */}
       {activeTab === 'TODAY' && (
         <div className="tab-content">
-          {summary && userRole !== 'STUDENT' && (
-            <div className="mess-summary-cards-grid margin-bottom">
-              {mealTypes.map(type => {
-                const info = summary.meals[type] || {};
-                return (
-                  <div key={type} className="stat-card mess-stat-pill">
-                    <span className="stat-label">{type} TAKING</span>
-                    <span className="stat-value text-success">{info.taking || 0}</span>
-                    <span className="stat-sub">Out of {info.totalActiveStudents || 0} active students</span>
-                  </div>
-                );
-              })}
+          <div className="today-menu-banner flex-between align-center mb-4">
+            <div>
+              <h3>Today's Serving Schedule</h3>
+              <p className="text-muted">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </p>
             </div>
-          )}
+            {canManage && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => {
+                  setEditingMenuItem(null);
+                  setModalInitialDate(new Date().toISOString().split('T')[0]);
+                  setIsMenuModalOpen(true);
+                }}
+              >
+                + Edit Today's Dishes
+              </button>
+            )}
+          </div>
 
           <div className="mess-meals-grid">
             {mealTypes.map(mealType => {
@@ -261,6 +323,11 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
                   onToggleParticipation={handleToggleParticipation}
                   isStudent={userRole === 'STUDENT'}
                   isUpdating={updatingMeal === mealType}
+                  onEdit={(item) => {
+                    setEditingMenuItem(item);
+                    setIsMenuModalOpen(true);
+                  }}
+                  canManage={canManage}
                 />
               );
             })}
@@ -268,29 +335,14 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
         </div>
       )}
 
-      {/* TAB CONTENT 2: WEEKLY SCHEDULE */}
-      {activeTab === 'WEEKLY' && (
-        <div className="tab-content">
-          <WeeklyMenu
-            weeklyData={weeklyData}
-            onEditItem={(item) => {
-              setEditingMenuItem(item);
-              setIsMenuModalOpen(true);
-            }}
-            onDeleteItem={handleDeleteMenuItem}
-            canManage={userRole !== 'STUDENT'}
-          />
-        </div>
-      )}
-
       {/* TAB CONTENT 3: STUDENT ROSTER (STAFF ONLY) */}
-      {activeTab === 'ROSTER' && userRole !== 'STUDENT' && (
+      {activeTab === 'ROSTER' && canManage && (
         <div className="tab-content">
           <div className="card toolbar-card margin-bottom">
             <div className="search-bar">
               <input
                 type="text"
-                placeholder="Search by student name, code or room..."
+                placeholder="Search student name, roll number, room..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-control"
@@ -315,21 +367,21 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
                   {rosterData.records.length > 0 ? (
                     rosterData.records.map(rec => (
                       <tr key={rec.id}>
-                        <td>{rec.student_name}</td>
+                        <td><strong>{rec.student_name}</strong></td>
                         <td>{rec.student_code}</td>
                         <td>{rec.room_number || '-'}</td>
                         <td>{new Date(rec.meal_date).toLocaleDateString()}</td>
-                        <td><strong>{rec.meal_type}</strong></td>
+                        <td><span className="meal-tag-pill">{rec.meal_type}</span></td>
                         <td>
                           <span className={`status-pill ${rec.status === 'TAKING' ? 'status-approved' : 'status-rejected'}`}>
-                            {rec.status}
+                            {rec.status === 'TAKING' ? '✓ Taking' : '✕ Skipping'}
                           </span>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="text-center p-4">
+                      <td colSpan={6} className="text-center p-4 text-muted">
                         No student meal participation records found.
                       </td>
                     </tr>
@@ -338,7 +390,6 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
               </table>
             </div>
 
-            {/* Pagination Controls */}
             {rosterData.totalPages > 1 && (
               <div className="pagination-bar flex-between align-center p-3">
                 <span>Page {rosterData.page} of {rosterData.totalPages} ({rosterData.total} records)</span>
@@ -367,13 +418,13 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
       )}
 
       {/* TAB CONTENT 4: MESS ANALYTICS (STAFF ONLY) */}
-      {activeTab === 'ANALYTICS' && userRole !== 'STUDENT' && (
+      {activeTab === 'ANALYTICS' && canManage && (
         <div className="tab-content">
           <MessAnalyticsCard analyticsData={analyticsData} />
         </div>
       )}
 
-      {/* Modals */}
+      {/* Menu Form Modal */}
       <MenuFormModal
         isOpen={isMenuModalOpen}
         onClose={() => {
@@ -382,15 +433,18 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
         }}
         onSubmit={handleCreateOrUpdateMenu}
         editItem={editingMenuItem}
+        initialDate={modalInitialDate}
+        initialMealType={modalInitialMealType}
         hostels={hostels}
         userRole={userRole}
       />
 
+      {/* Mess Complaint Modal */}
       <ComplaintFormModal
         isOpen={isComplaintModalOpen}
         onClose={() => setIsComplaintModalOpen(false)}
         defaultCategory="FOOD_MESS"
-        onComplaintCreated={() => {
+        onSubmitSuccess={() => {
           setIsComplaintModalOpen(false);
           alert('Mess complaint submitted successfully.');
         }}

@@ -397,6 +397,15 @@ const createStudent = async (studentData, creator) => {
       [bed_id]
     );
 
+    // E. Create initial ACTIVE record in student_allocations
+    const adminStaffId = creator?.id || 1;
+    const allocDate = admission_date || new Date().toISOString().slice(0, 10);
+    await connection.query(
+      `INSERT INTO student_allocations (student_id, hostel_id, room_id, bed_id, allocated_from, status, allocated_by)
+       VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)`,
+      [studentInsertResult.insertId, hostel_id, room_id, bed_id, allocDate, adminStaffId]
+    );
+
     await connection.commit();
     return { id: studentInsertResult.insertId, student_id, full_name, email, date_of_birth: date_of_birth || null };
   } catch (err) {
@@ -428,63 +437,53 @@ const updateStudent = async (studentId, updateData, user) => {
     full_name, date_of_birth, phone, email, branch, course, year, semester, status, base64Photo
   } = updateData;
 
-  // Validate email unique constraint if changing
-  if (email && email.trim() !== currentStudent.email) {
-    const [existingEmail] = await db.pool.query(
-      'SELECT id FROM students WHERE email = ? AND id != ?',
-      [email.trim(), studentId]
-    );
-    if (existingEmail.length > 0) {
-      const error = new Error('Email already exists.');
-      error.status = 400;
-      throw error;
-    }
-  }
+  let photoUrl = currentStudent.photo_url;
+  let newCloudinaryPublicId = null;
+  let oldCloudinaryPublicId = currentStudent.cloudinary_public_id;
 
-  // Upload new photo if provided
-  let newPhotoUrl = currentStudent.photo_url;
-  let newCloudinaryPublicId = currentStudent.cloudinary_public_id;
-  let oldCloudinaryPublicId = null;
-
+  // 1. Handle base64 image upload if provided
   if (base64Photo) {
-    const uploadRes = await uploadProfilePhoto(base64Photo);
-    newPhotoUrl = uploadRes.secure_url;
+    const uploadRes = await uploadProfilePhoto(base64Photo, `student_${currentStudent.student_id}`);
+    photoUrl = uploadRes.secure_url;
     newCloudinaryPublicId = uploadRes.public_id;
-    oldCloudinaryPublicId = currentStudent.cloudinary_public_id;
   }
 
+  // 2. Perform updates inside transaction
   const connection = await db.pool.getConnection();
   try {
     await connection.beginTransaction();
 
-    // A. Update student details
-    await connection.query(
-      `UPDATE students 
-       SET full_name = ?, date_of_birth = ?, phone = ?, email = ?, branch = ?, course = ?, 
-           year = ?, semester = ?, status = ?, photo_url = ?, cloudinary_public_id = ?
-       WHERE id = ?`,
-      [
-        full_name ? full_name.trim() : currentStudent.full_name,
-        date_of_birth !== undefined ? date_of_birth : currentStudent.date_of_birth,
-        phone !== undefined ? phone : currentStudent.phone,
-        email ? email.trim() : currentStudent.email,
-        branch !== undefined ? branch : currentStudent.branch,
-        course !== undefined ? course : currentStudent.course,
-        year !== undefined ? parseInt(year, 10) : currentStudent.year,
-        semester !== undefined ? parseInt(semester, 10) : currentStudent.semester,
-        status || currentStudent.status,
-        newPhotoUrl,
-        newCloudinaryPublicId,
-        studentId
-      ]
-    );
+    // A. Update student table
+    const studentUpdates = [];
+    const studentParams = [];
 
-    // B. Keep user account in sync
-    let userUpdates = [];
-    let userParams = [];
-    if (full_name) { userUpdates.push('full_name = ?'); userParams.push(full_name.trim()); }
-    if (phone !== undefined) { userUpdates.push('phone = ?'); userParams.push(phone); }
-    if (email && email.trim() !== currentStudent.email) { userUpdates.push('email = ?'); userParams.push(email.trim()); }
+    if (full_name !== undefined) { studentUpdates.push('full_name = ?'); studentParams.push(full_name.trim()); }
+    if (date_of_birth !== undefined) { studentUpdates.push('date_of_birth = ?'); studentParams.push(date_of_birth || null); }
+    if (phone !== undefined) { studentUpdates.push('phone = ?'); studentParams.push(phone ? phone.trim() : ''); }
+    if (email !== undefined) { studentUpdates.push('email = ?'); studentParams.push(email.trim()); }
+    if (branch !== undefined) { studentUpdates.push('branch = ?'); studentParams.push(branch.trim()); }
+    if (course !== undefined) { studentUpdates.push('course = ?'); studentParams.push(course.trim()); }
+    if (year !== undefined) { studentUpdates.push('year = ?'); studentParams.push(parseInt(year, 10)); }
+    if (semester !== undefined) { studentUpdates.push('semester = ?'); studentParams.push(parseInt(semester, 10)); }
+    if (status !== undefined) { studentUpdates.push('status = ?'); studentParams.push(status); }
+    if (newCloudinaryPublicId) {
+      studentUpdates.push('photo_url = ?', 'cloudinary_public_id = ?');
+      studentParams.push(photoUrl, newCloudinaryPublicId);
+    }
+
+    if (studentUpdates.length > 0) {
+      studentParams.push(studentId);
+      await connection.query(`UPDATE students SET ${studentUpdates.join(', ')} WHERE id = ?`, studentParams);
+    }
+
+    // B. Keep user account table in sync
+    const userUpdates = [];
+    const userParams = [];
+
+    if (full_name !== undefined) { userUpdates.push('full_name = ?'); userParams.push(full_name.trim()); }
+    if (phone !== undefined) { userUpdates.push('phone = ?'); userParams.push(phone ? phone.trim() : null); }
+    if (email !== undefined) { userUpdates.push('email = ?'); userParams.push(email.trim()); }
+
     if (userUpdates.length > 0) {
       userParams.push(currentStudent.user_id);
       await connection.query(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`, userParams);
@@ -498,7 +497,7 @@ const updateStudent = async (studentId, updateData, user) => {
         [userStatus, currentStudent.user_id]
       );
 
-      // If student is deactivated, release their bed
+      // If student is deactivated, release their bed and close allocations
       if (status !== 'ACTIVE' && currentStudent.bed_id) {
         await connection.query(
           "UPDATE beds SET status = 'AVAILABLE' WHERE id = ?",
@@ -508,13 +507,19 @@ const updateStudent = async (studentId, updateData, user) => {
           "UPDATE students SET bed_id = NULL WHERE id = ?",
           [studentId]
         );
+        await connection.query(
+          `UPDATE student_allocations
+           SET status = 'CHECKED_OUT', allocated_until = CURDATE(), checkout_reason = 'LEFT_COLLEGE'
+           WHERE student_id = ? AND status = 'ACTIVE'`,
+          [studentId]
+        );
       }
     }
 
     await connection.commit();
 
     // Successfully saved! Clean up old image if replaced
-    if (oldCloudinaryPublicId) {
+    if (oldCloudinaryPublicId && newCloudinaryPublicId) {
       await deleteProfilePhoto(oldCloudinaryPublicId);
     }
 
@@ -536,9 +541,8 @@ const updateStudent = async (studentId, updateData, user) => {
  */
 const transferStudent = async (studentId, transferData, user) => {
   const { new_hostel_id, new_floor_id, new_room_id, new_bed_id } = transferData;
-
   if (!new_hostel_id || !new_room_id || !new_bed_id) {
-    const error = new Error('Complete destination hostel, room, and bed assignments are required.');
+    const error = new Error('Destination Hostel, Room, and Bed must be selected.');
     error.status = 400;
     throw error;
   }
@@ -636,6 +640,21 @@ const transferStudent = async (studentId, transferData, user) => {
     await connection.query(
       "UPDATE students SET bed_id = ? WHERE id = ?",
       [new_bed_id, studentId]
+    );
+
+    // D. Update student_allocations history
+    const transferDate = new Date().toISOString().slice(0, 10);
+    await connection.query(
+      `UPDATE student_allocations 
+       SET status = 'TRANSFERRED', allocated_until = ?, transfer_reason = 'Transferred to new room/hostel'
+       WHERE student_id = ? AND status = 'ACTIVE'`,
+      [transferDate, studentId]
+    );
+
+    await connection.query(
+      `INSERT INTO student_allocations (student_id, hostel_id, room_id, bed_id, allocated_from, status, allocated_by)
+       VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?)`,
+      [studentId, new_hostel_id, new_room_id, new_bed_id, transferDate, user?.id || 1]
     );
 
     await connection.commit();

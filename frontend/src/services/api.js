@@ -63,6 +63,7 @@ api.getComplaintSummary = () => api.get('/complaints/summary');
 api.getComplaintById = (id) => api.get(`/complaints/${id}`);
 api.createComplaint = (data) => api.post('/complaints', data);
 api.updateComplaintStatus = (id, status, comment = '', resolution = '') => api.patch(`/complaints/${id}/status`, { status, comment, resolution });
+api.deleteComplaint = (id) => api.delete(`/complaints/${id}`);
 api.assignComplaint = (id, assignedTo) => api.post(`/complaints/${id}/assign`, { assignedTo });
 api.addComplaintComment = (id, comment, isInternal = false) => api.post(`/complaints/${id}/comments`, { comment, isInternal });
 
