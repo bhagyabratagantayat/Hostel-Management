@@ -194,9 +194,9 @@ const createRoom = async (roomData, user) => {
 
     const newRoomId = result.insertId;
 
-    // Automatically create beds according to capacity (e.g. Bed 1, Bed 2, Bed 3...)
+    // Automatically create beds according to capacity (e.g. '1', '2', '3'...)
     for (let i = 1; i <= parsedCapacity; i++) {
-      const bedNumber = `Bed ${i}`;
+      const bedNumber = `${i}`;
       await connection.query(
         'INSERT INTO beds (room_id, bed_number, status) VALUES (?, ?, ?)',
         [newRoomId, bedNumber, 'AVAILABLE']
@@ -323,11 +323,11 @@ const updateRoom = async (roomId, roomData, user) => {
       [targetHostelId, targetFloorId, room_number.trim(), parsedCapacity, status, roomId]
     );
 
-    // If capacity was increased, automatically create additional beds
+    // If capacity was increased, automatically create additional beds ('1', '2', '3'...)
     if (parsedCapacity > existingBedsCount) {
       const needed = parsedCapacity - existingBedsCount;
       for (let i = 1; i <= needed; i++) {
-        const nextBedNum = `Bed ${existingBedsCount + i}`;
+        const nextBedNum = `${existingBedsCount + i}`;
         await connection.query(
           'INSERT INTO beds (room_id, bed_number, status) VALUES (?, ?, ?)',
           [roomId, nextBedNum, 'AVAILABLE']

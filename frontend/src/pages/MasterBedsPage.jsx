@@ -366,12 +366,15 @@ const MasterBedsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {beds.map((b) => (
+                {beds.map((b) => {
+                  const bedLabel = String(b.bed_number || '').trim();
+                  const displayTitle = bedLabel.toLowerCase().startsWith('bed') ? bedLabel : `Bed ${bedLabel}`;
+                  return (
                   <tr key={b.id}>
                     <td>
                       <div className="master-cell-room">
                         <span className="master-room-icon" style={{ background: '#fdf2f8', color: '#db2777' }}>🛏️</span>
-                        <span>Bed {b.bed_number}</span>
+                        <span>{displayTitle}</span>
                       </div>
                     </td>
                     <td>Room {b.room_number || 'N/A'}</td>
@@ -408,18 +411,22 @@ const MasterBedsPage = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card View */}
           <div className="master-mobile-cards">
-            {beds.map((b) => (
+            {beds.map((b) => {
+              const bedLabel = String(b.bed_number || '').trim();
+              const displayTitle = bedLabel.toLowerCase().startsWith('bed') ? bedLabel : `Bed ${bedLabel}`;
+              return (
               <div key={b.id} className="master-mobile-card">
                 <div className="master-mobile-card-header">
                   <div>
-                    <div className="master-mobile-card-title">Bed {b.bed_number}</div>
+                    <div className="master-mobile-card-title">{displayTitle}</div>
                     <div className="master-mobile-card-subtitle">Room {b.room_number} • {b.hostel_name}</div>
                   </div>
                   {getStatusBadge(b.status)}
@@ -441,7 +448,8 @@ const MasterBedsPage = () => {
                   </button>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* Pagination */}

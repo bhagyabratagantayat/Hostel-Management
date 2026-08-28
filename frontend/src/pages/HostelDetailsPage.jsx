@@ -528,33 +528,37 @@ const HostelDetailsPage = () => {
             </div>
           ) : (
             <div className="hostels-grid">
-              {filteredBeds.map(bed => (
-                <Card 
-                  key={bed.id}
-                  title={`Bed ${bed.bed_number}`}
-                  footer={
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
-                      <Button onClick={() => handleOpenBedModal('edit', bed)} variant="secondary" style={{ padding: '4px 10px', fontSize: '12px' }}>
-                        Edit
-                      </Button>
-                      <Button onClick={() => handleDeleteBed(bed.id, bed.bed_number)} variant="danger" style={{ padding: '4px 10px', fontSize: '12px' }}>
-                        Delete
-                      </Button>
-                    </div>
-                  }
-                >
+              {filteredBeds.map(bed => {
+                const bedLabel = String(bed.bed_number || '').trim();
+                const displayTitle = bedLabel.toLowerCase().startsWith('bed') ? bedLabel : `Bed ${bedLabel}`;
+                return (
+                  <Card 
+                    key={bed.id}
+                    title={displayTitle}
+                    footer={
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
+                        <Button onClick={() => handleOpenBedModal('edit', bed)} variant="secondary" style={{ padding: '4px 10px', fontSize: '12px' }}>
+                          Edit
+                        </Button>
+                        <Button onClick={() => handleDeleteBed(bed.id, bed.bed_number)} variant="danger" style={{ padding: '4px 10px', fontSize: '12px' }}>
+                          Delete
+                        </Button>
+                      </div>
+                    }
+                  >
                   <div className="hostel-detail-item">
                     <span className="detail-label">Room Number:</span>
                     <span className="detail-value">Room {bed.room_number}</span>
                   </div>
-                  <div className="hostel-detail-item">
-                    <span className="detail-label">Status:</span>
-                    <span className={`detail-value`} style={{ color: bed.status === 'AVAILABLE' ? 'var(--success-color)' : bed.status === 'OCCUPIED' ? 'var(--primary-color)' : 'var(--warning-color)' }}>
-                      ● {bed.status}
-                    </span>
-                  </div>
-                </Card>
-              ))}
+                    <div className="hostel-detail-item">
+                      <span className="detail-label">Status:</span>
+                      <span className={`detail-value`} style={{ color: bed.status === 'AVAILABLE' ? 'var(--success-color)' : bed.status === 'OCCUPIED' ? 'var(--primary-color)' : 'var(--warning-color)' }}>
+                        ● {bed.status}
+                      </span>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
