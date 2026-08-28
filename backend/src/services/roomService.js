@@ -183,25 +183,56 @@ const createRoom = async (roomData, user) => {
     throw error;
   }
 
-  const [result] = await db.pool.query(
-    'INSERT INTO rooms (hostel_id, floor_id, room_number, capacity, status) VALUES (?, ?, ?, ?, ?)',
-    [hostel_id, cleanFloorId, room_number.trim(), parsedCapacity, status]
-  );
+  const connection = await db.pool.getConnection();
+  try {
+    await connection.beginTransaction();
 
-  const createdRoom = { id: result.insertId, hostel_id, floor_id: cleanFloorId, room_number: room_number.trim(), capacity: parsedCapacity, status };
+    const [result] = await connection.query(
+      'INSERT INTO rooms (hostel_id, floor_id, room_number, capacity, status) VALUES (?, ?, ?, ?, ?)',
+      [hostel_id, cleanFloorId, room_number.trim(), parsedCapacity, status]
+    );
 
-  await activityService.logActivity({
-    actorId: user.id,
-    action: 'ROOM_CREATED',
-    module: 'MASTER_DATA',
-    entityType: 'ROOM',
-    entityId: result.insertId,
-    hostelId: hostel_id,
-    description: `Created room "${room_number.trim()}" (Capacity: ${parsedCapacity})`,
-    metadata: createdRoom
-  });
+    const newRoomId = result.insertId;
 
-  return createdRoom;
+    // Automatically create beds according to capacity (e.g. Bed 1, Bed 2, Bed 3...)
+    for (let i = 1; i <= parsedCapacity; i++) {
+      const bedNumber = `Bed ${i}`;
+      await connection.query(
+        'INSERT INTO beds (room_id, bed_number, status) VALUES (?, ?, ?)',
+        [newRoomId, bedNumber, 'AVAILABLE']
+      );
+    }
+
+    const createdRoom = { 
+      id: newRoomId, 
+      hostel_id, 
+      floor_id: cleanFloorId, 
+      room_number: room_number.trim(), 
+      capacity: parsedCapacity, 
+      status,
+      beds_created: parsedCapacity
+    };
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'ROOM_CREATED',
+      module: 'MASTER_DATA',
+      entityType: 'ROOM',
+      entityId: newRoomId,
+      hostelId: hostel_id,
+      description: `Created room "${room_number.trim()}" with ${parsedCapacity} auto-generated beds`,
+      metadata: createdRoom
+    }, connection);
+
+    await connection.commit();
+    connection.release();
+
+    return createdRoom;
+  } catch (err) {
+    await connection.rollback();
+    connection.release();
+    throw err;
+  }
 };
 
 /**
@@ -272,36 +303,60 @@ const updateRoom = async (roomId, roomData, user) => {
     throw error;
   }
 
-  const [bedsCountRow] = await db.pool.query(
-    'SELECT COUNT(*) as count FROM beds WHERE room_id = ?',
+  const [existingBeds] = await db.pool.query(
+    'SELECT id, bed_number FROM beds WHERE room_id = ? ORDER BY id ASC',
     [roomId]
   );
-  const existingBedsCount = bedsCountRow[0].count;
+  const existingBedsCount = existingBeds.length;
   if (parsedCapacity < existingBedsCount) {
     const error = new Error(`Cannot decrease capacity to ${parsedCapacity}: There are already ${existingBedsCount} beds configured in this room.`);
     error.status = 400;
     throw error;
   }
 
-  await db.pool.query(
-    'UPDATE rooms SET hostel_id = ?, floor_id = ?, room_number = ?, capacity = ?, status = ? WHERE id = ?',
-    [targetHostelId, targetFloorId, room_number.trim(), parsedCapacity, status, roomId]
-  );
+  const connection = await db.pool.getConnection();
+  try {
+    await connection.beginTransaction();
 
-  const action = status === 'INACTIVE' ? 'ROOM_DEACTIVATED' : 'ROOM_UPDATED';
+    await connection.query(
+      'UPDATE rooms SET hostel_id = ?, floor_id = ?, room_number = ?, capacity = ?, status = ? WHERE id = ?',
+      [targetHostelId, targetFloorId, room_number.trim(), parsedCapacity, status, roomId]
+    );
 
-  await activityService.logActivity({
-    actorId: user.id,
-    action,
-    module: 'MASTER_DATA',
-    entityType: 'ROOM',
-    entityId: roomId,
-    hostelId: targetHostelId,
-    description: `Updated room "${room_number.trim()}" status to ${status}`,
-    metadata: { id: roomId, hostel_id: targetHostelId, floor_id: targetFloorId, room_number: room_number.trim(), capacity: parsedCapacity, status }
-  });
+    // If capacity was increased, automatically create additional beds
+    if (parsedCapacity > existingBedsCount) {
+      const needed = parsedCapacity - existingBedsCount;
+      for (let i = 1; i <= needed; i++) {
+        const nextBedNum = `Bed ${existingBedsCount + i}`;
+        await connection.query(
+          'INSERT INTO beds (room_id, bed_number, status) VALUES (?, ?, ?)',
+          [roomId, nextBedNum, 'AVAILABLE']
+        );
+      }
+    }
 
-  return { id: roomId, hostel_id: targetHostelId, floor_id: targetFloorId, room_number: room_number.trim(), capacity: parsedCapacity, status };
+    const action = status === 'INACTIVE' ? 'ROOM_DEACTIVATED' : 'ROOM_UPDATED';
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action,
+      module: 'MASTER_DATA',
+      entityType: 'ROOM',
+      entityId: roomId,
+      hostelId: targetHostelId,
+      description: `Updated room "${room_number.trim()}" (Capacity: ${parsedCapacity})`,
+      metadata: { id: roomId, hostel_id: targetHostelId, floor_id: targetFloorId, room_number: room_number.trim(), capacity: parsedCapacity, status }
+    }, connection);
+
+    await connection.commit();
+    connection.release();
+
+    return { id: roomId, hostel_id: targetHostelId, floor_id: targetFloorId, room_number: room_number.trim(), capacity: parsedCapacity, status };
+  } catch (err) {
+    await connection.rollback();
+    connection.release();
+    throw err;
+  }
 };
 
 /**
@@ -312,21 +367,38 @@ const deleteRoom = async (roomId, user) => {
 
   await masterService.validateRoomDeactivation(roomId);
 
-  const [beds] = await db.pool.query('SELECT id FROM beds WHERE room_id = ? LIMIT 1', [roomId]);
-  if (beds.length > 0) {
-    const error = new Error('Cannot delete room: It contains active beds. Remove beds first.');
+  // Check if any beds in this room are occupied by active students
+  const [occupiedBeds] = await db.pool.query(
+    `SELECT b.id FROM beds b 
+     JOIN students s ON s.bed_id = b.id AND s.status = 'ACTIVE'
+     WHERE b.room_id = ? LIMIT 1`,
+    [roomId]
+  );
+  if (occupiedBeds.length > 0) {
+    const error = new Error('Cannot delete room: It contains beds currently occupied by active students. Please reallocate students first.');
     error.status = 400;
     throw error;
   }
 
-  const [result] = await db.pool.query('DELETE FROM rooms WHERE id = ?', [roomId]);
-  if (result.affectedRows === 0) {
-    const error = new Error('Room not found.');
-    error.status = 404;
-    throw error;
-  }
+  const connection = await db.pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.query('DELETE FROM beds WHERE room_id = ?', [roomId]);
+    const [result] = await connection.query('DELETE FROM rooms WHERE id = ?', [roomId]);
+    if (result.affectedRows === 0) {
+      const error = new Error('Room not found.');
+      error.status = 404;
+      throw error;
+    }
+    await connection.commit();
+    connection.release();
 
-  return { success: true };
+    return { success: true };
+  } catch (err) {
+    await connection.rollback();
+    connection.release();
+    throw err;
+  }
 };
 
 module.exports = {

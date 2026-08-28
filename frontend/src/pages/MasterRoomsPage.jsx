@@ -521,8 +521,11 @@ const MasterRoomsPage = () => {
                     className="master-form-input"
                     required
                     value={formData.capacity}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value, 10) })}
+                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value, 10) || 1 })}
                   />
+                  <small style={{ color: '#059669', fontSize: '0.78rem', marginTop: '4px', display: 'block', fontWeight: '500' }}>
+                    ✨ {formData.capacity || 0} beds (Bed 1, Bed 2...) will be automatically created.
+                  </small>
                 </div>
 
                 <div className="master-form-group">

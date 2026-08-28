@@ -700,6 +700,9 @@ const HostelDetailsPage = () => {
                     onChange={e => setRoomForm(prev => ({ ...prev, capacity: e.target.value }))}
                     required
                   />
+                  <small style={{ color: '#059669', fontSize: '0.82rem', marginTop: '-8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }}>
+                    ✨ {roomForm.capacity || 0} beds (Bed 1, Bed 2...) will be automatically created for this room.
+                  </small>
 
                   <div className="form-group">
                     <label className="form-label" htmlFor="room_status">Room Status *</label>
