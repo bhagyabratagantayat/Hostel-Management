@@ -145,9 +145,80 @@ const getMe = async (req, res, next) => {
   }
 };
 
+/**
+ * 1-Click Impersonate a student account (Super Admin only).
+ */
+const impersonateStudent = async (req, res, next) => {
+  try {
+    const studentId = req.params.studentId;
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const user_agent = req.headers['user-agent'];
+
+    const result = await authService.impersonateStudent(req.user, studentId, { ip_address, user_agent });
+
+    const isProd = env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 8 * 60 * 60 * 1000 // 8 hours
+    };
+
+    res.cookie('token', result.token, cookieOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully switched to student account: ${result.user.full_name || result.user.username}`,
+      token: result.token,
+      user: result.user
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    next(error);
+  }
+};
+
+/**
+ * Exit student impersonation and restore Admin account.
+ */
+const exitImpersonation = async (req, res, next) => {
+  try {
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const user_agent = req.headers['user-agent'];
+
+    const result = await authService.exitImpersonation(req.user, { ip_address, user_agent });
+
+    const isProd = env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('token', result.token, cookieOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Switched back to administrator account successfully.',
+      token: result.token,
+      user: result.user
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    next(error);
+  }
+};
+
 module.exports = {
   login,
   changePassword,
   logout,
-  getMe
+  getMe,
+  impersonateStudent,
+  exitImpersonation
 };

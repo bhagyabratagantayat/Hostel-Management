@@ -170,8 +170,8 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
       <div className="mess-header flex-between align-center">
         <div>
           <div className="mess-badge-row">
-            <span className="mess-portal-badge">🍽️ HOSTEL MESS TIMETABLE</span>
-            {canManage && <span className="warden-status-pill">🛡️ Warden Editing Enabled</span>}
+            <span className="mess-portal-badge">HOSTEL MESS TIMETABLE</span>
+            {canManage && <span className="warden-status-pill">Warden Editing Enabled</span>}
           </div>
           <h2 className="mess-main-title">Hostel Mess & Food Schedule</h2>
           <p className="mess-subtitle">Weekly meal time-table for Breakfast, Lunch & Dinner</p>
@@ -184,7 +184,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
               className="btn btn-outline-warning"
               onClick={() => setIsComplaintModalOpen(true)}
             >
-              ⚠️ Report Mess Issue
+              Report Mess Issue
             </button>
           )}
 
@@ -199,7 +199,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
                 setIsMenuModalOpen(true);
               }}
             >
-              ✏️ Update Mess Menu
+              Update Mess Menu
             </button>
           )}
         </div>
@@ -224,7 +224,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
               </select>
             </div>
             <span className="timetable-info-text">
-              ✨ Updates made here reflect immediately on students' dashboards
+              Updates made here reflect immediately on students' dashboards
             </span>
           </div>
         </div>
@@ -237,14 +237,14 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
           className={`mess-tab-btn ${activeTab === 'WEEKLY' ? 'active' : ''}`}
           onClick={() => setActiveTab('WEEKLY')}
         >
-          📅 Weekly Time-Table
+          Weekly Time-Table
         </button>
         <button
           type="button"
           className={`mess-tab-btn ${activeTab === 'TODAY' ? 'active' : ''}`}
           onClick={() => setActiveTab('TODAY')}
         >
-          🍲 Today's Food ({new Date().toLocaleDateString('en-US', { weekday: 'short' })})
+          Today's Food ({new Date().toLocaleDateString('en-US', { weekday: 'short' })})
         </button>
         {canManage && (
           <>
@@ -253,14 +253,14 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
               className={`mess-tab-btn ${activeTab === 'ROSTER' ? 'active' : ''}`}
               onClick={() => setActiveTab('ROSTER')}
             >
-              📋 Student Opt-in Roster
+              Student Opt-in Roster
             </button>
             <button
               type="button"
               className={`mess-tab-btn ${activeTab === 'ANALYTICS' ? 'active' : ''}`}
               onClick={() => setActiveTab('ANALYTICS')}
             >
-              📊 Consumption Analytics
+              Consumption Analytics
             </button>
           </>
         )}
@@ -342,7 +342,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
             <div className="search-bar">
               <input
                 type="text"
-                placeholder="Search student name, roll number, room..."
+                placeholder="Search student name, ID, room..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-control"

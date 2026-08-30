@@ -3,6 +3,25 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import becLogo from '../assets/BEC LOGO FINAL.png';
+import {
+  LayoutDashboard,
+  Database,
+  Wrench,
+  Users,
+  ClipboardList,
+  ShieldCheck,
+  Building2,
+  GraduationCap,
+  BedDouble,
+  BarChart3,
+  UserCheck,
+  AlertCircle,
+  CalendarCheck,
+  Bell,
+  User,
+  Utensils,
+  LogOut
+} from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
@@ -29,48 +48,48 @@ const Sidebar = ({ isOpen, onClose }) => {
     switch (user.role) {
       case 'SUPER_ADMIN':
         return [
-          { label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
-          { label: 'Master Data Hub', icon: '🏛️', path: '/admin/master' },
-          { label: 'Maintenance Requests', icon: '🔧', path: '/admin/maintenance' },
-          { label: 'User Directory', icon: '👥', path: '/admin/users' },
-          { label: 'Activity Log', icon: '📋', path: '/admin/activity' },
-          { label: 'Security Audit', icon: '🛡️', path: '/admin/security-audit' },
-          { label: 'Hostels', icon: '🏢', path: '/admin/hostels' },
-          { label: 'Students', icon: '🎓', path: '/admin/students' },
-          { label: 'Allocations & Transfers', icon: '🛏️', path: '/admin/allocations' },
-          { label: 'Reports Center', icon: '📈', path: '/admin/reports' },
-          { label: 'Visitors', icon: '👥', path: '/admin/visitors' },
-          { label: 'Complaints', icon: '🛠️', path: '/admin/complaints' },
-          { label: 'Attendance', icon: '📝', path: '/admin/attendance' },
-          { label: 'Notices', icon: '📢', path: '/admin/notices', badge: unreadCount },
-          { label: 'My Profile', icon: '👤', path: '/profile' },
+          { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/admin/dashboard' },
+          { label: 'Master Data Hub', icon: <Database size={18} />, path: '/admin/master' },
+          { label: 'Maintenance Requests', icon: <Wrench size={18} />, path: '/admin/maintenance' },
+          { label: 'User Directory', icon: <Users size={18} />, path: '/admin/users' },
+          { label: 'Activity Log', icon: <ClipboardList size={18} />, path: '/admin/activity' },
+          { label: 'Security Audit', icon: <ShieldCheck size={18} />, path: '/admin/security-audit' },
+          { label: 'Hostels', icon: <Building2 size={18} />, path: '/admin/hostels' },
+          { label: 'Students', icon: <GraduationCap size={18} />, path: '/admin/students' },
+          { label: 'Allocations & Transfers', icon: <BedDouble size={18} />, path: '/admin/allocations' },
+          { label: 'Reports Center', icon: <BarChart3 size={18} />, path: '/admin/reports' },
+          { label: 'Visitors', icon: <UserCheck size={18} />, path: '/admin/visitors' },
+          { label: 'Complaints', icon: <AlertCircle size={18} />, path: '/admin/complaints' },
+          { label: 'Attendance', icon: <CalendarCheck size={18} />, path: '/admin/attendance' },
+          { label: 'Notices', icon: <Bell size={18} />, path: '/admin/notices', badge: unreadCount },
+          { label: 'My Profile', icon: <User size={18} />, path: '/profile' },
         ];
       case 'SUPERINTENDENT':
         return [
-          { label: 'Dashboard', icon: '📊', path: '/superintendent/dashboard' },
-          { label: 'Maintenance Requests', icon: '🔧', path: '/superintendent/maintenance' },
-          { label: 'My Hostels', icon: '🏢', path: '/superintendent/hostels' },
-          { label: 'Students', icon: '🎓', path: '/superintendent/students' },
-          { label: 'Allocations & Transfers', icon: '🛏️', path: '/superintendent/allocations' },
-          { label: 'Activity Log', icon: '📋', path: '/superintendent/activity' },
-          { label: 'Reports Center', icon: '📈', path: '/superintendent/reports' },
-          { label: 'Visitors', icon: '👥', path: '/superintendent/visitors' },
-          { label: 'Complaints', icon: '🛠️', path: '/superintendent/complaints' },
-          { label: 'Attendance', icon: '📝', path: '/superintendent/attendance' },
-          { label: 'Notices', icon: '📢', path: '/superintendent/notices', badge: unreadCount },
-          { label: 'My Profile', icon: '👤', path: '/profile' },
+          { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/superintendent/dashboard' },
+          { label: 'Maintenance Requests', icon: <Wrench size={18} />, path: '/superintendent/maintenance' },
+          { label: 'My Hostels', icon: <Building2 size={18} />, path: '/superintendent/hostels' },
+          { label: 'Students', icon: <GraduationCap size={18} />, path: '/superintendent/students' },
+          { label: 'Allocations & Transfers', icon: <BedDouble size={18} />, path: '/superintendent/allocations' },
+          { label: 'Activity Log', icon: <ClipboardList size={18} />, path: '/superintendent/activity' },
+          { label: 'Reports Center', icon: <BarChart3 size={18} />, path: '/superintendent/reports' },
+          { label: 'Visitors', icon: <UserCheck size={18} />, path: '/superintendent/visitors' },
+          { label: 'Complaints', icon: <AlertCircle size={18} />, path: '/superintendent/complaints' },
+          { label: 'Attendance', icon: <CalendarCheck size={18} />, path: '/superintendent/attendance' },
+          { label: 'Notices', icon: <Bell size={18} />, path: '/superintendent/notices', badge: unreadCount },
+          { label: 'My Profile', icon: <User size={18} />, path: '/profile' },
         ];
       case 'STUDENT':
         return [
-          { label: 'Dashboard', icon: '📊', path: '/student/dashboard' },
-          { label: 'My Accommodation', icon: '🛏️', path: '/student/accommodation' },
-          { label: 'My Maintenance', icon: '🔧', path: '/student/maintenance' },
-          { label: 'Visitors', icon: '👥', path: '/student/visitors' },
-          { label: 'My Complaints', icon: '🛠️', path: '/student/complaints' },
-          { label: 'Notices', icon: '📢', path: '/student/notices', badge: unreadCount },
-          { label: 'Mess Schedule', icon: '🍽️', path: '/student/mess' },
-          { label: 'My Attendance', icon: '📝', path: '/student/attendance' },
-          { label: 'My Profile', icon: '👤', path: '/profile' },
+          { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/student/dashboard' },
+          { label: 'My Accommodation', icon: <BedDouble size={18} />, path: '/student/accommodation' },
+          { label: 'My Maintenance', icon: <Wrench size={18} />, path: '/student/maintenance' },
+          { label: 'Visitors', icon: <UserCheck size={18} />, path: '/student/visitors' },
+          { label: 'My Complaints', icon: <AlertCircle size={18} />, path: '/student/complaints' },
+          { label: 'Notices', icon: <Bell size={18} />, path: '/student/notices', badge: unreadCount },
+          { label: 'Mess Schedule', icon: <Utensils size={18} />, path: '/student/mess' },
+          { label: 'My Attendance', icon: <CalendarCheck size={18} />, path: '/student/attendance' },
+          { label: 'My Profile', icon: <User size={18} />, path: '/profile' },
         ];
       default:
         return [];
@@ -111,7 +130,9 @@ const Sidebar = ({ isOpen, onClose }) => {
               return (
                 <li key={idx} className="sidebar-menu-item" onClick={onClose}>
                   <Link to={item.path} className={`sidebar-menu-link ${active ? 'active' : ''}`}>
-                    <span className="sidebar-menu-icon">{item.icon}</span>
+                    <span className="sidebar-menu-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      {item.icon}
+                    </span>
                     <span className="sidebar-menu-label">{item.label}</span>
                     {Boolean(item.badge && item.badge > 0) && (
                       <span className="sidebar-unread-badge" title={`${item.badge} unread notices`}>
@@ -126,7 +147,9 @@ const Sidebar = ({ isOpen, onClose }) => {
             {/* Direct Logout action in list */}
             <li className="sidebar-menu-item sidebar-logout-item">
               <button onClick={logout} className="sidebar-menu-link sidebar-logout-btn">
-                <span className="sidebar-menu-icon">🚪</span>
+                <span className="sidebar-menu-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <LogOut size={18} />
+                </span>
                 <span className="sidebar-menu-label">Logout</span>
               </button>
             </li>

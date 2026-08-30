@@ -7,26 +7,42 @@ import AttendanceChart from '../components/AttendanceChart';
 import OccupancySummary from '../components/OccupancySummary';
 import RecentNoticesSection from '../components/RecentNoticesSection';
 import RecentComplaintsSection from '../components/complaints/RecentComplaintsSection';
-import RecentVisitorsSection from '../components/visitors/RecentVisitorsSection';
 import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
+import {
+  Building2,
+  GraduationCap,
+  DoorClosed,
+  BedDouble,
+  CheckCircle2,
+  AlertTriangle,
+  UserCheck,
+  UserX,
+  Clock,
+  TrendingUp,
+  BarChart3,
+  RefreshCw,
+  ClipboardList,
+  Bell,
+  AlertCircle
+} from 'lucide-react';
 import './AdminDashboard.css';
 
 // Stat card definitions for the overall section
 const buildStats = (overall) => [
-  { title: 'Total Hostels',   value: overall.totalHostels,        icon: '🏢', color: 'blue'  },
-  { title: 'Total Students',  value: overall.totalStudents,        icon: '🎓', color: 'blue'  },
-  { title: 'Total Rooms',     value: overall.totalRooms,           icon: '🚪'                 },
-  { title: 'Total Beds',      value: overall.totalBeds,            icon: '🛏️'                },
-  { title: 'Occupied Beds',   value: overall.occupiedBeds,         icon: '✅', color: 'green' },
-  { title: 'Available Beds',  value: overall.availableBeds,        icon: '🟢', color: 'green' },
-  { title: 'Maintenance',     value: overall.maintenanceBeds,      icon: '🔧', color: 'amber' },
-  { title: 'Present Today',   value: overall.present,              icon: '👍', color: 'green' },
-  { title: 'Absent Today',    value: overall.absent,               icon: '👎', color: 'red'   },
-  { title: 'Not Marked',      value: overall.notMarked,            icon: '⏳', color: 'amber' },
-  { title: 'Attendance %',    value: `${overall.attendancePercentage}%`, icon: '📈', color: 'blue' },
-  { title: 'Occupancy %',     value: `${overall.occupancyPercentage}%`,  icon: '📊', color: 'blue' },
+  { title: 'Total Hostels',   value: overall.totalHostels,        icon: <Building2 size={20} />, color: 'blue'  },
+  { title: 'Total Students',  value: overall.totalStudents,       icon: <GraduationCap size={20} />, color: 'blue'  },
+  { title: 'Total Rooms',     value: overall.totalRooms,          icon: <DoorClosed size={20} />                 },
+  { title: 'Total Beds',      value: overall.totalBeds,           icon: <BedDouble size={20} />                },
+  { title: 'Occupied Beds',   value: overall.occupiedBeds,        icon: <CheckCircle2 size={20} />, color: 'green' },
+  { title: 'Available Beds',  value: overall.availableBeds,       icon: <CheckCircle2 size={20} />, color: 'green' },
+  { title: 'Maintenance',     value: overall.maintenanceBeds,     icon: <AlertTriangle size={20} />, color: 'amber' },
+  { title: 'Present Today',   value: overall.present,             icon: <UserCheck size={20} />, color: 'green' },
+  { title: 'Absent Today',    value: overall.absent,              icon: <UserX size={20} />, color: 'red'   },
+  { title: 'Not Marked',      value: overall.notMarked,           icon: <Clock size={20} />, color: 'amber' },
+  { title: 'Attendance %',    value: `${overall.attendancePercentage}%`, icon: <TrendingUp size={20} />, color: 'blue' },
+  { title: 'Occupancy %',     value: `${overall.occupancyPercentage}%`,  icon: <BarChart3 size={20} />, color: 'blue' },
 ];
 
 function AdminDashboard() {
@@ -81,31 +97,44 @@ function AdminDashboard() {
       <header className="dashboard-header">
         <div>
           <h1 className="dashboard-title">Admin Dashboard</h1>
-          <p className="dashboard-subtitle">College-wide hostel overview</p>
+          <p className="dashboard-subtitle">College-wide hostel overview & operations monitoring</p>
         </div>
         <button
           className="refresh-btn"
           onClick={fetchData}
           disabled={loading}
           aria-label="Refresh dashboard data"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          {loading ? '⏳' : '↻'} Refresh
+          <RefreshCw size={14} className={loading ? 'spinning' : ''} />
+          Refresh
         </button>
       </header>
 
       {/* Quick Actions */}
       <nav className="quick-actions" aria-label="Quick actions">
-        <button onClick={() => navigate('/admin/hostels')}  className="qa-btn">🏢 Manage Hostels</button>
-        <button onClick={() => navigate('/admin/students')} className="qa-btn">🎓 Add Student</button>
-        <button onClick={() => navigate('/admin/reports')} className="qa-btn">📈 View Reports</button>
-        <button onClick={() => navigate('/admin/attendance')} className="qa-btn">📝 Attendance</button>
-        <button onClick={() => navigate('/admin/notices')} className="qa-btn">📢 Notice Board</button>
+        <button onClick={() => navigate('/admin/hostels')}  className="qa-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Building2 size={16} /> Manage Hostels
+        </button>
+        <button onClick={() => navigate('/admin/students')} className="qa-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <GraduationCap size={16} /> Add Student
+        </button>
+        <button onClick={() => navigate('/admin/reports')} className="qa-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <BarChart3 size={16} /> View Reports
+        </button>
+        <button onClick={() => navigate('/admin/attendance')} className="qa-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <ClipboardList size={16} /> Attendance
+        </button>
+        <button onClick={() => navigate('/admin/notices')} className="qa-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <Bell size={16} /> Notice Board
+        </button>
       </nav>
 
       {/* Error state */}
       {error && (
-        <div className="dashboard-error" role="alert">
-          <p>⚠️ {error}</p>
+        <div className="dashboard-error" role="alert" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertCircle size={18} color="#ef4444" />
+          <p style={{ margin: 0 }}>{error}</p>
           <button onClick={fetchData} className="retry-btn">Retry</button>
         </div>
       )}

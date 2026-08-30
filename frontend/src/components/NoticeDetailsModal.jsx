@@ -5,16 +5,16 @@ import './NoticeDetailsModal.css';
 const PriorityBadge = ({ priority }) => {
   const norm = (priority || 'GENERAL').toUpperCase();
   let label = 'GENERAL';
-  let icon = 'ℹ️';
+  let icon = '';
   let className = 'priority-general';
 
   if (norm === 'URGENT') {
     label = 'URGENT';
-    icon = '🚨';
+    icon = '';
     className = 'priority-urgent';
   } else if (norm === 'IMPORTANT') {
     label = 'IMPORTANT';
-    icon = '⚠️';
+    icon = '️';
     className = 'priority-important';
   }
 
@@ -57,8 +57,8 @@ const NoticeDetailsModal = ({
   };
 
   const targetLabel = notice.hostel_id === null
-    ? '📢 All Hostels (College Wide)'
-    : `🏢 ${notice.hostel_name || `Hostel #${notice.hostel_id}`}`;
+    ? ' All Hostels (College Wide)'
+    : ` ${notice.hostel_name || `Hostel #${notice.hostel_id}`}`;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -69,9 +69,7 @@ const NoticeDetailsModal = ({
             <span className="detail-target-tag">{targetLabel}</span>
           </div>
 
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close"></button>
         </div>
 
         <div className="detail-modal-body">
@@ -80,20 +78,20 @@ const NoticeDetailsModal = ({
           <div className="detail-meta-grid">
             <div className="meta-item">
               <span className="meta-label">Published Date:</span>
-              <span className="meta-value">📅 {formatDate(notice.published_at || notice.created_at)}</span>
+              <span className="meta-value"> {formatDate(notice.published_at || notice.created_at)}</span>
             </div>
 
             {notice.creator_name && (
               <div className="meta-item">
                 <span className="meta-label">Issued By:</span>
-                <span className="meta-value">👤 {notice.creator_name}</span>
+                <span className="meta-value"> {notice.creator_name}</span>
               </div>
             )}
 
             {notice.expires_at && (
               <div className="meta-item">
                 <span className="meta-label">Expires On:</span>
-                <span className="meta-value expires-value">⌛ {formatDate(notice.expires_at)}</span>
+                <span className="meta-value expires-value"> {formatDate(notice.expires_at)}</span>
               </div>
             )}
           </div>

@@ -3,12 +3,12 @@ const activityService = require('./activityService');
 
 // Valid status transitions state machine
 const ALLOWED_STATUS_TRANSITIONS = {
-  OPEN: ['ASSIGNED', 'IN_PROGRESS', 'CLOSED'],
-  ASSIGNED: ['OPEN', 'IN_PROGRESS', 'CLOSED'],
+  OPEN: ['ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'],
+  ASSIGNED: ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'],
   IN_PROGRESS: ['ASSIGNED', 'RESOLVED', 'OPEN'],
   RESOLVED: ['CLOSED', 'REOPENED'],
   CLOSED: ['REOPENED'],
-  REOPENED: ['IN_PROGRESS', 'ASSIGNED', 'RESOLVED']
+  REOPENED: ['IN_PROGRESS', 'ASSIGNED', 'RESOLVED', 'CLOSED']
 };
 
 /**
@@ -480,6 +480,9 @@ async function updateMaintenanceStatus(id, newStatus, resolutionNote, actor) {
       const err = new Error('A resolution note is required when resolving a maintenance request.');
       err.status = 400;
       throw err;
+    }
+    if (!currentReq.started_at) {
+      extraSql += ', started_at = NOW()';
     }
     extraSql += ', resolved_at = NOW(), resolution_note = ?';
     extraParams.push(resolutionNote.trim());

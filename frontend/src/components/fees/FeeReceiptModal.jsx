@@ -19,16 +19,16 @@ const FeeReceiptModal = ({ isOpen, onClose, receipt }) => {
     <div className="modal-backdrop">
       <div className="modal-box glassmorphic receipt-modal-box">
         <div className="modal-header no-print">
-          <h3>🧾 Official Payment Receipt</h3>
+          <h3>Official Payment Receipt</h3>
           <div className="header-actions">
-            <button className="btn-print" onClick={handlePrint}>🖨️ Print Receipt</button>
+            <button className="btn-print" onClick={handlePrint}>Print Receipt</button>
             <button className="btn-close" onClick={onClose}>&times;</button>
           </div>
         </div>
 
         <div className="printable-receipt" id="printable-fee-receipt">
           <div className="receipt-header">
-            <div className="institution-logo">🏫</div>
+            <div className="institution-logo"></div>
             <div className="institution-details">
               <h2>COLLEGE HOSTEL MANAGEMENT SYSTEM</h2>
               <p>Official Student Fee Payment Receipt</p>
@@ -124,7 +124,7 @@ const FeeReceiptModal = ({ isOpen, onClose, receipt }) => {
             Close
           </button>
           <button type="button" className="btn-modal submit primary" onClick={handlePrint}>
-            🖨️ Print / Save PDF
+            ️ Print / Save PDF
           </button>
         </div>
       </div>

@@ -34,7 +34,7 @@ const RecentComplaintsSection = ({ user, complaintsPath = '/admin/complaints' })
     <div className="dashboard-section complaints-dashboard-section">
       <div className="section-header flex-between mb-4">
         <div>
-          <h2 className="section-title">🛠️ Complaint & Grievance Summary</h2>
+          <h2 className="section-title">Complaint & Grievance Summary</h2>
           <p className="section-sub">Track active maintenance requests and issues</p>
         </div>
         <Link to={complaintsPath} className="btn btn-sm btn-outline-primary">
@@ -72,7 +72,7 @@ const RecentComplaintsSection = ({ user, complaintsPath = '/admin/complaints' })
         </div>
       ) : complaints.length === 0 ? (
         <div className="empty-state-box">
-          <span className="empty-icon">🎉</span>
+          <span className="empty-icon"></span>
           <p className="empty-text">No active complaints found.</p>
         </div>
       ) : (

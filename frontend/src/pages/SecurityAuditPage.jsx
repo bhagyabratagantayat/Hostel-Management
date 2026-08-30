@@ -49,6 +49,18 @@ const SecurityAuditPage = () => {
     return 'audit-info';
   };
 
+  const formatIpAddress = (ip) => {
+    if (!ip) return '127.0.0.1 (Localhost)';
+    const clean = String(ip).trim();
+    if (clean === '::1' || clean === '127.0.0.1' || clean === '::ffff:127.0.0.1') {
+      return '127.0.0.1 (Localhost)';
+    }
+    if (clean.startsWith('::ffff:')) {
+      return clean.replace('::ffff:', '');
+    }
+    return clean;
+  };
+
   return (
     <div className="audit-page-container">
       <div className="audit-header">
@@ -131,7 +143,7 @@ const SecurityAuditPage = () => {
                       <em className="text-muted">System / Self</em>
                     )}
                   </td>
-                  <td><code>{log.ip_address || 'Unknown'}</code></td>
+                  <td><code className="ip-badge">{formatIpAddress(log.ip_address)}</code></td>
                   <td className="ua-cell" title={log.user_agent}>
                     {log.user_agent ? log.user_agent.slice(0, 30) + '...' : 'N/A'}
                   </td>

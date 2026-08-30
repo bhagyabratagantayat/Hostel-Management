@@ -36,9 +36,12 @@ const TransferModal = ({ isOpen, onClose, onSuccess, allocation, hostels = [] })
   useEffect(() => {
     if (formData.new_hostel_id) {
       setLoadingRooms(true);
-      api.getRooms({ hostel_id: formData.new_hostel_id })
+      api.getRooms({ hostel_id: formData.new_hostel_id, limit: 1000 })
         .then(res => {
           const roomList = res.data?.rooms || res.data || [];
+          roomList.sort((a, b) => {
+            return String(a.room_number || '').localeCompare(String(b.room_number || ''), undefined, { numeric: true, sensitivity: 'base' });
+          });
           setRooms(roomList);
           setFormData(prev => ({ ...prev, new_room_id: '', new_bed_id: '' }));
         })
@@ -58,7 +61,11 @@ const TransferModal = ({ isOpen, onClose, onSuccess, allocation, hostels = [] })
       setLoadingBeds(true);
       api.getAvailableBeds(formData.new_hostel_id, formData.new_room_id)
         .then(res => {
-          setAvailableBeds(res.data?.data || res.data || []);
+          const bedList = res.data?.data || res.data || [];
+          bedList.sort((a, b) => {
+            return String(a.bed_number || '').localeCompare(String(b.bed_number || ''), undefined, { numeric: true, sensitivity: 'base' });
+          });
+          setAvailableBeds(bedList);
           setFormData(prev => ({ ...prev, new_bed_id: '' }));
         })
         .catch(err => {

@@ -6,6 +6,8 @@ import Loading from '../components/Loading';
 import Error from '../components/Error';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { GraduationCap } from 'lucide-react';
+
 
 const DashboardPlaceholder = () => {
   const { user } = useAuth();
@@ -67,7 +69,9 @@ const DashboardPlaceholder = () => {
           <Card title="My Profile Details" className="student-profile-card">
             <div className="student-profile-layout">
               <div className="profile-photo-placeholder">
-                <span className="photo-icon">🎓</span>
+                <span className="photo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GraduationCap size={28} />
+                </span>
                 <span className="photo-label">Profile Image</span>
               </div>
               
@@ -79,10 +83,6 @@ const DashboardPlaceholder = () => {
                 <div className="profile-detail-row">
                   <span className="p-label">Student ID:</span>
                   <span className="p-val"><code>{studentProfile?.student_id}</code></span>
-                </div>
-                <div className="profile-detail-row">
-                  <span className="p-label">Roll Number:</span>
-                  <span className="p-val">{studentProfile?.roll_number}</span>
                 </div>
                 <div className="profile-detail-row">
                   <span className="p-label">Email:</span>

@@ -1,25 +1,25 @@
 import React from 'react';
 
 const STATUS_CONFIG = {
-  REQUESTED: { label: 'Requested', className: 'status-pill status-requested', icon: '⏳' },
-  APPROVED: { label: 'Approved', className: 'status-pill status-approved', icon: '✅' },
-  CHECKED_IN: { label: 'Checked In', className: 'status-pill status-checked-in', icon: '🚪' },
-  CHECKED_OUT: { label: 'Checked Out', className: 'status-pill status-checked-out', icon: '🏁' },
-  CANCELLED: { label: 'Cancelled', className: 'status-pill status-cancelled', icon: '🚫' },
-  REJECTED: { label: 'Rejected', className: 'status-pill status-rejected', icon: '❌' }
+  REQUESTED: { label: 'Requested', className: 'status-pill status-requested', icon: '' },
+  APPROVED: { label: 'Approved', className: 'status-pill status-approved', icon: '' },
+  CHECKED_IN: { label: 'Checked In', className: 'status-pill status-checked-in', icon: '' },
+  CHECKED_OUT: { label: 'Checked Out', className: 'status-pill status-checked-out', icon: '' },
+  CANCELLED: { label: 'Cancelled', className: 'status-pill status-cancelled', icon: '' },
+  REJECTED: { label: 'Rejected', className: 'status-pill status-rejected', icon: '' }
 };
 
 const VISITOR_TYPE_BADGES = {
-  PARENT: '👨‍👩‍👦 Parent',
-  GUARDIAN: '🛡️ Guardian',
-  RELATIVE: '🤝 Relative',
-  FRIEND: '👥 Friend',
-  OFFICIAL: '💼 Official',
-  OTHER: '👤 Visitor'
+  PARENT: 'Parent',
+  GUARDIAN: 'Guardian',
+  RELATIVE: 'Relative',
+  FRIEND: ' Friend',
+  OFFICIAL: ' Official',
+  OTHER: ' Visitor'
 };
 
 export default function VisitorCard({ visit, userRole, onViewDetails, onApprove, onReject, onCancel, onCheckIn, onCheckOut }) {
-  const statusInfo = STATUS_CONFIG[visit.status] || { label: visit.status, className: 'status-pill', icon: 'ℹ️' };
+  const statusInfo = STATUS_CONFIG[visit.status] || { label: visit.status, className: 'status-pill', icon: '' };
   const isOverdue = Boolean(visit.is_overdue || (visit.status === 'CHECKED_IN' && new Date(visit.expected_check_out) < new Date()));
 
   const formatDate = (dt) => {
@@ -40,7 +40,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
           <h3 className="visitor-name">{visit.visitor_name}</h3>
         </div>
         <div className="visitor-status-container">
-          {isOverdue && <span className="overdue-badge">⚠️ OVERDUE</span>}
+          {isOverdue && <span className="overdue-badge">️ OVERDUE</span>}
           <span className={statusInfo.className}>
             {statusInfo.icon} {statusInfo.label}
           </span>
@@ -50,18 +50,18 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
       <div className="visitor-card-body">
         <div className="visitor-meta-grid">
           <div className="visitor-meta-item">
-            <span className="meta-label">📞 Contact</span>
+            <span className="meta-label"> Contact</span>
             <span className="meta-value">{visit.visitor_phone}</span>
           </div>
 
           <div className="visitor-meta-item">
-            <span className="meta-label">🆔 ID Verification</span>
+            <span className="meta-label"> ID Verification</span>
             <span className="meta-value">{visit.identification_type} (••••{visit.identification_last4})</span>
           </div>
 
           {userRole !== 'STUDENT' && (
             <div className="visitor-meta-item">
-              <span className="meta-label">🎓 Visiting Student</span>
+              <span className="meta-label"> Visiting Student</span>
               <span className="meta-value highlight-student">
                 {visit.student_name} ({visit.student_code})
               </span>
@@ -70,7 +70,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
           )}
 
           <div className="visitor-meta-item">
-            <span className="meta-label">🏢 Hostel</span>
+            <span className="meta-label">Hostel</span>
             <span className="meta-value">{visit.hostel_name || 'Main Hostel'}</span>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
             <span className="timing-title">Expected In</span>
             <span className="timing-time">{formatDate(visit.expected_check_in)}</span>
           </div>
-          <div className="timing-arrow">➔</div>
+          <div className="timing-arrow"></div>
           <div className="timing-col">
             <span className="timing-title">Expected Out</span>
             <span className="timing-time">{formatDate(visit.expected_check_out)}</span>
@@ -110,7 +110,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
           className="btn-action btn-view"
           onClick={() => onViewDetails(visit.id)}
         >
-          📄 View Details
+           View Details
         </button>
 
         {/* Staff Actions */}
@@ -121,14 +121,14 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
               className="btn-action btn-approve"
               onClick={() => onApprove(visit.id)}
             >
-              ✅ Approve
+              ✓ Approve
             </button>
             <button
               type="button"
               className="btn-action btn-reject"
               onClick={() => onReject(visit.id)}
             >
-              ❌ Reject
+              ✕ Reject
             </button>
           </>
         )}
@@ -139,7 +139,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
             className="btn-action btn-checkin"
             onClick={() => onCheckIn(visit.id)}
           >
-            🚪 Check In
+             Check In
           </button>
         )}
 
@@ -149,7 +149,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
             className="btn-action btn-checkout"
             onClick={() => onCheckOut(visit.id)}
           >
-            🏁 Check Out
+             Check Out
           </button>
         )}
 
@@ -160,7 +160,7 @@ export default function VisitorCard({ visit, userRole, onViewDetails, onApprove,
             className="btn-action btn-cancel"
             onClick={() => onCancel(visit.id)}
           >
-            🚫 Cancel
+             Cancel
           </button>
         )}
       </div>

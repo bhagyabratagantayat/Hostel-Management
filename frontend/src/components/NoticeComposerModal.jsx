@@ -131,10 +131,8 @@ const NoticeComposerModal = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="notice-composer-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{noticeToEdit ? '✏️ Edit Notice' : '📢 Publish New Notice'}</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          <h2>{noticeToEdit ? 'Edit Notice' : 'Publish New Notice'}</h2>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close"></button>
         </div>
 
         <form onSubmit={handleSubmit} className="composer-form">
@@ -166,9 +164,9 @@ const NoticeComposerModal = ({
                 value={formData.priority}
                 onChange={handleChange}
               >
-                <option value="GENERAL">ℹ️ GENERAL</option>
-                <option value="IMPORTANT">⚠️ IMPORTANT</option>
-                <option value="URGENT">🚨 URGENT</option>
+                <option value="GENERAL">GENERAL</option>
+                <option value="IMPORTANT">IMPORTANT</option>
+                <option value="URGENT">URGENT</option>
               </select>
             </div>
 
@@ -180,9 +178,9 @@ const NoticeComposerModal = ({
                 value={formData.status}
                 onChange={handleChange}
               >
-                <option value="PUBLISHED">🚀 Publish Immediately</option>
-                <option value="DRAFT">📝 Save as Draft</option>
-                {noticeToEdit && <option value="ARCHIVED">📦 Archive</option>}
+                <option value="PUBLISHED"> Publish Immediately</option>
+                <option value="DRAFT"> Save as Draft</option>
+                {noticeToEdit && <option value="ARCHIVED"> Archive</option>}
               </select>
             </div>
           </div>
@@ -200,7 +198,7 @@ const NoticeComposerModal = ({
                     checked={formData.target === 'ALL_HOSTELS'}
                     onChange={handleChange}
                   />
-                  <span>📢 All Hostels (College-wide)</span>
+                  <span> All Hostels (College-wide)</span>
                 </label>
               )}
 
@@ -212,7 +210,7 @@ const NoticeComposerModal = ({
                   checked={formData.target === 'SPECIFIC_HOSTEL' || !isSuperAdmin}
                   onChange={handleChange}
                 />
-                <span>🏢 Specific Hostel</span>
+                <span> Specific Hostel</span>
               </label>
             </div>
             {!isSuperAdmin && (

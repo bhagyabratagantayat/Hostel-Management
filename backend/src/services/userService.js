@@ -2,6 +2,7 @@ const db = require('../config/db');
 const passwordUtil = require('../utils/password');
 const securityService = require('./securityService');
 const activityService = require('./activityService');
+const cloudinary = require('../config/cloudinary');
 
 /**
  * Returns paginated user list with filters (SUPER_ADMIN only).
@@ -588,14 +589,65 @@ const updateSelfProfile = async (userId, updates, reqContext = {}) => {
   if (role === 'STUDENT') {
     let studentFields = [];
     let studentParams = [];
-    if (phoneInput !== undefined && typeof phoneInput === 'string') {
+    if (phoneInput !== undefined) {
       studentFields.push('phone = ?');
-      studentParams.push(phoneInput.trim());
+      studentParams.push(phoneInput && typeof phoneInput === 'string' ? phoneInput.trim() : null);
     }
     if (updates.full_name !== undefined && typeof updates.full_name === 'string' && updates.full_name.trim()) {
       studentFields.push('full_name = ?');
       studentParams.push(updates.full_name.trim());
     }
+    if (updates.date_of_birth !== undefined && updates.date_of_birth) {
+      studentFields.push('date_of_birth = ?');
+      studentParams.push(updates.date_of_birth);
+    }
+    if (updates.base64Photo && typeof updates.base64Photo === 'string' && updates.base64Photo.startsWith('data:image')) {
+      try {
+        const uploadResult = await cloudinary.uploader.upload(updates.base64Photo, {
+          folder: 'hostel_management/students',
+          transformation: [{ width: 500, height: 500, crop: 'limit' }]
+        });
+        studentFields.push('photo_url = ?', 'cloudinary_public_id = ?');
+        studentParams.push(uploadResult.secure_url, uploadResult.public_id);
+      } catch (err) {
+        console.warn('Student profile photo upload to Cloudinary error:', err.message);
+      }
+    }
+    // Registration number (student_id / registration_no)
+    const regNoInput = updates.registration_no !== undefined ? updates.registration_no : (updates.student_id !== undefined ? updates.student_id : (updates.reg_no !== undefined ? updates.reg_no : updates.student_code));
+    if (regNoInput !== undefined && typeof regNoInput === 'string') {
+      const cleanRegNo = regNoInput.trim();
+      if (cleanRegNo) {
+        const [currStudent] = await db.pool.query('SELECT id, student_id FROM students WHERE user_id = ?', [userId]);
+        if (currStudent.length > 0 && currStudent[0].student_id !== cleanRegNo) {
+          const [dupStudent] = await db.pool.query(
+            'SELECT id FROM students WHERE student_id = ? AND user_id != ?',
+            [cleanRegNo, userId]
+          );
+          if (dupStudent.length > 0) {
+            const err = new Error(`Registration Number '${cleanRegNo}' is already registered to another student.`);
+            err.status = 409;
+            throw err;
+          }
+
+          const [dupUser] = await db.pool.query(
+            'SELECT id FROM users WHERE username = ? AND id != ?',
+            [cleanRegNo, userId]
+          );
+          if (dupUser.length > 0) {
+            const err = new Error(`Registration Number / Username '${cleanRegNo}' is already taken by another account.`);
+            err.status = 409;
+            throw err;
+          }
+
+          studentFields.push('student_id = ?');
+          studentParams.push(cleanRegNo);
+
+          await db.pool.query('UPDATE users SET username = ?, updated_at = NOW() WHERE id = ?', [cleanRegNo, userId]);
+        }
+      }
+    }
+
     if (studentFields.length > 0) {
       studentParams.push(userId);
       await db.pool.query(

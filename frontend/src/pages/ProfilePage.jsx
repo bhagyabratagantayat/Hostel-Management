@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './ProfilePage.css';
@@ -9,18 +9,26 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState('edit-profile');
 
   // Edit Profile Form State
   const [fullNameVal, setFullNameVal] = useState('');
   const [genderVal, setGenderVal] = useState('');
   const [emailVal, setEmailVal] = useState('');
   const [phoneVal, setPhoneVal] = useState('');
+  const [dobVal, setDobVal] = useState('');
+  const [regNoVal, setRegNoVal] = useState('');
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [base64Photo, setBase64Photo] = useState('');
   const [updatingProfile, setUpdatingProfile] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Change Password Form State
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
   const [changingPass, setChangingPass] = useState(false);
 
   const passReqs = {
@@ -40,12 +48,30 @@ const ProfilePage = () => {
       const res = await api.getMe();
       const userData = res.user || res.data?.user || res.data;
       setProfile(userData);
-      setFullNameVal(userData?.full_name || userData?.student_profile?.full_name || '');
+      
+      const st = userData?.student_profile;
+      setFullNameVal(userData?.full_name || st?.full_name || '');
       setGenderVal(userData?.gender || '');
       setEmailVal(userData?.email || '');
-      setPhoneVal(userData?.phone || userData?.student_profile?.phone_number || '');
+      setPhoneVal(userData?.phone || st?.phone_number || '');
+      setRegNoVal(st?.student_code || st?.student_id || userData?.username || '');
+      
+      // Format DOB for date input (YYYY-MM-DD)
+      if (st?.date_of_birth) {
+        const d = new Date(st.date_of_birth);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        setDobVal(`${yyyy}-${mm}-${dd}`);
+      } else {
+        setDobVal('');
+      }
+
+      if (st?.photo_url) {
+        setPhotoPreview(st.photo_url);
+      }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to load profile details.');
+      setError(err.message || err.data?.message || 'Failed to load profile details.');
     } finally {
       setLoading(false);
     }
@@ -55,6 +81,49 @@ const ProfilePage = () => {
     fetchProfile();
   }, []);
 
+  // Handle Photo selection & compression
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Selected image exceeds 10MB limit.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 800;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressed = canvas.toDataURL('image/jpeg', 0.88);
+        setPhotoPreview(compressed);
+        setBase64Photo(compressed);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setUpdatingProfile(true);
@@ -62,17 +131,31 @@ const ProfilePage = () => {
     setSuccess('');
 
     try {
-      await api.updateSelfProfile({
-        full_name: fullNameVal,
+      const payload = {
+        full_name: fullNameVal.trim(),
         gender: genderVal || null,
-        email: emailVal,
-        phone_number: phoneVal,
-        phone: phoneVal
-      });
-      setSuccess('Profile information updated successfully.');
+        email: emailVal.trim(),
+        phone: phoneVal.trim(),
+        phone_number: phoneVal.trim(),
+      };
+
+      if (profile?.role === 'STUDENT' && regNoVal.trim()) {
+        payload.registration_no = regNoVal.trim();
+      }
+
+      if (dobVal) {
+        payload.date_of_birth = dobVal;
+      }
+      if (base64Photo) {
+        payload.base64Photo = base64Photo;
+      }
+
+      await api.updateSelfProfile(payload);
+      setSuccess('Profile details updated successfully!');
+      setBase64Photo('');
       fetchProfile();
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to update profile.');
+      setError(err.message || err.data?.message || 'Failed to update profile.');
     } finally {
       setUpdatingProfile(false);
     }
@@ -91,250 +174,441 @@ const ProfilePage = () => {
         current_password: currentPassword,
         new_password: newPassword
       });
-      setSuccess('Your password has been changed successfully.');
+      setSuccess('Your password has been updated successfully.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to change password.');
+      setError(err.message || err.data?.message || 'Failed to change password.');
     } finally {
       setChangingPass(false);
     }
   };
 
   if (loading) {
-    return <div className="profile-container text-center py-5">Loading user profile...</div>;
+    return (
+      <div className="profile-container">
+        <div className="profile-loading-skeleton">
+          <div className="skeleton-spinner"></div>
+          <p>Loading your profile details...</p>
+        </div>
+      </div>
+    );
   }
 
   const st = profile?.student_profile;
-  const displayName = profile?.full_name || st?.full_name || profile?.username;
+  const displayName = fullNameVal || profile?.full_name || st?.full_name || profile?.username;
   const initials = displayName ? displayName.substring(0, 2).toUpperCase() : 'U';
 
   return (
     <div className="profile-container">
-      <div className="profile-header card">
-        <div className="profile-avatar">
-          {st?.photo_url ? (
-            <img src={st.photo_url} alt="Profile Avatar" />
-          ) : (
-            <div className="avatar-placeholder">{initials}</div>
-          )}
+      {/* Modern Hero Banner Card */}
+      <div className="profile-hero-card">
+        <div className="hero-background-overlay"></div>
+        <div className="hero-content">
+          <div className="hero-avatar-wrapper">
+            <div className="hero-avatar">
+              {photoPreview ? (
+                <img src={photoPreview} alt="User Avatar" />
+              ) : (
+                <div className="hero-avatar-placeholder">{initials}</div>
+              )}
+            </div>
+            
+            {/* Change Photo Overlay Button */}
+            <button 
+              type="button" 
+              className="change-photo-btn"
+              onClick={() => fileInputRef.current?.click()}
+              title="Upload / Change Profile Photo"
+            ><span>Change Photo</span>
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handlePhotoSelect} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+            />
+          </div>
+
+          <div className="hero-details">
+            <div className="hero-header-row">
+              <h1 className="hero-name">{displayName}</h1>
+              <div className="hero-badges">
+                <span className={`badge badge-role role-${profile?.role?.toLowerCase()}`}>
+                  {profile?.role}
+                </span>
+                <span className={`badge badge-status status-${profile?.status?.toLowerCase()}`}>
+                  ● {profile?.status}
+                </span>
+                {profile?.gender && (
+                  <span className={`badge badge-gender gender-${profile.gender.toLowerCase()}`}>
+                    {profile.gender === 'MALE' ? 'Male' : profile.gender === 'FEMALE' ? 'Female' : 'Other'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="hero-meta-row">
+              <span className="meta-item">
+                <strong>ID:</strong> #{profile?.id}
+              </span>
+              <span className="meta-divider">•</span>
+              <span className="meta-item">
+                <strong>Username:</strong> {profile?.username}
+              </span>
+              <span className="meta-divider">•</span>
+              <span className="meta-item">
+                <strong>Email:</strong> {profile?.email}
+              </span>
+              {(st?.student_code || st?.student_id || (profile?.role === 'STUDENT' && profile?.username)) && (
+                <>
+                  <span className="meta-divider">•</span>
+                  <span className="meta-item">
+                    <strong>Reg No:</strong> {st?.student_code || st?.student_id || profile?.username}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="profile-title-area">
-          <h2>{displayName}</h2>
-          <div className="profile-badges">
-            <span className={`role-badge role-${profile?.role?.toLowerCase()}`}>{profile?.role}</span>
-            <span className={`status-badge status-${profile?.status?.toLowerCase()}`}>{profile?.status}</span>
-            {profile?.gender && (
-              <span className={`gender-badge gender-${profile.gender.toLowerCase()}`}>
-                {profile.gender === 'MALE' ? '👨 Male' : profile.gender === 'FEMALE' ? '👩 Female' : '👤 Other'}
+
+        {/* Tab Navigation */}
+        <div className="profile-tabs-nav">
+          <button 
+            type="button"
+            className={`tab-nav-btn ${activeTab === 'edit-profile' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('edit-profile'); setError(''); setSuccess(''); }}
+          >
+            Edit Profile Info
+          </button>
+          
+          {profile?.role === 'STUDENT' && (
+            <button 
+              type="button"
+              className={`tab-nav-btn ${activeTab === 'academic-hostel' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('academic-hostel'); setError(''); setSuccess(''); }}
+            >
+              Accommodation & Academics
+            </button>
+          )}
+
+          <button 
+            type="button"
+            className={`tab-nav-btn ${activeTab === 'security-pass' ? 'active' : ''}`}
+            onClick={() => { setActiveTab('security-pass'); setError(''); setSuccess(''); }}
+          >
+            Security & Password
+          </button>
+        </div>
+      </div>
+
+      {/* Global Alerts */}
+      {error && (
+        <div className="profile-alert alert-error">
+          <span className="alert-icon">️</span>
+          <div className="alert-content">{error}</div>
+          <button type="button" className="alert-close" onClick={() => setError('')}>×</button>
+        </div>
+      )}
+      {success && (
+        <div className="profile-alert alert-success">
+          <span className="alert-icon"></span>
+          <div className="alert-content">{success}</div>
+          <button type="button" className="alert-close" onClick={() => setSuccess('')}>×</button>
+        </div>
+      )}
+
+      {/* Tab 1: Edit Profile Information */}
+      {activeTab === 'edit-profile' && (
+        <div className="profile-tab-content card">
+          <div className="tab-header">
+            <div>
+              <h2>Personal Information & Details</h2>
+              <p className="tab-subtitle">Update your personal identity, contact number, gender, registration number and details.</p>
+            </div>
+            {base64Photo && (
+              <span className="pending-photo-badge">
+                New photo selected (Click Save to update)
               </span>
             )}
           </div>
-          <p className="profile-meta">
-            Account ID: #{profile?.id} • Username: <strong>{profile?.username}</strong> • Created: {new Date(profile?.created_at).toLocaleDateString()}
-          </p>
-        </div>
-      </div>
 
-      {error && <div className="alert alert-danger my-3">{error}</div>}
-      {success && <div className="alert alert-success my-3">{success}</div>}
+          <form onSubmit={handleProfileUpdate} className="profile-edit-form">
+            <div className="form-grid-2">
+              <div className="form-group">
+                <label className="form-label">Student / User Full Name *</label>
+                <input
+                  type="text"
+                  className="modern-input"
+                  placeholder="e.g. Ramesh Kumar"
+                  value={fullNameVal}
+                  onChange={(e) => setFullNameVal(e.target.value)}
+                  required
+                />
+              </div>
 
-      <div className="profile-grid">
-        {/* Account & Details Information */}
-        <div className="card profile-info-card">
-          <h3>Account & Identity Details</h3>
-          
-          <div className="info-row">
-            <span className="info-label">Full Name</span>
-            <span className="info-val">{profile?.full_name || st?.full_name || 'Not set'}</span>
-          </div>
+              <div className="form-group">
+                <label className="form-label">Phone / WhatsApp Contact Number</label>
+                <input
+                  type="tel"
+                  className="modern-input"
+                  placeholder="e.g. 9876543210"
+                  value={phoneVal}
+                  onChange={(e) => setPhoneVal(e.target.value)}
+                />
+              </div>
 
-          <div className="info-row">
-            <span className="info-label">Gender</span>
-            <span className="info-val">
-              {profile?.gender ? (profile.gender === 'MALE' ? 'Male (👨)' : profile.gender === 'FEMALE' ? 'Female (👩)' : 'Other (👤)') : 'Not Specified'}
-            </span>
-          </div>
+              <div className="form-group">
+                <label className="form-label">Gender</label>
+                <select
+                  className="modern-input"
+                  value={genderVal}
+                  onChange={(e) => setGenderVal(e.target.value)}
+                >
+                  <option value="">-- Select Gender --</option>
+                  <option value="MALE">Male ()</option>
+                  <option value="FEMALE">Female ()</option>
+                  <option value="OTHER">Other ()</option>
+                </select>
+              </div>
 
-          <div className="info-row">
-            <span className="info-label">Email Address</span>
-            <span className="info-val">{profile?.email}</span>
-          </div>
+              {profile?.role === 'STUDENT' && (
+                <div className="form-group">
+                  <label className="form-label">Date of Birth</label>
+                  <input
+                    type="date"
+                    className="modern-input"
+                    value={dobVal}
+                    onChange={(e) => setDobVal(e.target.value)}
+                  />
+                  <small className="form-hint">Used for student identification records.</small>
+                </div>
+              )}
 
-          <div className="info-row">
-            <span className="info-label">Contact Phone</span>
-            <span className="info-val">{profile?.phone || st?.phone_number || 'Not Provided'}</span>
-          </div>
+              <div className="form-group">
+                <label className="form-label">Login Email Address *</label>
+                <input
+                  type="email"
+                  className="modern-input"
+                  value={emailVal}
+                  onChange={(e) => setEmailVal(e.target.value)}
+                  required
+                />
+                <small className="form-hint">College registered email identifier.</small>
+              </div>
 
-          <div className="info-row">
-            <span className="info-label">Last Login</span>
-            <span className="info-val">{profile?.last_login_at ? new Date(profile.last_login_at).toLocaleString() : 'First Session'}</span>
-          </div>
-
-          {/* Assigned Hostels for Superintendents / Wardens */}
-          {profile?.role === 'SUPERINTENDENT' && (
-            <div className="superintendent-hostels-section mt-4">
-              <h3>Assigned Hostels Management</h3>
-              {profile?.assigned_hostels && profile.assigned_hostels.length > 0 ? (
-                <div className="assigned-hostels-grid">
-                  {profile.assigned_hostels.map(h => (
-                    <div key={h.id} className="assigned-hostel-pill">
-                      <span className="hostel-pill-icon">🏢</span>
-                      <div className="hostel-pill-info">
-                        <span className="hostel-pill-name">{h.name}</span>
-                        <span className="hostel-pill-meta">{h.code} • {h.hostel_type || 'Hostel'}</span>
-                      </div>
-                    </div>
-                  ))}
+              {profile?.role === 'STUDENT' ? (
+                <div className="form-group">
+                  <label className="form-label">College Registration Number (Reg No / User ID)</label>
+                  <input
+                    type="text"
+                    className="modern-input"
+                    placeholder="e.g. 2301316095"
+                    value={regNoVal}
+                    onChange={(e) => setRegNoVal(e.target.value)}
+                  />
+                  <small className="form-hint" style={{ color: '#0284c7' }}>
+                    1st-year students can enter/update their official registration number here. You can also use it to log in.
+                  </small>
                 </div>
               ) : (
-                <p className="text-muted text-sm mt-1">No specific hostels assigned currently. (Contact Super Admin)</p>
+                <div className="form-group">
+                  <label className="form-label">Account Username (Read-Only)</label>
+                  <input
+                    type="text"
+                    className="modern-input read-only-input"
+                    value={profile?.username || ''}
+                    disabled
+                  />
+                  <small className="form-hint">System generated account identifier.</small>
+                </div>
               )}
             </div>
-          )}
 
-          {/* Student Profile Info */}
-          {profile?.role === 'STUDENT' && st && (
-            <>
-              <h3 className="mt-4">Accommodation & Academic Profile</h3>
-              <div className="info-row">
-                <span className="info-label">Registration No. (User ID)</span>
-                <span className="info-val">{st.student_code}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Date of Birth</span>
-                <span className="info-val">{st.date_of_birth ? new Date(st.date_of_birth).toLocaleDateString('en-GB') : 'Not Specified'}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Roll Number</span>
-                <span className="info-val">{st.roll_number || 'N/A'}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Branch & Course</span>
-                <span className="info-val">{st.branch} • {st.course} (Year {st.year_of_study})</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Hostel & Room</span>
-                <span className="info-val highlight">{st.hostel_name || 'Not Allocated'} {st.room_number ? `(Room ${st.room_number}, Bed ${st.bed_number})` : ''}</span>
-              </div>
-            </>
-          )}
-
-          {/* Edit Profile Form */}
-          <h3 className="mt-4">Edit Profile Information</h3>
-          <form onSubmit={handleProfileUpdate} className="mt-2">
-            <div className="form-group">
-              <label>Full Name</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Dr. Ramesh Kumar"
-                value={fullNameVal}
-                onChange={(e) => setFullNameVal(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Gender</label>
-              <select
-                className="form-control"
-                value={genderVal}
-                onChange={(e) => setGenderVal(e.target.value)}
+            <div className="form-actions">
+              <button 
+                type="submit" 
+                className="btn-save-profile" 
+                disabled={updatingProfile}
               >
-                <option value="">-- Select Gender --</option>
-                <option value="MALE">Male (👨)</option>
-                <option value="FEMALE">Female (👩)</option>
-                <option value="OTHER">Other (👤)</option>
-              </select>
+                {updatingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
+              </button>
             </div>
-
-            <div className="form-group">
-              <label>Phone / Contact Number</label>
-              <input
-                type="tel"
-                className="form-control"
-                placeholder="e.g. 9876543210"
-                value={phoneVal}
-                onChange={(e) => setPhoneVal(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Email Address *</label>
-              <input
-                type="email"
-                className="form-control"
-                value={emailVal}
-                onChange={(e) => setEmailVal(e.target.value)}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary mt-2" disabled={updatingProfile}>
-              {updatingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
-            </button>
           </form>
         </div>
+      )}
 
-        {/* Change Password Section */}
-        <div className="card profile-pass-card">
-          <h3>Change Security Password</h3>
-          <p className="text-muted text-sm mb-3">Update your login password regularly to protect your account.</p>
+      {/* Tab 2: Accommodation & Academic Profile (Student Only) */}
+      {activeTab === 'academic-hostel' && profile?.role === 'STUDENT' && (
+        <div className="profile-tab-content card">
+          <div className="tab-header">
+            <div>
+              <h2>Accommodation & Academic Information</h2>
+              <p className="tab-subtitle">Your allocated hostel room, bed assignment and enrolled program.</p>
+            </div>
+          </div>
 
-          <form onSubmit={handlePasswordChange}>
-            <div className="form-group">
-              <label>Current Password *</label>
-              <input
-                type="password"
-                className="form-control"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
+          <div className="academics-grid">
+            <div className="academic-card">
+              <span className="card-icon"></span>
+              <div className="card-info">
+                <span className="card-label">Assigned Hostel</span>
+                <span className="card-val highlight">{st?.hostel_name || 'Not Allocated'}</span>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>New Password *</label>
-              <input
-                type="password"
-                className="form-control"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
+            <div className="academic-card">
+              <span className="card-icon"></span>
+              <div className="card-info">
+                <span className="card-label">Room & Bed No</span>
+                <span className="card-val">
+                  {st?.room_number ? `Room ${st.room_number}, Bed ${st.bed_number}` : 'Pending Bed Allocation'}
+                </span>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>Confirm New Password *</label>
-              <input
-                type="password"
-                className="form-control"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+            <div className="academic-card">
+              <span className="card-icon"></span>
+              <div className="card-info">
+                <span className="card-label">Course & Branch</span>
+                <span className="card-val">{st?.course || 'B.Tech'} - {st?.branch || 'General'}</span>
+              </div>
             </div>
 
-            <div className="password-checklist mt-3 mb-3">
-              <div className="checklist-title">Complexity Requirements:</div>
-              <ul>
-                <li className={passReqs.length ? 'met' : ''}>{passReqs.length ? '✓' : '○'} 8+ characters</li>
-                <li className={passReqs.upper ? 'met' : ''}>{passReqs.upper ? '✓' : '○'} 1 uppercase letter</li>
-                <li className={passReqs.lower ? 'met' : ''}>{passReqs.lower ? '✓' : '○'} 1 lowercase letter</li>
-                <li className={passReqs.number ? 'met' : ''}>{passReqs.number ? '✓' : '○'} 1 number</li>
-                <li className={passReqs.match ? 'met' : ''}>{passReqs.match ? '✓' : '○'} Passwords match</li>
-              </ul>
+            <div className="academic-card">
+              <span className="card-icon"></span>
+              <div className="card-info">
+                <span className="card-label">Academic Year</span>
+                <span className="card-val">Year {st?.year_of_study || 1}</span>
+              </div>
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block" disabled={!isPassFormValid || changingPass}>
-              {changingPass ? 'Updating...' : 'Update Password'}
-            </button>
+            <div className="academic-card">
+              <span className="card-icon"></span>
+              <div className="card-info">
+                <span className="card-label">Registration No (User ID)</span>
+                <span className="card-val">{st?.student_code || profile?.username}</span>
+              </div>
+            </div>
+
+            <div className="academic-card">
+              <span className="card-icon"></span>
+              <div className="card-info">
+                <span className="card-label">Date of Birth</span>
+                <span className="card-val">
+                  {st?.date_of_birth ? new Date(st.date_of_birth).toLocaleDateString('en-GB') : 'Not Provided'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Security & Password */}
+      {activeTab === 'security-pass' && (
+        <div className="profile-tab-content card">
+          <div className="tab-header">
+            <div>
+              <h2>Change Account Password</h2>
+              <p className="tab-subtitle">Update your login security password regularly to protect your account.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handlePasswordChange} className="password-change-form">
+            <div className="password-inputs-grid">
+              <div className="form-group">
+                <label className="form-label">Current Password *</label>
+                <div className="input-password-wrapper">
+                  <input
+                    type={showCurrentPass ? 'text' : 'password'}
+                    className="modern-input"
+                    placeholder="Enter your current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    className="pass-toggle-btn"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                  >
+                    {showCurrentPass ? '' : ''}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">New Password *</label>
+                <div className="input-password-wrapper">
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    className="modern-input"
+                    placeholder="Enter strong new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    className="pass-toggle-btn"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                  >
+                    {showNewPass ? '' : ''}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Confirm New Password *</label>
+                <input
+                  type="password"
+                  className="modern-input"
+                  placeholder="Re-type new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="password-requirements-box">
+              <div className="req-title">Password Strength Requirements:</div>
+              <div className="req-grid">
+                <span className={`req-item ${passReqs.length ? 'met' : ''}`}>
+                  {passReqs.length ? '' : '○'} At least 8 characters
+                </span>
+                <span className={`req-item ${passReqs.upper ? 'met' : ''}`}>
+                  {passReqs.upper ? '' : '○'} 1 uppercase letter
+                </span>
+                <span className={`req-item ${passReqs.lower ? 'met' : ''}`}>
+                  {passReqs.lower ? '' : '○'} 1 lowercase letter
+                </span>
+                <span className={`req-item ${passReqs.number ? 'met' : ''}`}>
+                  {passReqs.number ? '' : '○'} 1 number (0-9)
+                </span>
+                <span className={`req-item ${passReqs.match ? 'met' : ''}`}>
+                  {passReqs.match ? '' : '○'} Passwords match
+                </span>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button 
+                type="submit" 
+                className="btn-save-profile" 
+                disabled={!isPassFormValid || changingPass}
+              >
+                {changingPass ? 'Updating Password...' : 'Update Password'}
+              </button>
+            </div>
           </form>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 export default ProfilePage;
+

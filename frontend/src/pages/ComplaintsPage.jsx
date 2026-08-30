@@ -88,7 +88,7 @@ const ComplaintsPage = () => {
       {/* Top Banner */}
       <div className="page-header flex-between align-center mb-4">
         <div>
-          <h1 className="page-title">🛠️ Hostel Complaint & Grievance Portal</h1>
+          <h1 className="page-title">Hostel Complaint & Grievance Portal</h1>
           <p className="page-sub">
             {isStudent 
               ? 'Submit and track maintenance complaints for your hostel room' 
@@ -101,7 +101,7 @@ const ComplaintsPage = () => {
             className="btn btn-primary btn-lg"
             onClick={() => setIsSubmitModalOpen(true)}
           >
-            ➕ Submit New Complaint
+             Submit New Complaint
           </button>
         )}
       </div>
@@ -147,7 +147,7 @@ const ComplaintsPage = () => {
           <input
             type="text"
             className="form-control search-input"
-            placeholder={isStudent ? "Search by complaint title..." : "Search by title, student name, roll no, room..."}
+            placeholder={isStudent ? "Search by complaint title..." : "Search by title, student name, ID, room..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -189,7 +189,7 @@ const ComplaintsPage = () => {
         <div className="alert alert-danger my-4">{error}</div>
       ) : complaints.length === 0 ? (
         <div className="empty-state-card py-5 text-center">
-          <div className="empty-state-icon">🛠️</div>
+          <div className="empty-state-icon"></div>
           <h3>No complaints found</h3>
           <p className="text-muted">
             {activeTab !== 'ALL' || categoryFilter !== 'ALL' || priorityFilter !== 'ALL'

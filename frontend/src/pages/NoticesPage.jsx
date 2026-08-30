@@ -142,7 +142,7 @@ const NoticesPage = () => {
       {/* Header */}
       <div className="notices-page-header">
         <div className="header-text">
-          <h1 className="page-heading">📢 Hostel Notice Board</h1>
+          <h1 className="page-heading">Hostel Notice Board</h1>
           <p className="page-subheading">Official announcements, maintenance schedules, and urgent alerts</p>
         </div>
 
@@ -152,7 +152,7 @@ const NoticesPage = () => {
             className="btn-create-notice"
             onClick={handleOpenComposerForCreate}
           >
-            ➕ Publish Notice
+            + Publish Notice
           </button>
         )}
       </div>
@@ -161,7 +161,7 @@ const NoticesPage = () => {
       <div className="notices-filter-card">
         <form onSubmit={handleSearchSubmit} className="search-form">
           <div className="search-input-wrapper">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"></span>
             <input
               type="text"
               name="search"
@@ -174,9 +174,7 @@ const NoticesPage = () => {
                 type="button"
                 className="clear-search-btn"
                 onClick={() => setFilters(prev => ({ ...prev, search: '' }))}
-              >
-                ✕
-              </button>
+              ></button>
             )}
           </div>
         </form>
@@ -192,9 +190,9 @@ const NoticesPage = () => {
               onChange={handleFilterChange}
             >
               <option value="">All Priorities</option>
-              <option value="URGENT">🚨 URGENT</option>
-              <option value="IMPORTANT">⚠️ IMPORTANT</option>
-              <option value="GENERAL">ℹ️ GENERAL</option>
+              <option value="URGENT">URGENT</option>
+              <option value="IMPORTANT">IMPORTANT</option>
+              <option value="GENERAL">GENERAL</option>
             </select>
           </div>
 
@@ -208,10 +206,10 @@ const NoticesPage = () => {
               onChange={handleFilterChange}
             >
               <option value="">All Scopes</option>
-              <option value="general">📢 All Hostels Only</option>
+              <option value="general">All Hostels Only</option>
               {hostels.map(h => (
                 <option key={h.id} value={h.id}>
-                  🏢 {h.name}
+                  {h.name}
                 </option>
               ))}
             </select>
@@ -228,9 +226,9 @@ const NoticesPage = () => {
                 onChange={handleFilterChange}
               >
                 <option value="">All Statuses</option>
-                <option value="PUBLISHED">🚀 PUBLISHED</option>
-                <option value="DRAFT">📝 DRAFT</option>
-                <option value="ARCHIVED">📦 ARCHIVED</option>
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="DRAFT">DRAFT</option>
+                <option value="ARCHIVED">ARCHIVED</option>
               </select>
             </div>
           )}
@@ -246,8 +244,8 @@ const NoticesPage = () => {
                 onChange={handleFilterChange}
               >
                 <option value="">All Notices</option>
-                <option value="unread">🔵 Unread Only</option>
-                <option value="read">⚪ Read Only</option>
+                <option value="unread">Unread Only</option>
+                <option value="read">Read Only</option>
               </select>
             </div>
           )}
@@ -264,7 +262,7 @@ const NoticesPage = () => {
         </div>
       ) : notices.length === 0 ? (
         <div className="empty-state-card">
-          <span className="empty-emoji">📭</span>
+          <span className="empty-emoji"></span>
           <h2>No Notices Found</h2>
           <p>There are no notices matching your current search and filter criteria.</p>
         </div>

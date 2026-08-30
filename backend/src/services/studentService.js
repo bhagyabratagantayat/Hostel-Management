@@ -143,8 +143,8 @@ const getAllStudents = async (filters = {}, user) => {
   // Search term
   if (search && search.trim() !== '') {
     const term = `%${search.trim()}%`;
-    conditions.push('(s.full_name LIKE ? OR s.student_id LIKE ? OR s.roll_number LIKE ? OR s.email LIKE ? OR s.phone LIKE ?)');
-    queryParams.push(term, term, term, term, term);
+    conditions.push('(s.full_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR s.phone LIKE ?)');
+    queryParams.push(term, term, term, term);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -237,31 +237,39 @@ const createStudent = async (studentData, creator) => {
   } = studentData;
 
   // 1. Inputs validation
-  if (!student_id || !student_id.trim()) {
-    const error = new Error('Student ID / Registration Number is required.');
-    error.status = 400;
-    throw error;
-  }
-  if (!roll_number || !roll_number.trim()) {
-    const error = new Error('Roll number is required.');
-    error.status = 400;
-    throw error;
-  }
   if (!full_name || !full_name.trim()) {
     const error = new Error('Full name is required.');
     error.status = 400;
     throw error;
   }
-  if (!email || !email.trim()) {
-    const error = new Error('Email is required.');
-    error.status = 400;
-    throw error;
+
+  // Auto-generate or sanitize student_id (Registration Number is optional)
+  let finalStudentId = (student_id && student_id.trim()) ? student_id.trim() : null;
+  if (!finalStudentId) {
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    finalStudentId = `BEC${randomDigits}`;
   }
-  if (!password || password.trim().length < 6) {
-    const error = new Error('Password must be at least 6 characters.');
-    error.status = 400;
-    throw error;
+
+  // Auto-generate email (fullname@bec.ac.in) if not provided
+  let finalEmail = (email && email.trim()) ? email.trim().toLowerCase() : null;
+  if (!finalEmail) {
+    const cleanName = full_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    finalEmail = `${cleanName || 'student'}@bec.ac.in`;
   }
+
+  // Format default password from DOB (format DDMMYYYY)
+  let finalPassword = '';
+  if (date_of_birth && /^\d{4}-\d{2}-\d{2}$/.test(date_of_birth)) {
+    const [yyyy, mm, dd] = date_of_birth.split('-');
+    finalPassword = `${dd}${mm}${yyyy}`;
+  } else if (password && password.trim().length >= 6) {
+    finalPassword = password.trim();
+  } else {
+    finalPassword = 'password123';
+  }
+
+  const finalRollNumber = (roll_number && roll_number.trim()) ? roll_number.trim() : null;
+
   if (!hostel_id || !room_id || !bed_id) {
     const error = new Error('Complete hostel, room, and bed assignments are required.');
     error.status = 400;
@@ -280,41 +288,37 @@ const createStudent = async (studentData, creator) => {
 
   // 3. Unique Constraints checks
   const [existingUser] = await db.pool.query(
-    'SELECT id FROM users WHERE username = ? OR email = ?',
-    [student_id.trim(), email.trim()]
+    'SELECT id, username, email FROM users WHERE username = ? OR email = ?',
+    [finalStudentId, finalEmail]
   );
   if (existingUser.length > 0) {
-    const error = new Error('Student Registration Number or Email already exists.');
+    const matched = existingUser[0];
+    if (matched.email === finalEmail) {
+      const error = new Error(`Student email '${finalEmail}' is already registered. Please use a unique name or customized email.`);
+      error.status = 400;
+      throw error;
+    }
+    const error = new Error(`Student registration ID '${finalStudentId}' is already in use. Please provide a different registration number.`);
     error.status = 400;
     throw error;
   }
 
   const [existingStudentId] = await db.pool.query(
     'SELECT id FROM students WHERE student_id = ?',
-    [student_id.trim()]
+    [finalStudentId]
   );
   if (existingStudentId.length > 0) {
-    const error = new Error('Student Registration Number already exists.');
-    error.status = 400;
-    throw error;
-  }
-
-  const [existingRoll] = await db.pool.query(
-    'SELECT id FROM students WHERE roll_number = ?',
-    [roll_number.trim()]
-  );
-  if (existingRoll.length > 0) {
-    const error = new Error('Roll number already exists.');
+    const error = new Error(`Student Registration Number '${finalStudentId}' is already registered.`);
     error.status = 400;
     throw error;
   }
 
   const [existingEmail] = await db.pool.query(
     'SELECT id FROM students WHERE email = ?',
-    [email.trim()]
+    [finalEmail]
   );
   if (existingEmail.length > 0) {
-    const error = new Error('Email already exists.');
+    const error = new Error(`Student Email '${finalEmail}' is already registered.`);
     error.status = 400;
     throw error;
   }
@@ -366,14 +370,14 @@ const createStudent = async (studentData, creator) => {
   try {
     await connection.beginTransaction();
 
-    // A. Hash password (defaults to DOB e.g. 15082005)
-    const passwordHash = await passwordUtil.hashPassword(password);
+    // A. Hash password (defaults to DOB DDMMYYYY e.g. 15082005)
+    const passwordHash = await passwordUtil.hashPassword(finalPassword);
 
     // B. Create account in users table (role_id 3 is STUDENT)
     const [userInsertResult] = await connection.query(
       `INSERT INTO users (role_id, username, email, full_name, phone, password_hash, status, must_change_password) 
        VALUES (3, ?, ?, ?, ?, ?, 'ACTIVE', 0)`,
-      [student_id.trim(), email.trim(), full_name.trim(), phone ? phone.trim() : null, passwordHash]
+      [finalStudentId, finalEmail, full_name.trim(), phone ? phone.trim() : null, passwordHash]
     );
     const newUserId = userInsertResult.insertId;
 
@@ -384,9 +388,9 @@ const createStudent = async (studentData, creator) => {
         phone, email, branch, course, year, semester, bed_id, admission_date, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
       [
-        newUserId, student_id.trim(), roll_number.trim(), full_name.trim(),
+        newUserId, finalStudentId, finalRollNumber, full_name.trim(),
         date_of_birth || null, photoUrl, cloudinaryPublicId,
-        phone || '', email.trim(), branch || '', course || '', parseInt(year, 10), parseInt(semester, 10),
+        phone ? phone.trim() : null, finalEmail, branch || '', course || '', parseInt(year, 10) || 1, parseInt(semester, 10) || 1,
         bed_id, admission_date || new Date().toISOString().slice(0, 10)
       ]
     );
@@ -407,7 +411,7 @@ const createStudent = async (studentData, creator) => {
     );
 
     await connection.commit();
-    return { id: studentInsertResult.insertId, student_id, full_name, email, date_of_birth: date_of_birth || null };
+    return { id: studentInsertResult.insertId, student_id: finalStudentId, full_name: full_name.trim(), email: finalEmail, date_of_birth: date_of_birth || null };
   } catch (err) {
     await connection.rollback();
     // Clean up Cloudinary file if created
@@ -434,8 +438,38 @@ const updateStudent = async (studentId, updateData, user) => {
   const currentStudent = await getStudentById(studentId, user);
 
   const {
-    full_name, date_of_birth, phone, email, branch, course, year, semester, status, base64Photo
+    full_name, date_of_birth, phone, email, branch, course, year, semester, status, base64Photo, student_id, registration_no
   } = updateData;
+
+  const regNoInput = student_id !== undefined ? student_id : registration_no;
+  let newStudentId = null;
+  if (regNoInput !== undefined && typeof regNoInput === 'string') {
+    const cleanRegNo = regNoInput.trim();
+    if (cleanRegNo && cleanRegNo !== currentStudent.student_id) {
+      newStudentId = cleanRegNo;
+      // Check uniqueness in students table
+      const [dupStudent] = await db.pool.query(
+        'SELECT id FROM students WHERE student_id = ? AND id != ?',
+        [newStudentId, studentId]
+      );
+      if (dupStudent.length > 0) {
+        const error = new Error(`Student Registration Number '${newStudentId}' is already registered to another student.`);
+        error.status = 409;
+        throw error;
+      }
+
+      // Check uniqueness in users table
+      const [dupUser] = await db.pool.query(
+        'SELECT id FROM users WHERE username = ? AND id != ?',
+        [newStudentId, currentStudent.user_id]
+      );
+      if (dupUser.length > 0) {
+        const error = new Error(`Student Registration ID / Username '${newStudentId}' is already in use by another account.`);
+        error.status = 409;
+        throw error;
+      }
+    }
+  }
 
   let photoUrl = currentStudent.photo_url;
   let newCloudinaryPublicId = null;
@@ -443,7 +477,7 @@ const updateStudent = async (studentId, updateData, user) => {
 
   // 1. Handle base64 image upload if provided
   if (base64Photo) {
-    const uploadRes = await uploadProfilePhoto(base64Photo, `student_${currentStudent.student_id}`);
+    const uploadRes = await uploadProfilePhoto(base64Photo, `student_${newStudentId || currentStudent.student_id}`);
     photoUrl = uploadRes.secure_url;
     newCloudinaryPublicId = uploadRes.public_id;
   }
@@ -457,6 +491,7 @@ const updateStudent = async (studentId, updateData, user) => {
     const studentUpdates = [];
     const studentParams = [];
 
+    if (newStudentId) { studentUpdates.push('student_id = ?'); studentParams.push(newStudentId); }
     if (full_name !== undefined) { studentUpdates.push('full_name = ?'); studentParams.push(full_name.trim()); }
     if (date_of_birth !== undefined) { studentUpdates.push('date_of_birth = ?'); studentParams.push(date_of_birth || null); }
     if (phone !== undefined) { studentUpdates.push('phone = ?'); studentParams.push(phone ? phone.trim() : ''); }
@@ -480,6 +515,7 @@ const updateStudent = async (studentId, updateData, user) => {
     const userUpdates = [];
     const userParams = [];
 
+    if (newStudentId) { userUpdates.push('username = ?'); userParams.push(newStudentId); }
     if (full_name !== undefined) { userUpdates.push('full_name = ?'); userParams.push(full_name.trim()); }
     if (phone !== undefined) { userUpdates.push('phone = ?'); userParams.push(phone ? phone.trim() : null); }
     if (email !== undefined) { userUpdates.push('email = ?'); userParams.push(email.trim()); }

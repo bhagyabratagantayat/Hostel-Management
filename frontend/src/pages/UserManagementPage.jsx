@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { KeyRound, Shield, Building2, UserX, UserCheck, ShieldAlert, UserPlus, Eye, EyeOff } from 'lucide-react';
 import './UserManagementPage.css';
 
 const UserManagementPage = () => {
@@ -234,11 +235,13 @@ const UserManagementPage = () => {
           <p className="subtitle">Manage system accounts, user status, superintendent assignments, and security audit logs.</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-secondary" onClick={() => navigate('/admin/security-audit')}>
-            🛡️ Security Audit Logs
+          <button className="btn btn-secondary" onClick={() => navigate('/admin/security-audit')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <ShieldAlert size={16} />
+            Security Audit Logs
           </button>
-          <button className="btn btn-primary" onClick={openCreateModal}>
-            + Create New User
+          <button className="btn btn-primary" onClick={openCreateModal} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <UserPlus size={16} />
+            Create New User
           </button>
         </div>
       </div>
@@ -331,7 +334,7 @@ const UserManagementPage = () => {
                         backgroundColor: u.gender === 'MALE' ? '#dbeafe' : u.gender === 'FEMALE' ? '#fce7f3' : '#f3e8ff',
                         color: u.gender === 'MALE' ? '#1e40af' : u.gender === 'FEMALE' ? '#9d174d' : '#6b21a8'
                       }}>
-                        {u.gender === 'MALE' ? '👨 Male' : u.gender === 'FEMALE' ? '👩 Female' : '👤 Other'}
+                        {u.gender === 'MALE' ? 'Male' : u.gender === 'FEMALE' ? 'Female' : 'Other'}
                       </span>
                     ) : (
                       <span className="text-muted text-sm">—</span>
@@ -347,7 +350,7 @@ const UserManagementPage = () => {
                     <span className={`status-badge status-${u.status.toLowerCase()}`}>
                       {u.status}
                     </span>
-                    {u.must_change_password ? <span className="badge badge-warning ml-1" title="Must change password on next login">🔒 Required</span> : null}
+                    {u.must_change_password ? <span className="badge badge-warning ml-1" title="Must change password on next login">Required</span> : null}
                   </td>
                   <td>
                     {u.role === 'SUPERINTENDENT' ? (
@@ -367,33 +370,50 @@ const UserManagementPage = () => {
                     <div className="action-buttons">
                       {u.role === 'SUPERINTENDENT' && (
                         <button
-                          className="btn-icon btn-sm"
+                          type="button"
+                          className="user-action-btn"
                           title="Assign Hostels"
                           onClick={() => openHostelModal(u)}
                         >
-                          🏢
+                          <Building2 size={13} />
+                          <span>Hostels</span>
                         </button>
                       )}
                       <button
-                        className="btn-icon btn-sm"
+                        type="button"
+                        className="user-action-btn"
                         title="Reset Password"
                         onClick={() => openResetModal(u)}
                       >
-                        🔑
+                        <KeyRound size={13} />
+                        <span>Reset Pass</span>
                       </button>
                       <button
-                        className="btn-icon btn-sm"
+                        type="button"
+                        className="user-action-btn"
                         title="Change Role"
                         onClick={() => openRoleModal(u)}
                       >
-                        👔
+                        <Shield size={13} />
+                        <span>Role</span>
                       </button>
                       <button
-                        className={`btn-icon btn-sm ${u.status === 'ACTIVE' ? 'btn-danger-icon' : 'btn-success-icon'}`}
+                        type="button"
+                        className={`user-action-btn ${u.status === 'ACTIVE' ? 'user-action-danger' : 'user-action-success'}`}
                         title={u.status === 'ACTIVE' ? 'Deactivate Account' : 'Activate Account'}
                         onClick={() => handleToggleStatus(u)}
                       >
-                        {u.status === 'ACTIVE' ? '🚫' : '✅'}
+                        {u.status === 'ACTIVE' ? (
+                          <>
+                            <UserX size={13} />
+                            <span>Deactivate</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck size={13} />
+                            <span>Activate</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </td>
@@ -466,9 +486,9 @@ const UserManagementPage = () => {
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                   >
                     <option value="">-- Select Gender --</option>
-                    <option value="MALE">Male (👨)</option>
-                    <option value="FEMALE">Female (👩)</option>
-                    <option value="OTHER">Other (👤)</option>
+                    <option value="MALE">Male ()</option>
+                    <option value="FEMALE">Female ()</option>
+                    <option value="OTHER">Other ()</option>
                   </select>
                 </div>
                 <div className="form-group">
@@ -507,11 +527,11 @@ const UserManagementPage = () => {
                         color: '#666'
                       }}
                     >
-                      {showPassword ? '👁️ Hide' : '👁️ Show'}
+                      {showPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
                   <small style={{ display: 'block', marginTop: '0.35rem', color: '#6b7280', fontSize: '0.82rem' }}>
-                    🔒 Must be at least 8 characters long, with 1 uppercase letter (A-Z), 1 lowercase letter (a-z), and 1 number (0-9).
+                    Must be at least 8 characters long, with 1 uppercase letter (A-Z), 1 lowercase letter (a-z), and 1 number (0-9).
                   </small>
                 </div>
                 <div className="form-group">
@@ -640,11 +660,11 @@ const UserManagementPage = () => {
                         color: '#666'
                       }}
                     >
-                      {showPassword ? '👁️ Hide' : '👁️ Show'}
+                      {showPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
                   <small style={{ display: 'block', marginTop: '0.35rem', color: '#6b7280', fontSize: '0.82rem' }}>
-                    🔒 Must be at least 8 characters long, with 1 uppercase letter (A-Z), 1 lowercase letter (a-z), and 1 number (0-9).
+                    Must be at least 8 characters long, with 1 uppercase letter (A-Z), 1 lowercase letter (a-z), and 1 number (0-9).
                   </small>
                 </div>
               </div>

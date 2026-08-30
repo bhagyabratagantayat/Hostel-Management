@@ -1,18 +1,18 @@
 import React from 'react';
 
 const CATEGORY_ICONS = {
-  ROOM: '🏠',
-  ELECTRICITY: '⚡',
-  WATER: '🚰',
-  PLUMBING: '🔧',
-  CLEANLINESS: '🧹',
-  FAN_AC: '❄️',
-  FURNITURE: '🪑',
-  FOOD_MESS: '🍲',
-  INTERNET: '📶',
-  SECURITY: '🛡️',
-  MAINTENANCE: '🔨',
-  OTHER: '📌'
+  ROOM: '',
+  ELECTRICITY: '',
+  WATER: '',
+  PLUMBING: '',
+  CLEANLINESS: '',
+  FAN_AC: '️',
+  FURNITURE: '',
+  FOOD_MESS: '',
+  INTERNET: '',
+  SECURITY: '',
+  MAINTENANCE: '',
+  OTHER: ''
 };
 
 const PRIORITY_BADGES = {
@@ -47,7 +47,7 @@ function formatRelativeTime(dateString) {
 }
 
 const ComplaintCard = ({ complaint, onClick, userRole }) => {
-  const categoryIcon = CATEGORY_ICONS[complaint.category] || '📌';
+  const categoryIcon = CATEGORY_ICONS[complaint.category] || '';
   const priorityInfo = PRIORITY_BADGES[complaint.priority] || PRIORITY_BADGES.MEDIUM;
   const statusInfo = STATUS_BADGES[complaint.status] || STATUS_BADGES.OPEN;
 
@@ -75,12 +75,12 @@ const ComplaintCard = ({ complaint, onClick, userRole }) => {
         <div className="complaint-card-info">
           {userRole !== 'STUDENT' && (
             <span className="complaint-student">
-              👤 {complaint.student_name} ({complaint.hostel_name || 'Hostel'}, Rm {complaint.room_number || 'N/A'})
+               {complaint.student_name} ({complaint.hostel_name || 'Hostel'}, Rm {complaint.room_number || 'N/A'})
             </span>
           )}
           {userRole === 'STUDENT' && (
             <span className="complaint-location">
-              📍 {complaint.hostel_name} • Rm {complaint.room_number || 'N/A'}
+               {complaint.hostel_name} • Rm {complaint.room_number || 'N/A'}
             </span>
           )}
         </div>

@@ -63,6 +63,17 @@
   color: #3730a3;
 }
 
+.ip-badge {
+  display: inline-block;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .ua-cell {
   font-size: 0.8rem;
   color: var(--text-muted, #64748b);

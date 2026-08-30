@@ -44,17 +44,17 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
     <div className="recent-visitors-section">
       <div className="section-header-flex">
         <div>
-          <h3>🚪 Visitor Management Overview</h3>
+          <h3>Visitor Management Overview</h3>
           <p className="section-subtitle">Real-time gate tracking and current hostel visitors</p>
         </div>
         <div className="section-header-actions">
           {userRole === 'STUDENT' ? (
             <button type="button" className="btn-primary btn-sm" onClick={onRequestNewVisitor}>
-              ➕ Request Visitor
+              + Request Visitor
             </button>
           ) : (
             <button type="button" className="btn-primary btn-sm" onClick={onRequestNewVisitor}>
-              ➕ Register Visitor
+              + Register Visitor
             </button>
           )}
           <button type="button" className="btn-secondary btn-sm" onClick={() => navigate('/visitors')}>
@@ -66,7 +66,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
       {/* KPI Metrics Grid */}
       <div className="visitor-kpi-grid">
         <div className="visitor-kpi-card kpi-current">
-          <div className="kpi-icon">🚪</div>
+          <div className="kpi-icon"></div>
           <div className="kpi-info">
             <span className="kpi-label">Currently Inside</span>
             <span className="kpi-number">{summary.current}</span>
@@ -74,7 +74,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
         </div>
 
         <div className={`visitor-kpi-card kpi-overdue ${summary.overdue > 0 ? 'alert-overdue' : ''}`}>
-          <div className="kpi-icon">⚠️</div>
+          <div className="kpi-icon">️</div>
           <div className="kpi-info">
             <span className="kpi-label">Overdue Visitors</span>
             <span className="kpi-number">{summary.overdue}</span>
@@ -82,7 +82,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
         </div>
 
         <div className="visitor-kpi-card kpi-today">
-          <div className="kpi-icon">📅</div>
+          <div className="kpi-icon"></div>
           <div className="kpi-info">
             <span className="kpi-label">Today's Visits</span>
             <span className="kpi-number">{summary.todayVisits}</span>
@@ -90,7 +90,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
         </div>
 
         <div className="visitor-kpi-card kpi-pending">
-          <div className="kpi-icon">⏳</div>
+          <div className="kpi-icon"></div>
           <div className="kpi-info">
             <span className="kpi-label">Pending Requests</span>
             <span className="kpi-number">{summary.pending}</span>
@@ -103,12 +103,12 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
         <h4 className="container-title">Currently Checked-In Visitors</h4>
 
         {loading ? (
-          <div className="loading-state-inline">⏳ Loading current visitors...</div>
+          <div className="loading-state-inline">Loading current visitors...</div>
         ) : error ? (
-          <div className="error-state-inline">⚠️ {error}</div>
+          <div className="error-state-inline">{error}</div>
         ) : currentVisitors.length === 0 ? (
           <div className="empty-visitors-state">
-            <span className="empty-icon">🟢</span>
+            <span className="empty-icon"></span>
             <p>No active visitors inside the hostel right now.</p>
           </div>
         ) : (
@@ -120,7 +120,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
                   <div className="item-main">
                     <span className="visitor-type-badge">{v.visitor_type}</span>
                     <strong className="visitor-title">{v.visitor_name}</strong>
-                    <span className="visitor-phone">📞 {v.visitor_phone}</span>
+                    <span className="visitor-phone"> {v.visitor_phone}</span>
                   </div>
 
                   <div className="item-student">
@@ -130,7 +130,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
 
                   <div className="item-time">
                     <span className="time-label">Entered:</span> {new Date(v.actual_check_in || v.expected_check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    {isOverdue && <span className="overdue-tag">⚠️ OVERDUE</span>}
+                    {isOverdue && <span className="overdue-tag">️ OVERDUE</span>}
                   </div>
 
                   {userRole !== 'STUDENT' && (
@@ -140,7 +140,7 @@ export default function RecentVisitorsSection({ userRole, onRequestNewVisitor })
                         className="btn-checkout-sm"
                         onClick={() => handleQuickCheckOut(v.id)}
                       >
-                        🏁 Check Out
+                         Check Out
                       </button>
                     </div>
                   )}

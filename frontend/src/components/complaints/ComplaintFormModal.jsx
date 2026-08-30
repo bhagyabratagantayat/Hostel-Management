@@ -79,7 +79,7 @@ const ComplaintFormModal = ({ isOpen, onClose, onSuccess, onSubmitSuccess }) => 
       >
         <div className="modal-header">
           <div>
-            <h2 className="modal-title">📝 Submit New Complaint</h2>
+            <h2 className="modal-title">Submit New Complaint</h2>
             <p className="modal-sub">Report an issue in your hostel room or common premises</p>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">×</button>

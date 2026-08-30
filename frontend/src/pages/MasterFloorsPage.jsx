@@ -185,15 +185,15 @@ const MasterFloorsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Floors</span>
           </div>
-          <h1 className="master-title">📑 Floor Management</h1>
+          <h1 className="master-title">Floor Management</h1>
           <p className="master-subtitle">Manage hostel floor levels, floor numbers, and floor names.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button onClick={handleGenerateDefaultFloors} className="master-action-btn btn-action-edit">
-            <span>⚡</span> Generate Ground to 10th
+            <span></span> Generate Ground to 10th
           </button>
           <button onClick={handleOpenCreateModal} className="master-btn-primary">
-            <span>➕</span> Add New Floor
+            <span></span> Add New Floor
           </button>
         </div>
       </div>
@@ -218,7 +218,7 @@ const MasterFloorsPage = () => {
 
           {/* Search Input */}
           <div className="master-search-box">
-            <span className="master-search-icon">🔍</span>
+            <span className="master-search-icon"></span>
             <input
               type="text"
               className="master-search-input"
@@ -239,7 +239,7 @@ const MasterFloorsPage = () => {
 
       {error && (
         <div className="master-alert-error">
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -248,7 +248,7 @@ const MasterFloorsPage = () => {
         <Loading message="Loading floors list..." />
       ) : floors.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon">📑</span>
+          <span className="master-empty-icon"></span>
           <h3 className="master-empty-title">No Floors Found</h3>
           <p className="master-empty-desc">Select another hostel filter or generate default floors.</p>
           <button
@@ -256,7 +256,7 @@ const MasterFloorsPage = () => {
             className="master-btn-primary"
             style={{ marginTop: '16px' }}
           >
-            ⚡ Generate Ground to 10th Floor
+            Generate Ground to 10th Floor
           </button>
         </div>
       ) : (
@@ -279,7 +279,7 @@ const MasterFloorsPage = () => {
                   <tr key={f.id}>
                     <td>
                       <div className="master-cell-room">
-                        <span className="master-room-icon" style={{ background: '#ede9fe', color: '#6d28d9' }}>📑</span>
+                        <span className="master-room-icon" style={{ background: '#ede9fe', color: '#6d28d9' }}></span>
                         <span>{f.floor_name}</span>
                       </div>
                     </td>
@@ -290,8 +290,7 @@ const MasterFloorsPage = () => {
                     </td>
                     <td>{f.hostel_name || 'Hostel'}</td>
                     <td>
-                      <span style={{ fontSize: '13px', color: '#475569' }}>
-                        🚪 <strong>{f.total_rooms ?? 0}</strong> rooms • 🛏️ <strong>{f.total_beds ?? 0}</strong> beds
+                      <span style={{ fontSize: '13px', color: '#475569' }}><strong>{f.total_rooms ?? 0}</strong> rooms • <strong>{f.total_beds ?? 0}</strong> beds
                       </span>
                     </td>
                     <td>
@@ -306,13 +305,13 @@ const MasterFloorsPage = () => {
                           onClick={() => handleOpenEditModal(f)}
                           className="master-action-btn btn-action-edit"
                         >
-                          ✏️ Edit
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDeleteFloor(f.id, f.floor_name)}
                           className="master-action-btn btn-action-delete"
                         >
-                          🗑️ Delete
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -342,10 +341,10 @@ const MasterFloorsPage = () => {
                 </div>
                 <div className="master-mobile-card-actions">
                   <button onClick={() => handleOpenEditModal(f)} className="master-action-btn btn-action-edit">
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button onClick={() => handleDeleteFloor(f.id, f.floor_name)} className="master-action-btn btn-action-delete">
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
               </div>
@@ -383,14 +382,14 @@ const MasterFloorsPage = () => {
           <div className="master-modal-content">
             <div className="master-modal-header">
               <h2 className="master-modal-title">
-                {editingFloor ? '✏️ Edit Floor' : '➕ Create New Floor'}
+                {editingFloor ? 'Edit Floor' : '+ Create New Floor'}
               </h2>
               <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
 
             {modalError && (
               <div className="master-alert-error">
-                <span>⚠️ {modalError}</span>
+                <span>{modalError}</span>
               </div>
             )}
 

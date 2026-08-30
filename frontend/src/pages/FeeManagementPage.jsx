@@ -224,7 +224,7 @@ const FeeManagementPage = () => {
       {/* Page Header */}
       <div className="page-header">
         <div className="page-title-group">
-          <h1>💳 Hostel Fees & Payment Management</h1>
+          <h1>Hostel Fees & Payment Management</h1>
           <p className="page-subtitle">
             {isStudent
               ? 'View your assigned hostel dues, payment status, and download official receipts.'
@@ -235,17 +235,17 @@ const FeeManagementPage = () => {
         {isStaff && (
           <div className="page-actions">
             <button className="btn-primary" onClick={() => setIsAssignModalOpen(true)}>
-              📌 Assign Fee
+              Assign Fee
             </button>
             <button className="btn-secondary" onClick={() => setIsStructureModalOpen(true)}>
-              ➕ New Structure
+              + New Structure
             </button>
           </div>
         )}
       </div>
 
-      {successMessage && <div className="toast-success-banner">✅ {successMessage}</div>}
-      {error && <div className="toast-error-banner">❌ {error}</div>}
+      {successMessage && <div className="toast-success-banner">{successMessage}</div>}
+      {error && <div className="toast-error-banner">{error}</div>}
 
       {/* Financial Summary Cards */}
       <FeeSummaryCards summary={summary} isStudent={isStudent} />
@@ -257,7 +257,7 @@ const FeeManagementPage = () => {
             className={`tab-link ${activeTab === 'my_fees' ? 'active' : ''}`}
             onClick={() => setActiveTab('my_fees')}
           >
-            📋 My Fee Dues & Payments
+            My Fee Dues & Payments
           </button>
         ) : (
           <>
@@ -265,19 +265,19 @@ const FeeManagementPage = () => {
               className={`tab-link ${activeTab === 'student_fees' ? 'active' : ''}`}
               onClick={() => setActiveTab('student_fees')}
             >
-              🎓 Student Fee Dues ({studentFees.length})
+              Student Fee Dues ({studentFees.length})
             </button>
             <button
               className={`tab-link ${activeTab === 'structures' ? 'active' : ''}`}
               onClick={() => setActiveTab('structures')}
             >
-              ⚙️ Fee Structures ({feeStructures.length})
+              Fee Structures ({feeStructures.length})
             </button>
             <button
               className={`tab-link ${activeTab === 'payments' ? 'active' : ''}`}
               onClick={() => setActiveTab('payments')}
             >
-              🧾 Payment Ledger ({payments.length})
+              Payment Ledger ({payments.length})
             </button>
           </>
         )}
@@ -287,7 +287,7 @@ const FeeManagementPage = () => {
       <div className="fee-filters-bar">
         {!isStudent && (
           <div className="filter-input-wrapper">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"></span>
             <input
               type="text"
               placeholder="Search student name or code..."
@@ -352,7 +352,7 @@ const FeeManagementPage = () => {
             <div className="tab-content">
               {studentFees.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">💸</div>
+                  <div className="empty-icon"></div>
                   <h3>No Fee Records Found</h3>
                   <p>No fee dues match your current filter selection.</p>
                 </div>
@@ -429,7 +429,7 @@ const FeeManagementPage = () => {
                                   className="btn-sm secondary"
                                   onClick={() => handleViewFeeDetails(fee.id)}
                                 >
-                                  📜 History
+                                  History
                                 </button>
                                 {isStaff && fee.remaining_amount > 0 && fee.status !== 'PAID' && fee.status !== 'WAIVED' && (
                                   <button
@@ -439,7 +439,7 @@ const FeeManagementPage = () => {
                                       setIsPaymentModalOpen(true);
                                     }}
                                   >
-                                    💵 Pay
+                                    Pay
                                   </button>
                                 )}
                                 {isSuperAdmin && fee.status !== 'PAID' && fee.status !== 'WAIVED' && (
@@ -450,7 +450,7 @@ const FeeManagementPage = () => {
                                       setIsWaiverModalOpen(true);
                                     }}
                                   >
-                                    🛡️ Waive
+                                    Waive
                                   </button>
                                 )}
                               </div>
@@ -470,7 +470,7 @@ const FeeManagementPage = () => {
             <div className="tab-content">
               {feeStructures.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">⚙️</div>
+                  <div className="empty-icon"></div>
                   <h3>No Fee Structures Configured</h3>
                   <p>Click "New Structure" to create reusable fee rules for hostels.</p>
                 </div>
@@ -517,7 +517,7 @@ const FeeManagementPage = () => {
             <div className="tab-content">
               {payments.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">🧾</div>
+                  <div className="empty-icon"></div>
                   <h3>No Payment Records</h3>
                   <p>Recorded payment receipts will appear here.</p>
                 </div>
@@ -558,7 +558,7 @@ const FeeManagementPage = () => {
                               className="btn-sm secondary"
                               onClick={() => handleViewReceipt(p.id)}
                             >
-                              🧾 View Receipt
+                              View Receipt
                             </button>
                           </td>
                         </tr>

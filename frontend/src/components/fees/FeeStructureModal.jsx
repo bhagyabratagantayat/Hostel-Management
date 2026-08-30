@@ -45,7 +45,7 @@ const FeeStructureModal = ({ isOpen, onClose, onSubmit, hostels = [], isSuperAdm
     <div className="modal-backdrop">
       <div className="modal-box glassmorphic">
         <div className="modal-header">
-          <h3>➕ Create New Fee Structure</h3>
+          <h3>Create New Fee Structure</h3>
           <button className="btn-close" onClick={onClose}>&times;</button>
         </div>
 

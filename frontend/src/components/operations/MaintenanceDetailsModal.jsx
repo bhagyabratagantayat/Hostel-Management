@@ -5,6 +5,7 @@ import {
   updateMaintenancePriority,
   addMaintenanceUpdate
 } from '../../api/operations';
+import '../../pages/MaintenancePage.css';
 
 export default function MaintenanceDetailsModal({
   isOpen,
@@ -18,7 +19,6 @@ export default function MaintenanceDetailsModal({
   const [resolutionNote, setResolutionNote] = useState('');
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
   const [actionError, setActionError] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
 
@@ -27,7 +27,7 @@ export default function MaintenanceDetailsModal({
   const handleStatusChange = async (targetStatus) => {
     setActionError(null);
     if (targetStatus === 'RESOLVED' && !resolutionNote.trim()) {
-      setActionError('Resolution note is required when resolving a request.');
+      setActionError('A resolution note is required when marking a request as resolved.');
       return;
     }
     setLoadingAction(true);
@@ -91,102 +91,128 @@ export default function MaintenanceDetailsModal({
   };
 
   const getPriorityBadge = (p) => {
-    switch (p) {
-      case 'URGENT': return <span className="badge bg-danger text-white">URGENT</span>;
-      case 'HIGH': return <span className="badge bg-warning text-dark">HIGH</span>;
-      case 'MEDIUM': return <span className="badge bg-info text-dark">MEDIUM</span>;
-      default: return <span className="badge bg-secondary">LOW</span>;
-    }
+    const priorityKey = (p || 'LOW').toLowerCase();
+    return <span className={`priority-pill priority-${priorityKey}`}>{p || 'LOW'}</span>;
   };
 
   const getStatusBadge = (s) => {
-    switch (s) {
-      case 'OPEN': return <span className="badge bg-secondary">OPEN</span>;
-      case 'ASSIGNED': return <span className="badge bg-info text-dark">ASSIGNED</span>;
-      case 'IN_PROGRESS': return <span className="badge bg-primary">IN_PROGRESS</span>;
-      case 'RESOLVED': return <span className="badge bg-success">RESOLVED</span>;
-      case 'CLOSED': return <span className="badge bg-dark">CLOSED</span>;
-      case 'REOPENED': return <span className="badge bg-danger">REOPENED</span>;
-      default: return <span className="badge bg-secondary">{s}</span>;
-    }
+    const statusKey = (s || 'OPEN').toLowerCase();
+    return <span className={`status-pill status-${statusKey}`}>{(s || 'OPEN').replace('_', ' ')}</span>;
   };
 
   return (
-    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
-      <div className="modal-dialog modal-dialog-centered modal-xl">
-        <div className="modal-content shadow">
-          <div className="modal-header bg-dark text-white">
-            <h5 className="modal-title">
-              Maintenance Request #{request.id}: {request.title}
-            </h5>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Close"></button>
-          </div>
+    <div className="modal-backdrop-custom" onClick={onClose}>
+      <div 
+        className="modal-dialog-custom"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Modal Header */}
+        <div className="modal-header-custom">
+          <h2 className="modal-title-custom">
+            <span>Maintenance Request #{request.id}</span>
+            <span className="badge-id" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>
+              {request.category}
+            </span>
+          </h2>
+          <button 
+            type="button" 
+            className="modal-close-btn-custom" 
+            onClick={onClose} 
+            aria-label="Close modal"
+          >
+            &times;
+          </button>
+        </div>
 
-          <div className="modal-body">
-            {actionError && (
-              <div className="alert alert-danger p-2 small mb-3">
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                {actionError}
+        {/* Modal Body */}
+        <div className="modal-body-custom">
+          {actionError && (
+            <div className="alert-error-custom">
+              <span>️</span>
+              <div>{actionError}</div>
+            </div>
+          )}
+
+          <div className="modal-grid-2col">
+            {/* Left Column: Details & Actions */}
+            <div>
+              {/* Request Status & Priority Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {getStatusBadge(request.status)}
+                  {getPriorityBadge(request.priority)}
+                </div>
+                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                   Reported: {new Date(request.reported_at || request.created_at).toLocaleString()}
+                </span>
               </div>
-            )}
 
-            <div className="row g-4">
-              {/* Left Column: Details & Actions */}
-              <div className="col-12 col-lg-7 border-end-lg">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <div>
-                    <span className="me-2">{getStatusBadge(request.status)}</span>
-                    <span>{getPriorityBadge(request.priority)}</span>
-                    <span className="badge bg-light text-dark border ms-2">{request.category}</span>
-                  </div>
-                  <small className="text-muted">
-                    Reported: {new Date(request.reported_at || request.created_at).toLocaleString()}
-                  </small>
+              {/* Title & Description Card */}
+              <div className="info-card-box">
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: '0 0 8px 0' }}>
+                  {request.title}
+                </h3>
+                <div className="info-label">Description</div>
+                <p className="info-desc-text">{request.description}</p>
+              </div>
+
+              {/* Location & Metadata Grid */}
+              <div className="info-meta-grid">
+                <div>
+                  <div className="meta-field-label">Assigned Hostel</div>
+                  <div className="meta-field-value">{request.hostel_name || 'N/A'}</div>
                 </div>
-
-                <div className="card bg-light border-0 p-3 mb-3">
-                  <h6 className="font-weight-bold mb-1">Description</h6>
-                  <p className="mb-0 text-secondary" style={{ whiteSpace: 'pre-wrap' }}>{request.description}</p>
-                </div>
-
-                {/* Location & Metadata */}
-                <div className="row g-2 mb-3 small">
-                  <div className="col-6 col-md-4">
-                    <strong>Hostel:</strong> {request.hostel_name || 'N/A'}
-                  </div>
-                  <div className="col-6 col-md-4">
-                    <strong>Room / Bed:</strong> {request.room_number ? `Room ${request.room_number}` : 'N/A'} {request.bed_number ? `(Bed ${request.bed_number})` : ''}
-                  </div>
-                  <div className="col-6 col-md-4">
-                    <strong>Reported By:</strong> {request.student_name || request.reporter_name || 'N/A'}
-                  </div>
-                  <div className="col-6 col-md-4">
-                    <strong>Assigned To:</strong> {request.assignee_name || <span className="text-muted">Unassigned</span>}
-                  </div>
-                  <div className="col-6 col-md-4">
-                    <strong>Started At:</strong> {request.started_at ? new Date(request.started_at).toLocaleString() : 'Not started'}
-                  </div>
-                  <div className="col-6 col-md-4">
-                    <strong>Resolved At:</strong> {request.resolved_at ? new Date(request.resolved_at).toLocaleString() : 'Unresolved'}
+                <div>
+                  <div className="meta-field-label">Room & Bed</div>
+                  <div className="meta-field-value">
+                    {request.room_number ? `Room ${request.room_number}` : 'N/A'} {request.bed_number ? `(Bed ${request.bed_number})` : ''}
                   </div>
                 </div>
-
-                {request.resolution_note && (
-                  <div className="alert alert-success p-2 small mb-3">
-                    <strong>Resolution Note:</strong> {request.resolution_note}
+                <div>
+                  <div className="meta-field-label">Reported By</div>
+                  <div className="meta-field-value">{request.student_name || request.reporter_name || 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="meta-field-label">Assigned Staff</div>
+                  <div className="meta-field-value">
+                    {request.assignee_name ? ` ${request.assignee_name}` : <span style={{ color: '#94a3b8', fontWeight: 500 }}>Unassigned</span>}
                   </div>
-                )}
+                </div>
+                <div>
+                  <div className="meta-field-label">Started At</div>
+                  <div className="meta-field-value" style={{ fontWeight: 500 }}>
+                    {request.started_at ? new Date(request.started_at).toLocaleString() : 'Not started'}
+                  </div>
+                </div>
+                <div>
+                  <div className="meta-field-label">Resolved At</div>
+                  <div className="meta-field-value" style={{ fontWeight: 500 }}>
+                    {request.resolved_at ? new Date(request.resolved_at).toLocaleString() : 'Unresolved'}
+                  </div>
+                </div>
+              </div>
 
-                {/* Controls & Status Management */}
-                <hr />
-                <h6 className="font-weight-bold mb-2">Actions & Workflow</h6>
+              {/* Existing Resolution Summary if already resolved */}
+              {request.resolution_note && (
+                <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '14px', marginBottom: '18px' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', marginBottom: '4px' }}>
+                    ✓ Resolution Summary
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: '#14532d' }}>{request.resolution_note}</div>
+                </div>
+              )}
+
+              {/* Actions & Workflow Panel */}
+              <div className="workflow-actions-box">
+                <h4 className="workflow-heading">Actions & Workflow Management</h4>
 
                 {isStaff ? (
-                  <div className="vstack gap-3">
+                  <>
                     {/* Staff Assignment */}
-                    <form onSubmit={handleAssign} className="d-flex gap-2">
+                    <form onSubmit={handleAssign} className="workflow-inline-form">
                       <select
-                        className="form-select form-select-sm"
                         value={selectedAssignee}
                         onChange={(e) => setSelectedAssignee(e.target.value)}
                       >
@@ -195,15 +221,18 @@ export default function MaintenanceDetailsModal({
                           <option key={s.id} value={s.id}>{s.username} ({s.role})</option>
                         ))}
                       </select>
-                      <button type="submit" className="btn btn-outline-primary btn-sm text-nowrap" disabled={loadingAction || !selectedAssignee}>
-                        Assign
+                      <button 
+                        type="submit" 
+                        className="btn-action-outline"
+                        disabled={loadingAction || !selectedAssignee}
+                      >
+                        Assign Staff
                       </button>
                     </form>
 
                     {/* Priority Change */}
-                    <form onSubmit={handlePriorityChange} className="d-flex gap-2">
+                    <form onSubmit={handlePriorityChange} className="workflow-inline-form">
                       <select
-                        className="form-select form-select-sm"
                         value={selectedPriority}
                         onChange={(e) => setSelectedPriority(e.target.value)}
                       >
@@ -213,17 +242,23 @@ export default function MaintenanceDetailsModal({
                         <option value="HIGH">HIGH</option>
                         <option value="URGENT">URGENT</option>
                       </select>
-                      <button type="submit" className="btn btn-outline-warning btn-sm text-nowrap" disabled={loadingAction || !selectedPriority}>
+                      <button 
+                        type="submit" 
+                        className="btn-action-outline"
+                        style={{ borderColor: '#f59e0b', color: '#d97706' }}
+                        disabled={loadingAction || !selectedPriority}
+                      >
                         Set Priority
                       </button>
                     </form>
 
-                    {/* Status Action Buttons */}
-                    <div className="d-flex flex-wrap gap-2">
+                    {/* Quick Status Action Buttons */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {request.status !== 'IN_PROGRESS' && request.status !== 'RESOLVED' && request.status !== 'CLOSED' && (
                         <button
                           type="button"
-                          className="btn btn-primary btn-sm"
+                          className="btn-action-outline"
+                          style={{ borderColor: '#3b82f6', color: '#2563eb', background: '#eff6ff' }}
                           onClick={() => handleStatusChange('IN_PROGRESS')}
                           disabled={loadingAction}
                         >
@@ -234,7 +269,8 @@ export default function MaintenanceDetailsModal({
                       {request.status === 'RESOLVED' && (
                         <button
                           type="button"
-                          className="btn btn-dark btn-sm"
+                          className="btn-action-outline"
+                          style={{ borderColor: '#475569', color: '#334155', background: '#f8fafc' }}
                           onClick={() => handleStatusChange('CLOSED')}
                           disabled={loadingAction}
                         >
@@ -245,94 +281,112 @@ export default function MaintenanceDetailsModal({
 
                     {/* Resolution Form */}
                     {request.status !== 'RESOLVED' && request.status !== 'CLOSED' && (
-                      <div className="card p-2 bg-light border">
-                        <label className="form-label small font-weight-bold mb-1">Resolve Request</label>
+                      <div className="resolution-panel">
+                        <div className="resolution-panel-title">
+                          ✓ Mark Resolved & Record Notes
+                        </div>
                         <textarea
-                          className="form-control form-control-sm mb-2"
+                          className="resolution-textarea"
                           rows="2"
-                          placeholder="Enter resolution notes (e.g. Replaced faulty wiring / fixed faucet)..."
+                          placeholder="Describe work completed (e.g. Replaced faulty washer in tap / Fixed wiring)..."
                           value={resolutionNote}
                           onChange={(e) => setResolutionNote(e.target.value)}
-                        ></textarea>
+                        />
                         <button
                           type="button"
-                          className="btn btn-success btn-sm align-self-start"
+                          className="btn-resolve-success"
                           onClick={() => handleStatusChange('RESOLVED')}
                           disabled={loadingAction || !resolutionNote.trim()}
                         >
-                          Mark Resolved
+                          Confirm & Mark Resolved
                         </button>
                       </div>
                     )}
-                  </div>
+                  </>
                 ) : (
                   <div>
                     {request.status === 'RESOLVED' && (
-                      <div className="mb-3">
+                      <div>
                         <button
                           type="button"
-                          className="btn btn-danger btn-sm me-2"
+                          className="btn-action-outline"
+                          style={{ borderColor: '#ef4444', color: '#dc2626', background: '#fef2f2' }}
                           onClick={() => handleStatusChange('REOPENED')}
                           disabled={loadingAction}
                         >
-                          <i className="bi bi-arrow-counterclockwise me-1"></i>
                           Reopen Request (Issue Not Fixed)
                         </button>
                       </div>
                     )}
                     {request.status !== 'RESOLVED' && (
-                      <p className="text-muted small">
-                        Status changes are managed by hostel superintendents and maintenance staff. You will be notified when resolved.
+                      <p style={{ color: '#64748b', fontSize: '0.86rem', margin: 0 }}>
+                        Status updates are tracked by hostel superintendents and maintenance staff.
                       </p>
                     )}
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Right Column: Updates Timeline */}
-              <div className="col-12 col-lg-5">
-                <h6 className="font-weight-bold mb-3">Activity & Timeline History</h6>
+            {/* Right Column: Updates & Timeline */}
+            <div className="timeline-section">
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                 Activity & Timeline History
+              </h4>
 
-                <div className="timeline-container pe-1" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                  {request.updates && request.updates.length > 0 ? (
-                    <div className="vstack gap-2">
-                      {request.updates.map((u) => (
-                        <div key={u.id} className="p-2 border rounded bg-white shadow-sm small">
-                          <div className="d-flex justify-content-between text-muted mb-1" style={{ fontSize: '0.75rem' }}>
-                            <span><strong>{u.user_name}</strong> ({u.user_role})</span>
-                            <span>{new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                          <p className="mb-0 text-dark">{u.message}</p>
+              <div className="timeline-list">
+                {request.updates && request.updates.length > 0 ? (
+                  request.updates.map((u) => (
+                    <div key={u.id} className="timeline-item-card">
+                      <div className="timeline-item-header">
+                        <div>
+                          <span className="timeline-author">{u.user_name || 'Staff'}</span>
+                          <span className="timeline-role-tag">{u.user_role || 'STAFF'}</span>
                         </div>
-                      ))}
+                        <span className="timeline-time">
+                          {new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="timeline-message">{u.message}</p>
                     </div>
-                  ) : (
-                    <div className="text-muted small italic">No updates recorded yet.</div>
-                  )}
-                </div>
-
-                {/* Add Comment Box */}
-                <form onSubmit={handleAddComment} className="mt-3">
-                  <div className="input-group input-group-sm">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Add an update comment..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                    />
-                    <button type="submit" className="btn btn-primary" disabled={loadingAction || !newComment.trim()}>
-                      Send
-                    </button>
+                  ))
+                ) : (
+                  <div style={{ color: '#94a3b8', fontSize: '0.86rem', fontStyle: 'italic', padding: '16px', textAlign: 'center', background: '#f8fafc', borderRadius: '8px' }}>
+                    No timeline updates recorded yet.
                   </div>
-                </form>
+                )}
               </div>
+
+              {/* Add Comment Form */}
+              <form onSubmit={handleAddComment} className="add-comment-box">
+                <input
+                  type="text"
+                  className="add-comment-input"
+                  placeholder="Add a progress update comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <button 
+                  type="submit" 
+                  className="btn-send-comment"
+                  disabled={loadingAction || !newComment.trim()}
+                >
+                  Send
+                </button>
+              </form>
             </div>
           </div>
+        </div>
 
-          <div className="modal-footer bg-light">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
-          </div>
+        {/* Modal Footer */}
+        <div className="modal-footer-custom">
+          <button 
+            type="button" 
+            className="filter-reset-btn"
+            onClick={onClose}
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

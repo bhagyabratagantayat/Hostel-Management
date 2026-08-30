@@ -68,7 +68,7 @@ const AssignFeeModal = ({
     <div className="modal-backdrop">
       <div className="modal-box glassmorphic">
         <div className="modal-header">
-          <h3>📌 Assign Fee to Student(s)</h3>
+          <h3>Assign Fee to Student(s)</h3>
           <button className="btn-close" onClick={onClose}>&times;</button>
         </div>
 
@@ -78,14 +78,14 @@ const AssignFeeModal = ({
             className={`tab-btn ${!isBulk ? 'active' : ''}`}
             onClick={() => { setIsBulk(false); setError(''); }}
           >
-            👤 Single Student
+            Single Student
           </button>
           <button
             type="button"
             className={`tab-btn ${isBulk ? 'active' : ''}`}
             onClick={() => { setIsBulk(true); setError(''); }}
           >
-            👥 Bulk Hostel Assignment
+            Bulk Hostel Assignment
           </button>
         </div>
 

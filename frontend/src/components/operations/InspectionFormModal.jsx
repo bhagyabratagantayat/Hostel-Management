@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createInspection } from '../../api/operations';
+import '../../pages/MaintenancePage.css';
 
 const CONDITION_OPTIONS = [
-  { value: 'GOOD', label: 'Good (Normal)', badgeClass: 'bg-success' },
-  { value: 'ATTENTION_REQUIRED', label: 'Attention Required', badgeClass: 'bg-warning text-dark' },
-  { value: 'CRITICAL', label: 'Critical Issue', badgeClass: 'bg-danger' }
+  { value: 'GOOD', label: 'Good (Normal)', color: '#16a34a', bg: '#dcfce7' },
+  { value: 'ATTENTION_REQUIRED', label: 'Attention Required', color: '#d97706', bg: '#fef3c7' },
+  { value: 'CRITICAL', label: 'Critical Issue', color: '#dc2626', bg: '#fee2e2' }
 ];
 
 export default function InspectionFormModal({
@@ -32,7 +33,6 @@ export default function InspectionFormModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch floors when hostel_id changes
   useEffect(() => {
     if (!isOpen) return;
     if (formData.hostel_id) {
@@ -48,7 +48,6 @@ export default function InspectionFormModal({
     }
   }, [formData.hostel_id, hostels, isOpen]);
 
-  // Fetch rooms when floor_id changes
   useEffect(() => {
     if (!isOpen) return;
     if (formData.floor_id) {
@@ -71,10 +70,9 @@ export default function InspectionFormModal({
     setSubmitting(true);
 
     try {
-      const result = await createInspection(formData);
+      await createInspection(formData);
       onSuccess();
       
-      // Check if any critical/attention condition exists and offer to create maintenance request
       const hasCriticalOrAttention = [
         formData.cleanliness_status,
         formData.electrical_status,
@@ -116,122 +114,187 @@ export default function InspectionFormModal({
   };
 
   const renderRadioGroup = (key, label) => (
-    <div className="mb-3 border-bottom pb-2" key={key}>
-      <label className="form-label font-weight-bold d-block mb-1">{label}</label>
-      <div className="btn-group btn-group-sm w-100" role="group" aria-label={label}>
-        {CONDITION_OPTIONS.map(opt => (
-          <React.Fragment key={opt.value}>
-            <input
-              type="radio"
-              className="btn-check"
-              name={key}
-              id={`${key}-${opt.value}`}
-              value={opt.value}
-              checked={formData[key] === opt.value}
-              onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-            />
-            <label className={`btn ${formData[key] === opt.value ? opt.badgeClass : 'btn-outline-secondary'}`} htmlFor={`${key}-${opt.value}`}>
-              {opt.label}
-            </label>
-          </React.Fragment>
-        ))}
+    <div key={key} style={{ padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+        {label}
+      </label>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        {CONDITION_OPTIONS.map(opt => {
+          const isSelected = formData[key] === opt.value;
+          return (
+            <button
+              type="button"
+              key={opt.value}
+              onClick={() => setFormData({ ...formData, [key]: opt.value })}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: isSelected ? `2px solid ${opt.color}` : '1.5px solid #cbd5e1',
+                background: isSelected ? opt.bg : '#ffffff',
+                color: isSelected ? opt.color : '#475569',
+                fontWeight: isSelected ? 700 : 500,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+            >
+              {isSelected ? '● ' : ''}{opt.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 
   return (
-    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
-      <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="modal-content shadow">
-          <div className="modal-header bg-dark text-white">
-            <h5 className="modal-title">
-              <i className="bi bi-clipboard-check me-2"></i>
-              New Room Inspection Checklist
-            </h5>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Close"></button>
+    <div className="modal-backdrop-custom" onClick={onClose}>
+      <div 
+        className="modal-dialog-custom" 
+        style={{ maxWidth: '750px' }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog" 
+        aria-modal="true"
+      >
+        {/* Modal Header */}
+        <div className="modal-header-custom">
+          <h2 className="modal-title-custom">
+            <span>New Room Inspection Checklist</span>
+          </h2>
+          <button 
+            type="button" 
+            className="modal-close-btn-custom" 
+            onClick={onClose} 
+            aria-label="Close modal"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <div className="modal-body-custom">
+            {error && (
+              <div className="alert-error-custom">
+                <span>️</span>
+                <div>{error}</div>
+              </div>
+            )}
+
+            {/* Location Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '16px', borderRadius: '12px', marginBottom: '18px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                  Hostel <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <select
+                  className="filter-select"
+                  style={{ width: '100%' }}
+                  value={formData.hostel_id}
+                  onChange={(e) => setFormData({ ...formData, hostel_id: e.target.value, floor_id: '', room_id: '' })}
+                  required
+                >
+                  <option value="">Select Hostel</option>
+                  {hostels.map(h => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                  Floor
+                </label>
+                <select
+                  className="filter-select"
+                  style={{ width: '100%' }}
+                  value={formData.floor_id}
+                  onChange={(e) => setFormData({ ...formData, floor_id: e.target.value, room_id: '' })}
+                >
+                  <option value="">Select Floor (Optional)</option>
+                  {floors.map(f => (
+                    <option key={f.id} value={f.id}>{f.floor_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                  Room
+                </label>
+                <select
+                  className="filter-select"
+                  style={{ width: '100%' }}
+                  value={formData.room_id}
+                  onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                >
+                  <option value="">Select Room (Optional)</option>
+                  {rooms.map(r => (
+                    <option key={r.id} value={r.id}>Room {r.room_number}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                  Inspection Date
+                </label>
+                <input
+                  type="date"
+                  className="filter-search-input"
+                  style={{ paddingLeft: '12px' }}
+                  value={formData.inspection_date}
+                  onChange={(e) => setFormData({ ...formData, inspection_date: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Inspection Items */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', marginBottom: '18px' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0f172a', marginBottom: '10px' }}>
+                 Physical Condition Checklist
+              </div>
+              {renderRadioGroup('cleanliness_status', '1. Cleanliness & Hygiene')}
+              {renderRadioGroup('electrical_status', '2. Electrical Fixtures & Wiring')}
+              {renderRadioGroup('plumbing_status', '3. Plumbing, Taps & Washroom')}
+              {renderRadioGroup('furniture_status', '4. Study Tables, Chairs & Cupboards')}
+              {renderRadioGroup('bed_status', '5. Beds & Mattresses')}
+              {renderRadioGroup('safety_status', '6. Doors, Windows & Safety Latches')}
+            </div>
+
+            {/* Remarks */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Inspection Remarks & Action Items
+              </label>
+              <textarea
+                className="resolution-textarea"
+                rows="2"
+                placeholder="Enter observations, damages found, or recommendations..."
+                value={formData.remarks}
+                onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              {error && (
-                <div className="alert alert-danger p-2 small mb-3">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  {error}
-                </div>
-              )}
-
-              {/* Location Selectors */}
-              <div className="row g-3 mb-3 bg-light p-3 rounded border">
-                <div className="col-12 col-md-4">
-                  <label className="form-label font-weight-bold">Hostel <span className="text-danger">*</span></label>
-                  <select
-                    className="form-select form-select-sm"
-                    value={formData.hostel_id}
-                    onChange={(e) => setFormData({ ...formData, hostel_id: e.target.value, floor_id: '', room_id: '' })}
-                    required
-                  >
-                    <option value="">Select Hostel</option>
-                    {hostels.map(h => (
-                      <option key={h.id} value={h.id}>{h.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-6 col-md-4">
-                  <label className="form-label font-weight-bold">Floor ID <span className="text-danger">*</span></label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    placeholder="Floor ID"
-                    value={formData.floor_id}
-                    onChange={(e) => setFormData({ ...formData, floor_id: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="col-6 col-md-4">
-                  <label className="form-label font-weight-bold">Room ID <span className="text-danger">*</span></label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    placeholder="Room ID"
-                    value={formData.room_id}
-                    onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Checklist Items */}
-              <h6 className="font-weight-bold mb-3 text-primary">Inspection Health Checklist</h6>
-              {renderRadioGroup('cleanliness_status', '1. Room Cleanliness')}
-              {renderRadioGroup('electrical_status', '2. Electrical Fittings & Appliances')}
-              {renderRadioGroup('plumbing_status', '3. Plumbing & Water Supply')}
-              {renderRadioGroup('furniture_status', '4. Furniture & Doors/Windows')}
-              {renderRadioGroup('bed_status', '5. Beds & Mattresses')}
-              {renderRadioGroup('safety_status', '6. Safety & Fire Precautions')}
-
-              {/* Remarks */}
-              <div className="mt-3">
-                <label className="form-label font-weight-bold">Inspector Remarks</label>
-                <textarea
-                  className="form-control"
-                  rows="2"
-                  placeholder="Optional observations or maintenance action suggestions..."
-                  value={formData.remarks}
-                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                ></textarea>
-              </div>
-            </div>
-
-            <div className="modal-footer bg-light">
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Cancel</button>
-              <button type="submit" className="btn btn-dark" disabled={submitting}>
-                {submitting ? 'Saving Inspection...' : 'Save Room Inspection'}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Modal Footer */}
+          <div className="modal-footer-custom">
+            <button 
+              type="button" 
+              className="filter-reset-btn"
+              onClick={onClose} 
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="btn-primary-gradient"
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'Record Room Inspection'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

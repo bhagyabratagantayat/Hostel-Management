@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Loading from './Loading';
+import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 /**
  * Route protection wrapper component.
@@ -27,7 +28,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return (
       <div className="forbidden-container">
         <div className="forbidden-card">
-          <div className="forbidden-icon">🚫</div>
+          <div className="forbidden-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+            <ShieldAlert size={48} color="#ef4444" />
+          </div>
           <h1 className="forbidden-title">Access Denied</h1>
           <p className="forbidden-message">
             You do not have the required permissions to access this page.
@@ -35,7 +38,8 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
           <p className="forbidden-subtext">
             Required role: <strong>[{allowedRoles.join(', ')}]</strong>. Your role: <strong>{user?.role}</strong>.
           </p>
-          <a href="/" className="btn btn-primary">
+          <a href="/" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <ArrowLeft size={16} />
             Back to Dashboard
           </a>
         </div>

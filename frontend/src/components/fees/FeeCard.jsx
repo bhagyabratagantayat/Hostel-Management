@@ -86,7 +86,7 @@ const FeeCard = ({
           className="btn-action secondary"
           onClick={() => onViewDetails(fee.id)}
         >
-          🔍 View History
+          View History
         </button>
 
         {isStaff && fee.remaining_amount > 0 && fee.status !== 'PAID' && fee.status !== 'WAIVED' && (
@@ -94,7 +94,7 @@ const FeeCard = ({
             className="btn-action primary"
             onClick={() => onRecordPayment(fee)}
           >
-            💵 Record Payment
+            Record Payment
           </button>
         )}
 
@@ -103,7 +103,7 @@ const FeeCard = ({
             className="btn-action danger"
             onClick={() => onWaiveFee(fee)}
           >
-            🛡️ Waive
+            Waive
           </button>
         )}
       </div>

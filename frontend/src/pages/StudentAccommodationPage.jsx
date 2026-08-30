@@ -40,7 +40,7 @@ const StudentAccommodationPage = () => {
     return (
       <div className="accommodation-container">
         <div className="error-box">
-          <h3>⚠️ Unable to Load Details</h3>
+          <h3>Unable to Load Details</h3>
           <p>{error || 'No accommodation profile found.'}</p>
           <button className="btn btn-primary btn-sm mt-3" onClick={fetchAccommodation}>
             Try Again
@@ -56,7 +56,7 @@ const StudentAccommodationPage = () => {
     <div className="accommodation-container">
       {/* Page Header */}
       <div className="page-intro">
-        <h1 className="page-title">🛏️ My Hostel Accommodation</h1>
+        <h1 className="page-title">My Hostel Accommodation</h1>
         <p className="page-subtitle">Your active room assignment, roommates, and complete stay history.</p>
       </div>
 
@@ -83,7 +83,7 @@ const StudentAccommodationPage = () => {
         {currentAllocation && (
           <div className="alloc-metrics-grid">
             <div className="metric-pill-box">
-              <span className="metric-icon">🚪</span>
+              <span className="metric-icon"></span>
               <div>
                 <span className="metric-label">Room No</span>
                 <div className="metric-value">Room {currentAllocation.room_number}</div>
@@ -91,7 +91,7 @@ const StudentAccommodationPage = () => {
             </div>
 
             <div className="metric-pill-box">
-              <span className="metric-icon">🛏️</span>
+              <span className="metric-icon"></span>
               <div>
                 <span className="metric-label">Bed Assignment</span>
                 <div className="metric-value">Bed {currentAllocation.bed_number}</div>
@@ -99,7 +99,7 @@ const StudentAccommodationPage = () => {
             </div>
 
             <div className="metric-pill-box">
-              <span className="metric-icon">🏢</span>
+              <span className="metric-icon"></span>
               <div>
                 <span className="metric-label">Floor</span>
                 <div className="metric-value">{currentAllocation.floor_name || 'Ground Floor'}</div>
@@ -107,7 +107,7 @@ const StudentAccommodationPage = () => {
             </div>
 
             <div className="metric-pill-box">
-              <span className="metric-icon">📅</span>
+              <span className="metric-icon"></span>
               <div>
                 <span className="metric-label">Stay Since</span>
                 <div className="metric-value">
@@ -126,7 +126,7 @@ const StudentAccommodationPage = () => {
         <div className="roommates-card">
           <div className="card-title-bar">
             <h3>
-              👥 Room Companions / Roommates
+              Room Companions / Roommates
             </h3>
             <span className="roommate-count-pill">
               {roommates.length === 0 ? 'No roommates currently' : `${roommates.length} Roommate${roommates.length > 1 ? 's' : ''}`}
@@ -153,7 +153,7 @@ const StudentAccommodationPage = () => {
                     <div className="roommate-info">
                       <strong className="roommate-name">{rm.full_name}</strong>
                       <span className="roommate-meta">{rm.branch} • Year {rm.year}</span>
-                      <span className="roommate-bed-tag">🛏️ Bed {rm.bed_number}</span>
+                      <span className="roommate-bed-tag">Bed {rm.bed_number}</span>
                     </div>
                   </div>
                 );
@@ -166,7 +166,7 @@ const StudentAccommodationPage = () => {
       {/* Stay History Timeline */}
       <div className="history-card">
         <div className="card-title-bar">
-          <h3>📜 Accommodation History</h3>
+          <h3>Accommodation History</h3>
           <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
             {history.length} Record{history.length !== 1 ? 's' : ''}
           </span>
@@ -221,7 +221,7 @@ const StudentAccommodationPage = () => {
 
       {/* Warden Help Box */}
       <div className="warden-help-card">
-        <div className="help-icon">ℹ️</div>
+        <div className="help-icon"></div>
         <div className="help-content">
           <h4>Room Change or Maintenance Inquiry?</h4>
           <p>

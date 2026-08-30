@@ -34,10 +34,10 @@ const ReportFilterBar = ({
             value={filters.hostel_id || 'all'}
             onChange={(e) => onFilterChange({ ...filters, hostel_id: e.target.value })}
           >
-            {isSuperAdmin && <option value="all">🏢 All Hostels</option>}
+            {isSuperAdmin && <option value="all"> All Hostels</option>}
             {hostels.map(h => (
               <option key={h.id} value={h.id}>
-                🏢 {h.name}
+                {h.name}
               </option>
             ))}
           </select>
@@ -102,7 +102,7 @@ const ReportFilterBar = ({
               onClick={onRefresh}
               disabled={loading}
             >
-              {loading ? '...' : '🔄 Refresh'}
+              {loading ? '...' : 'Refresh'}
             </button>
           </div>
         </div>

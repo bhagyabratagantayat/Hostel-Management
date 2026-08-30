@@ -15,7 +15,7 @@ const FeeDetailsModal = ({ isOpen, onClose, feeDetail, onViewReceipt }) => {
     <div className="modal-backdrop">
       <div className="modal-box glassmorphic large-modal-box">
         <div className="modal-header">
-          <h3>📜 Fee Record & Payment History</h3>
+          <h3>Fee Record & Payment History</h3>
           <button className="btn-close" onClick={onClose}>&times;</button>
         </div>
 
@@ -48,7 +48,7 @@ const FeeDetailsModal = ({ isOpen, onClose, feeDetail, onViewReceipt }) => {
 
           {/* Payments Section */}
           <div className="detail-section">
-            <h4>💳 Recorded Payments ({feeDetail.payments ? feeDetail.payments.length : 0})</h4>
+            <h4>Recorded Payments ({feeDetail.payments ? feeDetail.payments.length : 0})</h4>
             {feeDetail.payments && feeDetail.payments.length > 0 ? (
               <div className="table-responsive">
                 <table className="fee-table">
@@ -77,7 +77,7 @@ const FeeDetailsModal = ({ isOpen, onClose, feeDetail, onViewReceipt }) => {
                             className="btn-action secondary small"
                             onClick={() => onViewReceipt(p.id)}
                           >
-                            🧾 Receipt
+                            Receipt
                           </button>
                         </td>
                       </tr>
@@ -92,12 +92,12 @@ const FeeDetailsModal = ({ isOpen, onClose, feeDetail, onViewReceipt }) => {
 
           {/* Audit History Section */}
           <div className="detail-section">
-            <h4>🛡️ Audit History Trail</h4>
+            <h4> Audit History Trail</h4>
             {feeDetail.history && feeDetail.history.length > 0 ? (
               <div className="timeline-container">
                 {feeDetail.history.map((h) => (
                   <div className="timeline-item" key={h.id}>
-                    <div className="timeline-badge">{h.action === 'ASSIGNED' ? '📌' : h.action === 'PAYMENT_RECORDED' ? '💵' : '🛡️'}</div>
+                    <div className="timeline-badge">{h.action === 'ASSIGNED' ? '' : h.action === 'PAYMENT_RECORDED' ? '' : ''}</div>
                     <div className="timeline-content">
                       <div className="timeline-header">
                         <span className="action-tag">{h.action}</span>

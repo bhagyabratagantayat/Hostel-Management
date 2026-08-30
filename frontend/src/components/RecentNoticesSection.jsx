@@ -24,7 +24,7 @@ const RecentNoticesSection = ({
     <section className="recent-notices-section">
       <div className="section-header">
         <div className="header-left">
-          <h2 className="section-title">📢 Recent Announcements & Notices</h2>
+          <h2 className="section-title">Recent Announcements & Notices</h2>
           <span className="section-subtitle">Stay updated with official hostel communications</span>
         </div>
 
@@ -44,7 +44,7 @@ const RecentNoticesSection = ({
         </div>
       ) : notices.length === 0 ? (
         <div className="empty-notices-banner">
-          <span className="empty-icon">📭</span>
+          <span className="empty-icon"></span>
           <div className="empty-text">
             <h3>No recent notices</h3>
             <p>There are no active published notices at this time.</p>

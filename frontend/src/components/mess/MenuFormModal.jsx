@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const MEAL_OPTIONS = [
-  { value: 'BREAKFAST', label: '🌅 Breakfast (07:30 AM – 09:30 AM)' },
-  { value: 'LUNCH', label: '☀️ Lunch (12:30 PM – 02:30 PM)' },
-  { value: 'DINNER', label: '🌙 Dinner (07:30 PM – 09:30 PM)' }
+  { value: 'BREAKFAST', label: ' Breakfast (07:30 AM – 09:30 AM)' },
+  { value: 'LUNCH', label: ' Lunch (12:30 PM – 02:30 PM)' },
+  { value: 'DINNER', label: ' Dinner (07:30 PM – 09:30 PM)' }
 ];
 
 const DISH_PRESETS = [
@@ -118,7 +118,7 @@ const MenuFormModal = ({
       <div className="modal-container modal-md mess-form-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div>
-            <h3 className="modal-title">{editItem ? '✏️ Update Mess Food / Time-Table' : '➕ Add Meal to Time-Table'}</h3>
+            <h3 className="modal-title">{editItem ? '️ Update Mess Food / Time-Table' : ' Add Meal to Time-Table'}</h3>
             <p className="modal-sub">Update hostel mess food menu for breakfast, lunch, or dinner</p>
           </div>
           <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Close">×</button>

@@ -5,6 +5,8 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import becLogo from '../assets/BEC LOGO FINAL.png';
 
+import { Eye, EyeOff, AlertTriangle, Info } from 'lucide-react';
+
 const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -50,16 +52,16 @@ const Login = () => {
 
         {errorMsg && (
           <div className="login-error-alert">
-            <span className="alert-icon">⚠️</span>
+            <span className="alert-icon"><AlertTriangle size={16} /></span>
             <span className="alert-text">{errorMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="login-form">
           <Input
-            label="Email or Username"
+            label="Email, Registration No or Username"
             id="loginIdentifier"
-            placeholder="e.g. admin@hostel.com or superadmin"
+            placeholder="e.g. fullname@bec.ac.in, 2301316095, or superadmin"
             value={loginIdentifier}
             onChange={(e) => setLoginIdentifier(e.target.value)}
             required
@@ -70,7 +72,7 @@ const Login = () => {
               label="Password"
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
+              placeholder="•••••••• (Default: DDMMYYYY)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -80,10 +82,15 @@ const Login = () => {
               className="password-toggle-btn"
               onClick={() => setShowPassword(prev => !prev)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              {showPassword ? '👁️' : '🙈'}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+
+          <small style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '-10px', marginBottom: '14px', fontSize: '11.5px', color: '#64748b' }}>
+            <Info size={13} style={{ flexShrink: 0 }} /> <span><strong>Students:</strong> Sign in with your <code>fullname@bec.ac.in</code> email or Registration Number. Default password is your Date of Birth (format <code>DDMMYYYY</code>).</span>
+          </small>
 
           <Button
             type="submit"
@@ -95,11 +102,11 @@ const Login = () => {
         </form>
 
         <div className="login-footer">
-          <p>Development Test Accounts:</p>
+          <p>Quick Test Credentials:</p>
           <ul className="dev-accounts-list">
             <li><strong>Super Admin:</strong> <code>superadmin</code> / <code>password123</code></li>
             <li><strong>Warden:</strong> <code>warden</code> / <code>password123</code></li>
-            <li><strong>Student:</strong> <code>student</code> / <code>password123</code></li>
+            <li><strong>Student:</strong> <code>student@hostel.com</code> / <code>password123</code></li>
           </ul>
         </div>
       </div>

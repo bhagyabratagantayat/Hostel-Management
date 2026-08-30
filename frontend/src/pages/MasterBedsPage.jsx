@@ -216,7 +216,7 @@ const MasterBedsPage = () => {
 
   const handleDeleteBed = async (id, bedNum, status) => {
     if (status === 'OCCUPIED') {
-      alert(`⚠️ Occupied bed "${bedNum}" cannot be deleted while assigned to a student.`);
+      alert(`Occupied bed "${bedNum}" cannot be deleted while assigned to a student.`);
       return;
     }
     if (!window.confirm(`Are you sure you want to delete bed "${bedNum}"?`)) return;
@@ -256,11 +256,11 @@ const MasterBedsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Beds</span>
           </div>
-          <h1 className="master-title">🛏️ Bed Management</h1>
+          <h1 className="master-title">Bed Management</h1>
           <p className="master-subtitle">Manage bed identifiers, availability, and occupancy state guards.</p>
         </div>
         <button onClick={handleOpenCreateModal} className="master-btn-primary">
-          <span>➕</span> Add New Bed
+          <span></span> Add New Bed
         </button>
       </div>
 
@@ -316,7 +316,7 @@ const MasterBedsPage = () => {
 
           {/* Search Bar */}
           <div className="master-search-box">
-            <span className="master-search-icon">🔍</span>
+            <span className="master-search-icon"></span>
             <input
               type="text"
               className="master-search-input"
@@ -337,7 +337,7 @@ const MasterBedsPage = () => {
 
       {error && (
         <div className="master-alert-error">
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -346,7 +346,7 @@ const MasterBedsPage = () => {
         <Loading message="Loading beds list..." />
       ) : beds.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon">🛏️</span>
+          <span className="master-empty-icon"></span>
           <h3 className="master-empty-title">No Beds Found</h3>
           <p className="master-empty-desc">Adjust your filters or create a new bed in this room.</p>
         </div>
@@ -373,7 +373,7 @@ const MasterBedsPage = () => {
                   <tr key={b.id}>
                     <td>
                       <div className="master-cell-room">
-                        <span className="master-room-icon" style={{ background: '#fdf2f8', color: '#db2777' }}>🛏️</span>
+                        <span className="master-room-icon" style={{ background: '#fdf2f8', color: '#db2777' }}></span>
                         <span>{displayTitle}</span>
                       </div>
                     </td>
@@ -382,7 +382,7 @@ const MasterBedsPage = () => {
                     <td>
                       {b.student_name ? (
                         <span style={{ fontWeight: '600', color: '#4f46e5' }}>
-                          👤 {b.student_name}
+                          {b.student_name}
                         </span>
                       ) : (
                         <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
@@ -397,7 +397,7 @@ const MasterBedsPage = () => {
                           onClick={() => handleOpenEditModal(b)}
                           className="master-action-btn btn-action-edit"
                         >
-                          ✏️ Edit
+                          Edit
                         </button>
                         <button
                           disabled={b.status === 'OCCUPIED'}
@@ -406,7 +406,7 @@ const MasterBedsPage = () => {
                           title={b.status === 'OCCUPIED' ? 'Cannot delete occupied bed' : 'Delete bed'}
                           style={{ opacity: b.status === 'OCCUPIED' ? 0.45 : 1, cursor: b.status === 'OCCUPIED' ? 'not-allowed' : 'pointer' }}
                         >
-                          🗑️ Delete
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -436,7 +436,7 @@ const MasterBedsPage = () => {
                 </div>
                 <div className="master-mobile-card-actions">
                   <button onClick={() => handleOpenEditModal(b)} className="master-action-btn btn-action-edit">
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button
                     disabled={b.status === 'OCCUPIED'}
@@ -444,7 +444,7 @@ const MasterBedsPage = () => {
                     className="master-action-btn btn-action-delete"
                     style={{ opacity: b.status === 'OCCUPIED' ? 0.45 : 1 }}
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
               </div>
@@ -483,14 +483,14 @@ const MasterBedsPage = () => {
           <div className="master-modal-content">
             <div className="master-modal-header">
               <h2 className="master-modal-title">
-                {editingBed ? '✏️ Edit Bed' : '➕ Create New Bed'}
+                {editingBed ? 'Edit Bed' : '+ Create New Bed'}
               </h2>
               <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
 
             {modalError && (
               <div className="master-alert-error">
-                <span>⚠️ {modalError}</span>
+                <span>{modalError}</span>
               </div>
             )}
 

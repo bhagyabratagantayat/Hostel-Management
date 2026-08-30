@@ -51,7 +51,7 @@ const DataIntegrityPage = () => {
 
       const res = await api.repairDataIntegrity(issue.type, issue.target_id || issue.id, action);
       if (res.success) {
-        setRepairSuccessMsg(`✅ Successfully repaired: ${issue.title}`);
+        setRepairSuccessMsg(`✓ Successfully repaired: ${issue.title}`);
         runDiagnosticCheck();
       } else {
         setError(res.message || 'Failed to repair integrity issue.');
@@ -83,7 +83,7 @@ const DataIntegrityPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Data Integrity</span>
           </div>
-          <h1 className="master-title">🛡️ Data Integrity Diagnostic Center</h1>
+          <h1 className="master-title"> Data Integrity Diagnostic Center</h1>
           <p className="master-subtitle">
             Scan and detect relational inconsistencies, ghost allocations, orphaned records, and schema gaps.
           </p>
@@ -93,14 +93,14 @@ const DataIntegrityPage = () => {
           disabled={scanning}
           className="master-btn-primary"
         >
-          <span>{scanning ? '🔄' : '🔍'}</span>
+          <span>{scanning ? '' : ''}</span>
           {scanning ? 'Scanning System...' : 'Run Integrity Scan'}
         </button>
       </div>
 
       {error && (
         <div className="master-alert-error">
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
         </div>
       )}
       {repairSuccessMsg && (
@@ -183,7 +183,7 @@ const DataIntegrityPage = () => {
       {/* Issues List */}
       {filteredIssues.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon">🎉</span>
+          <span className="master-empty-icon"></span>
           <h3 className="master-empty-title">Zero Integrity Issues Found</h3>
           <p className="master-empty-desc">
             All master data relationships, room allocations, and bed occupancy states are 100% healthy.
@@ -213,7 +213,7 @@ const DataIntegrityPage = () => {
                   </p>
                   {issue.recommendation && (
                     <div style={{ fontSize: '12.5px', color: '#4f46e5', fontWeight: '500' }}>
-                      💡 Recommended Action: {issue.recommendation}
+                      Recommended Action: {issue.recommendation}
                     </div>
                   )}
                 </div>
@@ -227,7 +227,7 @@ const DataIntegrityPage = () => {
                         onClick={() => handleExecuteRepair(issue, act.action)}
                         className="master-action-btn btn-action-edit"
                       >
-                        ⚡ {act.label || act.action}
+                         {act.label || act.action}
                       </button>
                     ))}
                   </div>

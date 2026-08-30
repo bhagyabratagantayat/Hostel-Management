@@ -166,14 +166,14 @@
 /* Modal Form Layout */
 .modal-form-grid-2 {
   display: grid;
-  grid-templateColumns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-bottom: 14px;
 }
 
 @media (max-width: 600px) {
   .modal-form-grid-2 {
-    grid-templateColumns: 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 }

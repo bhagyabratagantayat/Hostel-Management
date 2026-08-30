@@ -60,32 +60,32 @@ export default function VisitorDetailsModal({ visitId, isOpen, onClose, userRole
     <div className="modal-backdrop">
       <div className="modal-container visitor-details-modal">
         <div className="modal-header">
-          <h2>📑 Visitor Log Details #{visitId}</h2>
-          <button type="button" className="btn-close" onClick={onClose}>✕</button>
+          <h2>Visitor Log Details #{visitId}</h2>
+          <button type="button" className="btn-close" onClick={onClose}></button>
         </div>
 
         {loading ? (
-          <div className="modal-loading">⏳ Loading visitor details...</div>
+          <div className="modal-loading">Loading visitor details...</div>
         ) : error ? (
-          <div className="form-error-alert">⚠️ {error}</div>
+          <div className="form-error-alert">{error}</div>
         ) : visit ? (
           <div className="modal-content-scroll">
             <div className="details-header-card">
               <div className="details-title-group">
                 <span className="visitor-type-tag">{visit.visitor_type}</span>
                 <h3>{visit.visitor_name}</h3>
-                <p className="visitor-phone-text">📞 {visit.visitor_phone} {visit.visitor_email && `| ✉️ ${visit.visitor_email}`}</p>
+                <p className="visitor-phone-text"> {visit.visitor_phone} {visit.visitor_email && `| ️ ${visit.visitor_email}`}</p>
               </div>
               <div className="details-status-badge">
                 <span className={`status-pill status-${visit.status.toLowerCase().replace('_', '-')}`}>
                   {visit.status}
                 </span>
-                {visit.is_overdue === 1 && <span className="overdue-badge">⚠️ OVERDUE</span>}
+                {visit.is_overdue === 1 && <span className="overdue-badge">️ OVERDUE</span>}
               </div>
             </div>
 
             <div className="details-section">
-              <h4>🏫 Student & Hostel Assignment</h4>
+              <h4> Student & Hostel Assignment</h4>
               <div className="details-grid-2col">
                 <div><strong>Visiting Student:</strong> {visit.student_name} ({visit.student_code})</div>
                 <div><strong>Student Contact:</strong> {visit.student_phone || 'N/A'}</div>
@@ -96,7 +96,7 @@ export default function VisitorDetailsModal({ visitId, isOpen, onClose, userRole
             </div>
 
             <div className="details-section">
-              <h4>🔍 Verification & Schedule</h4>
+              <h4> Verification & Schedule</h4>
               <div className="details-grid-2col">
                 <div><strong>ID Document Type:</strong> {visit.identification_type}</div>
                 <div><strong>ID Last 4 Digits:</strong> ••••{visit.identification_last4}</div>
@@ -111,7 +111,7 @@ export default function VisitorDetailsModal({ visitId, isOpen, onClose, userRole
 
             {/* Quick Action Box */}
             <div className="details-action-box">
-              <h4>⚡ Quick Actions</h4>
+              <h4>Quick Actions</h4>
               <div className="action-comment-input">
                 <input
                   type="text"
@@ -125,29 +125,29 @@ export default function VisitorDetailsModal({ visitId, isOpen, onClose, userRole
                 {userRole !== 'STUDENT' && visit.status === 'REQUESTED' && (
                   <>
                     <button type="button" className="btn-action btn-approve" onClick={() => handleAction('approve')} disabled={submittingAction}>
-                      ✅ Approve Request
+                      ✓ Approve Request
                     </button>
                     <button type="button" className="btn-action btn-reject" onClick={() => handleAction('reject')} disabled={submittingAction}>
-                      ❌ Reject Request
+                      ✕ Reject Request
                     </button>
                   </>
                 )}
 
                 {userRole !== 'STUDENT' && visit.status === 'APPROVED' && (
                   <button type="button" className="btn-action btn-checkin" onClick={() => handleAction('checkIn')} disabled={submittingAction}>
-                    🚪 Confirm Check In
+                     Confirm Check In
                   </button>
                 )}
 
                 {userRole !== 'STUDENT' && visit.status === 'CHECKED_IN' && (
                   <button type="button" className="btn-action btn-checkout" onClick={() => handleAction('checkOut')} disabled={submittingAction}>
-                    🏁 Confirm Check Out
+                     Confirm Check Out
                   </button>
                 )}
 
                 {(visit.status === 'REQUESTED' || visit.status === 'APPROVED') && (
                   <button type="button" className="btn-action btn-cancel" onClick={() => handleAction('cancel')} disabled={submittingAction}>
-                    🚫 Cancel Visit
+                     Cancel Visit
                   </button>
                 )}
               </div>
@@ -155,7 +155,7 @@ export default function VisitorDetailsModal({ visitId, isOpen, onClose, userRole
 
             {/* Audit History Log */}
             <div className="details-section">
-              <h4>🕒 Visitor Transition Audit Log</h4>
+              <h4> Visitor Transition Audit Log</h4>
               {visit.history && visit.history.length > 0 ? (
                 <div className="timeline-container">
                   {visit.history.map((h) => (

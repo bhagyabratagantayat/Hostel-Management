@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getRoomInspectionHistory } from '../../api/operations';
+import '../../pages/MaintenancePage.css';
 
 export default function InspectionHistoryModal({ isOpen, onClose, roomId }) {
   const [historyData, setHistoryData] = useState(null);
@@ -21,79 +22,108 @@ export default function InspectionHistoryModal({ isOpen, onClose, roomId }) {
 
   const renderBadge = (status) => {
     switch (status) {
-      case 'CRITICAL': return <span className="badge bg-danger">CRITICAL</span>;
-      case 'ATTENTION_REQUIRED': return <span className="badge bg-warning text-dark">ATTENTION REQUIRED</span>;
-      default: return <span className="badge bg-success">GOOD</span>;
+      case 'CRITICAL':
+        return <span className="priority-pill priority-urgent">CRITICAL</span>;
+      case 'ATTENTION_REQUIRED':
+        return <span className="priority-pill priority-high">ATTENTION</span>;
+      default:
+        return <span className="status-pill status-resolved">GOOD</span>;
     }
   };
 
   return (
-    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
-      <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="modal-content shadow">
-          <div className="modal-header bg-dark text-white">
-            <h5 className="modal-title">
-              Room Inspection History {historyData?.room?.room_number ? `(Room ${historyData.room.room_number} - ${historyData.room.hostel_name})` : ''}
-            </h5>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Close"></button>
-          </div>
-
-          <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-            {loading && (
-              <div className="text-center py-4">
-                <div className="spinner-border text-primary" role="status"></div>
-                <p className="mt-2 text-muted">Loading room history...</p>
-              </div>
+    <div className="modal-backdrop-custom" onClick={onClose}>
+      <div 
+        className="modal-dialog-custom" 
+        style={{ maxWidth: '750px' }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog" 
+        aria-modal="true"
+      >
+        {/* Modal Header */}
+        <div className="modal-header-custom">
+          <h2 className="modal-title-custom">
+            <span>Room Inspection History</span>
+            {historyData?.room?.room_number && (
+              <span className="badge-id" style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff' }}>
+                Room {historyData.room.room_number} - {historyData.room.hostel_name}
+              </span>
             )}
+          </h2>
+          <button 
+            type="button" 
+            className="modal-close-btn-custom" 
+            onClick={onClose} 
+            aria-label="Close modal"
+          >
+            &times;
+          </button>
+        </div>
 
-            {error && (
-              <div className="alert alert-danger p-2 small mb-0">
-                <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                {error}
-              </div>
-            )}
+        {/* Modal Body */}
+        <div className="modal-body-custom">
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '12px' }}></div>
+              <p>Loading room inspection records...</p>
+            </div>
+          )}
 
-            {!loading && historyData && historyData.history && (
-              historyData.history.length > 0 ? (
-                <div className="timeline-list vstack gap-3">
-                  {historyData.history.map(insp => (
-                    <div key={insp.id} className="card border p-3 bg-light">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <span className="font-weight-bold">
-                          <i className="bi bi-calendar-check me-2"></i>
-                          {new Date(insp.inspection_date).toLocaleDateString()}
-                        </span>
-                        <span className="small text-muted">Inspector: {insp.inspector_name}</span>
-                      </div>
+          {error && (
+            <div className="alert-error-custom">
+              <span>️</span>
+              <div>{error}</div>
+            </div>
+          )}
 
-                      <div className="row g-2 small mb-2">
-                        <div className="col-6 col-md-4">Cleanliness: {renderBadge(insp.cleanliness_status)}</div>
-                        <div className="col-6 col-md-4">Electrical: {renderBadge(insp.electrical_status)}</div>
-                        <div className="col-6 col-md-4">Plumbing: {renderBadge(insp.plumbing_status)}</div>
-                        <div className="col-6 col-md-4">Furniture: {renderBadge(insp.furniture_status)}</div>
-                        <div className="col-6 col-md-4">Beds: {renderBadge(insp.bed_status)}</div>
-                        <div className="col-6 col-md-4">Safety: {renderBadge(insp.safety_status)}</div>
-                      </div>
-
-                      {insp.remarks && (
-                        <div className="text-muted small mt-2 pt-2 border-top">
-                          <strong>Remarks:</strong> {insp.remarks}
-                        </div>
-                      )}
+          {!loading && historyData && historyData.history && (
+            historyData.history.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {historyData.history.map(insp => (
+                  <div key={insp.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                         {new Date(insp.inspection_date).toLocaleDateString()}
+                      </span>
+                      <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                        Inspector: <strong>{insp.inspector_name}</strong>
+                      </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted">
-                  No inspection history found for this room.
-                </div>
-              )
-            )}
-          </div>
 
-          <div className="modal-footer bg-light">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
-          </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '0.84rem' }}>
+                      <div>Cleanliness: {renderBadge(insp.cleanliness_status)}</div>
+                      <div>Electrical: {renderBadge(insp.electrical_status)}</div>
+                      <div>Plumbing: {renderBadge(insp.plumbing_status)}</div>
+                      <div>Furniture: {renderBadge(insp.furniture_status)}</div>
+                      <div>Beds: {renderBadge(insp.bed_status)}</div>
+                      <div>Safety: {renderBadge(insp.safety_status)}</div>
+                    </div>
+
+                    {insp.remarks && (
+                      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e2e8f0', fontSize: '0.85rem', color: '#475569' }}>
+                        <strong>Remarks:</strong> {insp.remarks}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8', fontStyle: 'italic' }}>
+                No past inspection history recorded for this room.
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="modal-footer-custom">
+          <button 
+            type="button" 
+            className="filter-reset-btn"
+            onClick={onClose}
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

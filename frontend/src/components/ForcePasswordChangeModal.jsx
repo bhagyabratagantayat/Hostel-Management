@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../services/api';
+import { Lock, Check, Circle } from 'lucide-react';
 import './ForcePasswordChangeModal.css';
 
 const ForcePasswordChangeModal = ({ user, onPasswordChanged }) => {
@@ -50,7 +51,9 @@ const ForcePasswordChangeModal = ({ user, onPasswordChanged }) => {
     <div className="force-password-overlay">
       <div className="force-password-modal">
         <div className="force-password-header">
-          <div className="force-password-icon">🔒</div>
+          <div className="force-password-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+            <Lock size={36} color="#4f46e5" />
+          </div>
           <h2>Password Change Required</h2>
           <p>You are using a temporary or initial password. For security compliance, please set a new password to proceed.</p>
         </div>
@@ -100,12 +103,22 @@ const ForcePasswordChangeModal = ({ user, onPasswordChanged }) => {
 
           <div className="password-checklist">
             <div className="checklist-title">Password Security Requirements:</div>
-            <ul>
-              <li className={reqs.length ? 'met' : ''}>{reqs.length ? '✓' : '○'} At least 8 characters long</li>
-              <li className={reqs.upper ? 'met' : ''}>{reqs.upper ? '✓' : '○'} At least one uppercase letter (A-Z)</li>
-              <li className={reqs.lower ? 'met' : ''}>{reqs.lower ? '✓' : '○'} At least one lowercase letter (a-z)</li>
-              <li className={reqs.number ? 'met' : ''}>{reqs.number ? '✓' : '○'} At least one number (0-9)</li>
-              <li className={reqs.match ? 'met' : ''}>{reqs.match ? '✓' : '○'} Passwords match</li>
+            <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+              <li className={reqs.length ? 'met' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {reqs.length ? <Check size={14} color="#16a34a" /> : <Circle size={14} color="#94a3b8" />} At least 8 characters long
+              </li>
+              <li className={reqs.upper ? 'met' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {reqs.upper ? <Check size={14} color="#16a34a" /> : <Circle size={14} color="#94a3b8" />} At least one uppercase letter (A-Z)
+              </li>
+              <li className={reqs.lower ? 'met' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {reqs.lower ? <Check size={14} color="#16a34a" /> : <Circle size={14} color="#94a3b8" />} At least one lowercase letter (a-z)
+              </li>
+              <li className={reqs.number ? 'met' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {reqs.number ? <Check size={14} color="#16a34a" /> : <Circle size={14} color="#94a3b8" />} At least one number (0-9)
+              </li>
+              <li className={reqs.match ? 'met' : ''} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {reqs.match ? <Check size={14} color="#16a34a" /> : <Circle size={14} color="#94a3b8" />} Passwords match
+              </li>
             </ul>
           </div>
 

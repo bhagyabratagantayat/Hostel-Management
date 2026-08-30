@@ -15,13 +15,23 @@ const activityService = require('./activityService');
 const validateUser = async (loginIdentifier, password, reqContext = {}) => {
   const { ip_address = null, user_agent = null } = reqContext;
 
-  // Query user by username or email
+  const cleanIdentifier = (loginIdentifier || '').trim();
+  const identifierPrefix = cleanIdentifier.includes('@') ? cleanIdentifier.split('@')[0].trim() : cleanIdentifier;
+
+  // Query user by username, email, student registration ID, or college email prefix
   const [users] = await db.pool.query(
-    `SELECT u.id, u.username, u.email, u.password_hash, u.status, u.must_change_password, r.name as role
+    `SELECT DISTINCT u.id, u.username, u.email, u.password_hash, u.status, u.must_change_password, r.name as role
      FROM users u
      JOIN roles r ON u.role_id = r.id
-     WHERE (u.username = ? OR u.email = ?)`,
-    [loginIdentifier, loginIdentifier]
+     LEFT JOIN students s ON s.user_id = u.id
+     WHERE (
+       u.username = ? OR u.email = ? OR s.student_id = ? OR s.email = ?
+       OR (u.email = CONCAT(?, '@bec.ac.in'))
+       OR (s.email = CONCAT(?, '@bec.ac.in'))
+       OR (u.username = ?)
+     )
+     LIMIT 1`,
+    [cleanIdentifier, cleanIdentifier, cleanIdentifier, cleanIdentifier, identifierPrefix, identifierPrefix, identifierPrefix]
   );
 
   if (users.length === 0) {
@@ -238,9 +248,165 @@ const generateToken = (user) => {
   );
 };
 
+/**
+ * 1-Click Impersonate a student (SUPER_ADMIN / SUPERINTENDENT).
+ */
+const impersonateStudent = async (adminUser, studentIdentifier, reqContext = {}) => {
+  const { ip_address = null, user_agent = null } = reqContext;
+
+  if (!['SUPER_ADMIN', 'SUPERINTENDENT'].includes(adminUser.role)) {
+    const err = new Error('Forbidden: Only administrators can impersonate students.');
+    err.status = 403;
+    throw err;
+  }
+
+  // Find student by student ID (id, student_id, or user_id)
+  const [students] = await db.pool.query(
+    `SELECT s.*, u.id as user_id, u.username, u.email as user_email, u.status as user_status, r.name as role
+     FROM students s
+     JOIN users u ON s.user_id = u.id
+     JOIN roles r ON u.role_id = r.id
+     WHERE s.id = ? OR s.student_id = ? OR s.user_id = ? OR u.username = ? OR u.email = ?
+     LIMIT 1`,
+    [studentIdentifier, studentIdentifier, studentIdentifier, studentIdentifier, studentIdentifier]
+  );
+
+  if (students.length === 0) {
+    const err = new Error('Student account not found.');
+    err.status = 404;
+    throw err;
+  }
+
+  const student = students[0];
+
+  if (student.user_status !== 'ACTIVE') {
+    const err = new Error('Cannot login as an inactive student.');
+    err.status = 400;
+    throw err;
+  }
+
+  // Generate impersonation token
+  const token = jwt.sign(
+    {
+      id: student.user_id,
+      role: 'STUDENT',
+      isImpersonating: true,
+      originalAdminId: adminUser.id,
+      originalAdminUsername: adminUser.username,
+      originalAdminRole: adminUser.role
+    },
+    env.JWT.secret,
+    { expiresIn: '8h' }
+  );
+
+  await securityService.logSecurityEvent({
+    action: 'IMPERSONATION_LOGIN',
+    user_id: student.user_id,
+    actor_id: adminUser.id,
+    ip_address,
+    user_agent,
+    metadata: {
+      student_id: student.id,
+      student_name: student.full_name,
+      student_code: student.student_id,
+      admin_id: adminUser.id,
+      admin_username: adminUser.username
+    }
+  });
+
+  await activityService.logActivity({
+    actorId: adminUser.id,
+    action: 'IMPERSONATION_LOGIN',
+    module: 'AUTHENTICATION',
+    entityType: 'STUDENT',
+    entityId: student.id,
+    description: `Admin '${adminUser.username}' 1-click logged in as student '${student.full_name}' (${student.student_id})`,
+    metadata: { student_id: student.id, student_name: student.full_name, admin_username: adminUser.username }
+  });
+
+  const studentProfile = await getUserProfile(student.user_id);
+  studentProfile.isImpersonating = true;
+  studentProfile.originalAdmin = {
+    id: adminUser.id,
+    username: adminUser.username,
+    role: adminUser.role
+  };
+
+  return {
+    token,
+    user: studentProfile
+  };
+};
+
+/**
+ * Exit impersonation and restore original admin session.
+ */
+const exitImpersonation = async (impersonatingUser, reqContext = {}) => {
+  const { ip_address = null, user_agent = null } = reqContext;
+
+  const adminId = impersonatingUser.originalAdminId;
+  if (!adminId) {
+    const err = new Error('No active impersonation session found.');
+    err.status = 400;
+    throw err;
+  }
+
+  const [admins] = await db.pool.query(
+    `SELECT u.id, u.username, u.email, u.status, r.name as role
+     FROM users u
+     JOIN roles r ON u.role_id = r.id
+     WHERE u.id = ? AND u.status = 'ACTIVE'`,
+    [adminId]
+  );
+
+  if (admins.length === 0) {
+    const err = new Error('Original administrator account not found or inactive.');
+    err.status = 404;
+    throw err;
+  }
+
+  const admin = admins[0];
+
+  const token = jwt.sign(
+    { id: admin.id, role: admin.role },
+    env.JWT.secret,
+    { expiresIn: env.JWT.expiresIn }
+  );
+
+  await securityService.logSecurityEvent({
+    action: 'EXIT_IMPERSONATION',
+    user_id: admin.id,
+    actor_id: admin.id,
+    ip_address,
+    user_agent,
+    metadata: {
+      exited_student_id: impersonatingUser.id,
+      admin_id: admin.id,
+      admin_username: admin.username
+    }
+  });
+
+  await activityService.logActivity({
+    actorId: admin.id,
+    action: 'EXIT_IMPERSONATION',
+    module: 'AUTHENTICATION',
+    entityType: 'USER',
+    entityId: admin.id,
+    description: `Admin '${admin.username}' exited student impersonation session`
+  });
+
+  const adminProfile = await getUserProfile(admin.id);
+  return {
+    token,
+    user: adminProfile
+  };
+};
+
 module.exports = {
   validateUser,
   changePassword,
   getUserProfile,
-  generateToken
+  generateToken,
+  impersonateStudent,
+  exitImpersonation
 };

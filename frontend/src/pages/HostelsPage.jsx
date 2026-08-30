@@ -184,7 +184,7 @@ const HostelsPage = () => {
 
       {filteredHostels.length === 0 ? (
         <div className="empty-hostels-state" style={{ background: '#ffffff', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '54px 24px', textAlign: 'center', marginTop: '16px' }}>
-          <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>🏢</span>
+          <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}></span>
           <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px 0' }}>
             {searchQuery ? 'No Hostels Found' : 'No Hostels Configured Yet'}
           </h3>
@@ -275,7 +275,7 @@ const HostelsPage = () => {
             <div className="custom-modal-header">
               <div className="custom-modal-header-content">
                 <h2 className="custom-modal-title">
-                  {modalMode === 'add' ? '🏢 Add New Hostel' : '✏️ Edit Hostel'}
+                  {modalMode === 'add' ? 'Add New Hostel' : 'Edit Hostel'}
                 </h2>
                 <p className="custom-modal-subtitle">Enter details to configure the hostel properties.</p>
               </div>
@@ -293,7 +293,7 @@ const HostelsPage = () => {
               <div className="custom-modal-body">
                 {formErrors.form && (
                   <div className="login-error-alert" style={{ marginBottom: '16px' }}>
-                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-icon">️</span>
                     <span className="alert-text">{formErrors.form}</span>
                   </div>
                 )}

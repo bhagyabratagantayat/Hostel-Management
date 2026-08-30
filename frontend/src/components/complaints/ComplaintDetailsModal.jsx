@@ -196,7 +196,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
                 <div className="overview-item">
                   <span className="overview-label">Assigned Staff</span>
                   <span className="overview-val">
-                    {complaint.assigned_to_name ? `👤 ${complaint.assigned_to_name}` : 'Unassigned'}
+                    {complaint.assigned_to_name ? ` ${complaint.assigned_to_name}` : 'Unassigned'}
                   </span>
                 </div>
               </div>
@@ -225,14 +225,14 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
 
             {/* Description */}
             <div className="complaint-section mb-4">
-              <h4 className="section-title">📄 Description</h4>
+              <h4 className="section-title"> Description</h4>
               <p className="description-text">{complaint.description}</p>
             </div>
 
             {/* Resolution Box if resolved/closed */}
             {complaint.resolution && (
               <div className="resolution-callout mb-4">
-                <h4>✅ Resolution Summary</h4>
+                <h4>✓ Resolution Summary</h4>
                 <p>{complaint.resolution}</p>
                 {complaint.resolved_at && (
                   <small className="text-muted">
@@ -245,7 +245,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
             {/* Actions Panel */}
             <div className="complaint-actions-panel mb-4">
               <div className="flex-between align-center mb-3">
-                <h4 className="section-title m-0">⚡ Manage Complaint</h4>
+                <h4 className="section-title m-0">Manage Complaint</h4>
                 <div className="flex-gap">
                   {complaint.status !== 'CLOSED' && (
                     <button
@@ -254,7 +254,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
                       onClick={handleQuickClose}
                       disabled={isUpdatingStatus}
                     >
-                      🔒 Close Complaint
+                      Close Complaint
                     </button>
                   )}
                   {canDelete && (
@@ -264,7 +264,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
                       onClick={handleDeleteComplaint}
                       disabled={isUpdatingStatus}
                     >
-                      🗑️ Delete Complaint
+                      Delete Complaint
                     </button>
                   )}
                 </div>
@@ -275,7 +275,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
                   className="btn btn-outline-primary mb-3"
                   onClick={handleSelfAssign}
                 >
-                  🙋 Assign Complaint to Me
+                   Assign Complaint to Me
                 </button>
               )}
 
@@ -356,7 +356,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
 
             {/* Comments & Discussion */}
             <div className="complaint-section mb-4">
-              <h4 className="section-title">💬 Activity & Comments</h4>
+              <h4 className="section-title"> Activity & Comments</h4>
               
               {complaint.comments?.length === 0 ? (
                 <p className="empty-text">No comments yet on this complaint.</p>
@@ -412,7 +412,7 @@ const ComplaintDetailsModal = ({ complaintId, isOpen, onClose, user, onUpdate })
 
             {/* History Audit Log */}
             <div className="complaint-section">
-              <h4 className="section-title">📜 Audit Trail & History</h4>
+              <h4 className="section-title"> Audit Trail & History</h4>
               <ul className="audit-list">
                 {complaint.history?.map((h) => (
                   <li key={h.id} className="audit-item">

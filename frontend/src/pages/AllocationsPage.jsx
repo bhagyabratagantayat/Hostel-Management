@@ -118,7 +118,7 @@ const AllocationsPage = () => {
         </div>
         <div className="allocations-actions">
           <button className="btn-secondary" onClick={handleRunConsistencyCheck} disabled={auditing}>
-            {auditing ? 'Auditing...' : '🔍 Consistency Audit'}
+            {auditing ? 'Auditing...' : ' Consistency Audit'}
           </button>
           <button className="btn-primary" onClick={() => setIsAllocateOpen(true)}>
             + Allocate Student
@@ -139,7 +139,7 @@ const AllocationsPage = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: '1.05rem', color: consistencyResult.isConsistent ? '#065F46' : '#991B1B' }}>
-              {consistencyResult.isConsistent ? '✅ System Accommodation Database is 100% Consistent' : '⚠️ Database Consistency Audit Alert'}
+              {consistencyResult.isConsistent ? '✓ System Accommodation Database is 100% Consistent' : '️ Database Consistency Audit Alert'}
             </h3>
             <button
               onClick={() => setConsistencyResult(null)}
@@ -173,7 +173,7 @@ const AllocationsPage = () => {
       {/* Stats Summary Bar */}
       <div className="allocations-stats">
         <div className="alloc-stat-card">
-          <div className="stat-icon-wrapper" style={{ background: '#EEF2FF', color: '#4F46E5' }}>🛏️</div>
+          <div className="stat-icon-wrapper" style={{ background: '#EEF2FF', color: '#4F46E5' }}></div>
           <div className="stat-info">
             <div className="stat-value">{allocations.filter(a => a.status === 'ACTIVE').length}</div>
             <div className="stat-label">Active Occupants</div>
@@ -181,7 +181,7 @@ const AllocationsPage = () => {
         </div>
 
         <div className="alloc-stat-card">
-          <div className="stat-icon-wrapper" style={{ background: '#ECFDF5', color: '#10B981' }}>🔄</div>
+          <div className="stat-icon-wrapper" style={{ background: '#ECFDF5', color: '#10B981' }}></div>
           <div className="stat-info">
             <div className="stat-value">{allocations.filter(a => a.status === 'TRANSFERRED').length}</div>
             <div className="stat-label">Transfers Recorded</div>
@@ -189,7 +189,7 @@ const AllocationsPage = () => {
         </div>
 
         <div className="alloc-stat-card">
-          <div className="stat-icon-wrapper" style={{ background: '#FEF2F2', color: '#EF4444' }}>🚪</div>
+          <div className="stat-icon-wrapper" style={{ background: '#FEF2F2', color: '#EF4444' }}></div>
           <div className="stat-info">
             <div className="stat-value">{allocations.filter(a => a.status === 'CHECKED_OUT').length}</div>
             <div className="stat-label">Hostel Checkouts</div>
@@ -197,7 +197,7 @@ const AllocationsPage = () => {
         </div>
 
         <div className="alloc-stat-card">
-          <div className="stat-icon-wrapper" style={{ background: '#FFFBEB', color: '#F59E0B' }}>👤</div>
+          <div className="stat-icon-wrapper" style={{ background: '#FFFBEB', color: '#F59E0B' }}></div>
           <div className="stat-info">
             <div className="stat-value">{unallocatedStudents.length}</div>
             <div className="stat-label">Unallocated Students</div>
@@ -210,7 +210,7 @@ const AllocationsPage = () => {
         <div className="filter-group">
           <input
             type="text"
-            placeholder="Search student, roll no, room..."
+            placeholder="Search student, ID, room..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="filter-input"
@@ -267,7 +267,7 @@ const AllocationsPage = () => {
                   <td>
                     <div style={{ fontWeight: '600', color: '#111827' }}>{alloc.student_name}</div>
                     <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
-                      {alloc.student_code} &bull; {alloc.roll_number}
+                      ID: {alloc.student_code}
                     </div>
                   </td>
                   <td>

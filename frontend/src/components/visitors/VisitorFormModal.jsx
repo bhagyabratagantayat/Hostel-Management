@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import api from '../../services/api';
 
 const VISITOR_TYPES = [
-  { value: 'PARENT', label: '👨‍👩‍👦 Parent' },
-  { value: 'GUARDIAN', label: '🛡️ Local Guardian' },
-  { value: 'RELATIVE', label: '🤝 Relative' },
-  { value: 'FRIEND', label: '👥 Friend' },
-  { value: 'OFFICIAL', label: '💼 Official / Delivery' },
-  { value: 'OTHER', label: '👤 Other' }
+  { value: 'PARENT', label: 'Parent' },
+  { value: 'GUARDIAN', label: 'Local Guardian' },
+  { value: 'RELATIVE', label: 'Relative' },
+  { value: 'FRIEND', label: ' Friend' },
+  { value: 'OFFICIAL', label: ' Official / Delivery' },
+  { value: 'OTHER', label: 'Other' }
 ];
 
 const ID_TYPES = ['Aadhaar', 'Voter ID', 'Passport', 'Driving License', 'College ID', 'Other Govt ID'];
@@ -94,15 +94,15 @@ export default function VisitorFormModal({ isOpen, onClose, onSubmitSuccess, use
     <div className="modal-backdrop">
       <div className="modal-container visitor-form-modal">
         <div className="modal-header">
-          <h2>👥 Register New Visitor</h2>
-          <button type="button" className="btn-close" onClick={onClose}>✕</button>
+          <h2> Register New Visitor</h2>
+          <button type="button" className="btn-close" onClick={onClose}></button>
         </div>
 
         <form onSubmit={handleSubmit} className="visitor-form">
-          {error && <div className="form-error-alert">⚠️ {error}</div>}
+          {error && <div className="form-error-alert">{error}</div>}
 
           <div className="privacy-notice-box">
-            <span>🛡️ <strong>Data Privacy:</strong> Store ONLY the last 4 digits of government IDs (e.g. Aadhaar). Never enter full ID numbers.</span>
+            <span> <strong>Data Privacy:</strong> Store ONLY the last 4 digits of government IDs (e.g. Aadhaar). Never enter full ID numbers.</span>
           </div>
 
           <div className="form-grid">

@@ -216,11 +216,11 @@ const MasterRoomsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Rooms</span>
           </div>
-          <h1 className="master-title">🚪 Room Management</h1>
+          <h1 className="master-title">Room Management</h1>
           <p className="master-subtitle">Manage room numbers, bed capacities, and operational status.</p>
         </div>
         <button onClick={handleOpenCreateModal} className="master-btn-primary">
-          <span>➕</span> Add New Room
+          <span></span> Add New Room
         </button>
       </div>
 
@@ -260,7 +260,7 @@ const MasterRoomsPage = () => {
 
           {/* Search Input */}
           <div className="master-search-box">
-            <span className="master-search-icon">🔍</span>
+            <span className="master-search-icon"></span>
             <input
               type="text"
               className="master-search-input"
@@ -281,7 +281,7 @@ const MasterRoomsPage = () => {
 
       {error && (
         <div className="master-alert-error">
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -290,7 +290,7 @@ const MasterRoomsPage = () => {
         <Loading message="Loading rooms list..." />
       ) : rooms.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon">🚪</span>
+          <span className="master-empty-icon"></span>
           <h3 className="master-empty-title">No Rooms Found</h3>
           <p className="master-empty-desc">Adjust your filters or create a new room in this floor.</p>
         </div>
@@ -321,7 +321,7 @@ const MasterRoomsPage = () => {
                     <tr key={r.id}>
                       <td>
                         <div className="master-cell-room">
-                          <span className="master-room-icon">🚪</span>
+                          <span className="master-room-icon"></span>
                           <span>Room {r.room_number}</span>
                         </div>
                       </td>
@@ -360,13 +360,13 @@ const MasterRoomsPage = () => {
                             onClick={() => handleOpenEditModal(r)}
                             className="master-action-btn btn-action-edit"
                           >
-                            ✏️ Edit
+                            Edit
                           </button>
                           <button
                             onClick={() => handleDeleteRoom(r.id, r.room_number)}
                             className="master-action-btn btn-action-delete"
                           >
-                            🗑️ Delete
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -414,10 +414,10 @@ const MasterRoomsPage = () => {
 
                   <div className="master-mobile-card-actions">
                     <button onClick={() => handleOpenEditModal(r)} className="master-action-btn btn-action-edit">
-                      ✏️ Edit
+                      Edit
                     </button>
                     <button onClick={() => handleDeleteRoom(r.id, r.room_number)} className="master-action-btn btn-action-delete">
-                      🗑️ Delete
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -456,14 +456,14 @@ const MasterRoomsPage = () => {
           <div className="master-modal-content">
             <div className="master-modal-header">
               <h2 className="master-modal-title">
-                {editingRoom ? '✏️ Edit Room' : '➕ Create New Room'}
+                {editingRoom ? 'Edit Room' : '+ Create New Room'}
               </h2>
               <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
 
             {modalError && (
               <div className="master-alert-error">
-                <span>⚠️ {modalError}</span>
+                <span>{modalError}</span>
               </div>
             )}
 
@@ -524,7 +524,7 @@ const MasterRoomsPage = () => {
                     onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value, 10) || 1 })}
                   />
                   <small style={{ color: '#059669', fontSize: '0.78rem', marginTop: '4px', display: 'block', fontWeight: '500' }}>
-                    ✨ {formData.capacity || 0} beds (Bed 1, Bed 2...) will be automatically created.
+                    {formData.capacity || 0} beds (Bed 1, Bed 2...) will be automatically created.
                   </small>
                 </div>
 

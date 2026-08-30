@@ -11,11 +11,11 @@ const getAllRooms = async (filters, user) => {
   const { id: userId, role } = user;
 
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  const limitNum = Math.min(1000, Math.max(1, parseInt(limit, 10) || 20));
   const offset = (pageNum - 1) * limitNum;
 
   let query = `
-    SELECT r.*, h.name as hostel_name, IFNULL(f.floor_name, 'No Floor') as floor_name,
+    SELECT r.*, h.name as hostel_name, IFNULL(f.floor_name, 'No Floor') as floor_name, f.floor_number,
            (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id) as total_beds,
            (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'OCCUPIED') as occupied_beds,
            (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'AVAILABLE') as available_beds
@@ -76,7 +76,7 @@ const getAllRooms = async (filters, user) => {
   const totalItems = countRows[0]?.total || 0;
   const totalPages = Math.ceil(totalItems / limitNum);
 
-  query += whereSql + ' ORDER BY r.hostel_id ASC, r.floor_id ASC, r.room_number ASC LIMIT ? OFFSET ?';
+  query += whereSql + ' ORDER BY r.hostel_id ASC, IFNULL(f.floor_number, 999) ASC, LENGTH(r.room_number) ASC, r.room_number ASC LIMIT ? OFFSET ?';
   const [rows] = await db.pool.query(query, [...queryParams, limitNum, offset]);
 
   return {

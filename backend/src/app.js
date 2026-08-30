@@ -45,9 +45,9 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing & Cookie parsing middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing & Cookie parsing middleware (allow photo uploads up to 25MB)
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ limit: '25mb', extended: true }));
 app.use(cookieParser());
 
 // Test DB Connection on startup

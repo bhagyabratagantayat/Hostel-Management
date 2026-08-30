@@ -14,9 +14,9 @@ const MealCard = ({
   canManage = false
 }) => {
   const mealIcons = {
-    BREAKFAST: '🌅',
-    LUNCH: '☀️',
-    DINNER: '🌙'
+    BREAKFAST: '',
+    LUNCH: '',
+    DINNER: ''
   };
 
   const mealTitles = {
@@ -37,10 +37,10 @@ const MealCard = ({
     <div className={`meal-card ${menuItem?.is_available === 0 ? 'unavailable' : ''}`}>
       <div className="meal-card-header">
         <div className="meal-title-group">
-          <span className="meal-icon">{mealIcons[mealType] || '🍲'}</span>
+          <span className="meal-icon">{mealIcons[mealType] || ''}</span>
           <div>
             <h4 className="meal-type-title">{mealTitles[mealType] || mealType}</h4>
-            <span className="meal-timing-pill">⏰ {mealTimings[mealType] || 'Service Hours'}</span>
+            <span className="meal-timing-pill"> {mealTimings[mealType] || 'Service Hours'}</span>
           </div>
         </div>
         {canManage && menuItem && onEdit && (
@@ -50,7 +50,7 @@ const MealCard = ({
             title="Edit this meal"
             onClick={() => onEdit(menuItem)}
           >
-            ✏️ Edit
+            Edit
           </button>
         )}
       </div>

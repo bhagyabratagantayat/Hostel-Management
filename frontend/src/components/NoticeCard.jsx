@@ -7,16 +7,16 @@ import './NoticeCard.css';
 const PriorityBadge = ({ priority }) => {
   const normalized = (priority || 'GENERAL').toUpperCase();
   let label = 'GENERAL';
-  let icon = 'ℹ️';
+  let icon = '';
   let className = 'priority-general';
 
   if (normalized === 'URGENT') {
     label = 'URGENT';
-    icon = '🚨';
+    icon = '';
     className = 'priority-urgent';
   } else if (normalized === 'IMPORTANT') {
     label = 'IMPORTANT';
-    icon = '⚠️';
+    icon = '️';
     className = 'priority-important';
   }
 
@@ -65,8 +65,8 @@ const NoticeCard = ({
   };
 
   const targetLabel = notice.hostel_id === null
-    ? '📢 All Hostels'
-    : `🏢 ${notice.hostel_name || `Hostel #${notice.hostel_id}`}`;
+    ? ' All Hostels'
+    : ` ${notice.hostel_name || `Hostel #${notice.hostel_id}`}`;
 
   return (
     <div className={`notice-card ${isUnread ? 'unread-card' : ''}`}>
@@ -102,11 +102,11 @@ const NoticeCard = ({
       <div className="notice-card-footer">
         <div className="notice-timestamps">
           <span className="notice-date">
-            <span className="calendar-icon">📅</span> {formatDate(notice.published_at || notice.created_at)}
+            <span className="calendar-icon"></span> {formatDate(notice.published_at || notice.created_at)}
           </span>
           {notice.expires_at && (
             <span className="notice-expiration" title="Expiration date">
-              ⌛ Expires {formatDate(notice.expires_at)}
+               Expires {formatDate(notice.expires_at)}
             </span>
           )}
         </div>
@@ -130,7 +130,7 @@ const NoticeCard = ({
                   onClick={() => onEdit(notice)}
                   title="Edit Notice"
                 >
-                  ✏️ Edit
+                  Edit
                 </button>
               )}
 
@@ -141,7 +141,7 @@ const NoticeCard = ({
                   onClick={() => onStatusChange(notice.id, 'PUBLISHED')}
                   title="Publish Notice"
                 >
-                  🚀 Publish
+                   Publish
                 </button>
               )}
 
@@ -152,7 +152,7 @@ const NoticeCard = ({
                   onClick={() => onStatusChange(notice.id, 'ARCHIVED')}
                   title="Archive Notice"
                 >
-                  📦 Archive
+                   Archive
                 </button>
               )}
 
@@ -163,7 +163,7 @@ const NoticeCard = ({
                   onClick={() => onDelete(notice.id)}
                   title="Delete Notice"
                 >
-                  🗑️
+                  ️
                 </button>
               )}
             </>

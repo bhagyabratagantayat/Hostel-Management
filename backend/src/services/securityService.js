@@ -16,6 +16,14 @@ const sanitizeMetadata = (data) => {
   return copy;
 };
 
+const normalizeIp = (ip) => {
+  if (!ip) return '127.0.0.1';
+  const s = String(ip).trim();
+  if (s === '::1' || s === '::ffff:127.0.0.1') return '127.0.0.1';
+  if (s.startsWith('::ffff:')) return s.replace('::ffff:', '');
+  return s;
+};
+
 /**
  * Logs a security audit event.
  * @param {object} event
@@ -29,10 +37,11 @@ const sanitizeMetadata = (data) => {
 const logSecurityEvent = async ({ action, user_id = null, actor_id = null, ip_address = null, user_agent = null, metadata = null }) => {
   try {
     const cleanMeta = metadata ? JSON.stringify(sanitizeMetadata(metadata)) : null;
+    const cleanIp = normalizeIp(ip_address);
     await db.pool.query(
       `INSERT INTO security_audit_log (user_id, actor_id, action, ip_address, user_agent, metadata)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [user_id, actor_id, action, ip_address ? String(ip_address).slice(0, 45) : null, user_agent ? String(user_agent).slice(0, 255) : null, cleanMeta]
+      [user_id, actor_id, action, cleanIp.slice(0, 45), user_agent ? String(user_agent).slice(0, 255) : null, cleanMeta]
     );
   } catch (err) {
     console.error('Failed to write to security_audit_log:', err.message);

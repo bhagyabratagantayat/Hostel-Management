@@ -3,6 +3,7 @@ import { getMaintenanceRequests } from '../api/operations';
 import MaintenanceFilterBar from '../components/operations/MaintenanceFilterBar';
 import MaintenanceFormModal from '../components/operations/MaintenanceFormModal';
 import MaintenanceDetailsModal from '../components/operations/MaintenanceDetailsModal';
+import './MaintenancePage.css';
 
 export default function MaintenancePage({ role = 'SUPER_ADMIN' }) {
   const isStaff = role === 'SUPER_ADMIN' || role === 'SUPERINTENDENT';
@@ -40,9 +41,9 @@ export default function MaintenancePage({ role = 'SUPER_ADMIN' }) {
       const data = await getMaintenanceRequests(filters);
       setRequests(data.requests || []);
       setPagination({
-        page: data.page,
-        totalPages: data.totalPages,
-        total: data.total
+        page: data.page || 1,
+        totalPages: data.totalPages || 1,
+        total: data.total || 0
       });
     } catch (err) {
       setError(err.message || 'Failed to fetch maintenance requests.');
@@ -56,24 +57,13 @@ export default function MaintenancePage({ role = 'SUPER_ADMIN' }) {
   }, [filters]);
 
   const getPriorityBadge = (p) => {
-    switch (p) {
-      case 'URGENT': return <span className="badge bg-danger text-white">URGENT</span>;
-      case 'HIGH': return <span className="badge bg-warning text-dark">HIGH</span>;
-      case 'MEDIUM': return <span className="badge bg-info text-dark">MEDIUM</span>;
-      default: return <span className="badge bg-secondary">LOW</span>;
-    }
+    const priorityKey = (p || 'LOW').toLowerCase();
+    return <span className={`priority-pill priority-${priorityKey}`}>{p || 'LOW'}</span>;
   };
 
   const getStatusBadge = (s) => {
-    switch (s) {
-      case 'OPEN': return <span className="badge bg-secondary">OPEN</span>;
-      case 'ASSIGNED': return <span className="badge bg-info text-dark">ASSIGNED</span>;
-      case 'IN_PROGRESS': return <span className="badge bg-primary">IN_PROGRESS</span>;
-      case 'RESOLVED': return <span className="badge bg-success">RESOLVED</span>;
-      case 'CLOSED': return <span className="badge bg-dark">CLOSED</span>;
-      case 'REOPENED': return <span className="badge bg-danger">REOPENED</span>;
-      default: return <span className="badge bg-secondary">{s}</span>;
-    }
+    const statusKey = (s || 'OPEN').toLowerCase();
+    return <span className={`status-pill status-${statusKey}`}>{(s || 'OPEN').replace('_', ' ')}</span>;
   };
 
   const openDetail = (req) => {
@@ -82,24 +72,24 @@ export default function MaintenancePage({ role = 'SUPER_ADMIN' }) {
   };
 
   return (
-    <div className="container-fluid py-4">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div className="maintenance-page">
+      {/* Top Header */}
+      <div className="maintenance-header-row">
         <div>
-          <h2 className="h4 font-weight-bold mb-1">
-            <i className="bi bi-tools text-primary me-2"></i>
-            Hostel Maintenance Management
-          </h2>
-          <p className="text-muted small mb-0">
-            Report, track, and manage physical infrastructure and room maintenance requests.
+          <h1 className="maintenance-title">
+            <span>Hostel Maintenance Management</span>
+          </h1>
+          <p className="maintenance-sub">
+            Track physical infrastructure issues, repairs, room equipment, and resolve maintenance requests campus-wide.
           </p>
         </div>
 
         <button
-          className="btn btn-primary"
+          type="button"
+          className="btn-primary-gradient"
           onClick={() => setIsFormOpen(true)}
         >
-          <i className="bi bi-plus-lg me-1"></i>
-          Report Maintenance Issue
+          <span>+ Report Maintenance Issue</span>
         </button>
       </div>
 
@@ -111,140 +101,108 @@ export default function MaintenancePage({ role = 'SUPER_ADMIN' }) {
       />
 
       {error && (
-        <div className="alert alert-danger p-3 mb-4">
-          <i className="bi bi-exclamation-octagon me-2"></i>
-          {error}
+        <div className="alert-error-custom">
+          <span>️</span>
+          <div>{error}</div>
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status"></div>
-          <p className="mt-2 text-muted">Loading maintenance requests...</p>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '12px' }}></div>
+          <p style={{ fontWeight: 600 }}>Loading maintenance requests...</p>
         </div>
       ) : requests.length === 0 ? (
-        <div className="card text-center p-5 border-dashed">
-          <i className="bi bi-tools text-muted display-4 mb-3"></i>
-          <h5>No Maintenance Requests Found</h5>
-          <p className="text-muted small">No requests match your selected search or filter criteria.</p>
+        <div style={{ background: '#ffffff', border: '2px dashed #e2e8f0', borderRadius: '16px', padding: '60px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '12px' }}></div>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>No Maintenance Requests Found</h3>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>No requests match your current search or filter criteria.</p>
         </div>
       ) : (
         <>
-          {/* Desktop Table View (>= 768px) */}
-          <div className="d-none d-md-block card shadow-sm border mb-4">
-            <div className="table-responsive">
-              <table className="table table-hover align-middle mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Title & Category</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Location</th>
-                    <th>Reported By</th>
-                    <th>Assigned To</th>
-                    <th>Date</th>
-                    <th className="text-end">Actions</th>
+          {/* Table Card */}
+          <div className="maintenance-table-card">
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '80px' }}>ID</th>
+                  <th>Title & Category</th>
+                  <th style={{ width: '110px' }}>Priority</th>
+                  <th style={{ width: '130px' }}>Status</th>
+                  <th>Location</th>
+                  <th>Reported By</th>
+                  <th>Assigned Staff</th>
+                  <th>Date</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map(req => (
+                  <tr key={req.id}>
+                    <td>
+                      <span className="badge-id">#{req.id}</span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 700, color: '#0f172a' }}>{req.title}</div>
+                      <span className="badge-category">{req.category}</span>
+                    </td>
+                    <td>{getPriorityBadge(req.priority)}</td>
+                    <td>{getStatusBadge(req.status)}</td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{req.hostel_name || 'Campus Wide'}</div>
+                      <small style={{ color: '#64748b', fontSize: '0.8rem' }}>
+                        {req.room_number ? `Room ${req.room_number}` : ''} {req.bed_number ? `(Bed ${req.bed_number})` : ''}
+                      </small>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>{req.student_name || req.reporter_name || 'Student / User'}</div>
+                    </td>
+                    <td>
+                      {req.assignee_name ? (
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{req.assignee_name}</span>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.85rem' }}>Unassigned</span>
+                      )}
+                    </td>
+                    <td>
+                      <small style={{ color: '#64748b' }}>
+                        {new Date(req.reported_at || req.created_at).toLocaleDateString()}
+                      </small>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        className="btn-manage-action"
+                        onClick={() => openDetail(req)}
+                      >
+                        View & Manage
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {requests.map(req => (
-                    <tr key={req.id}>
-                      <td className="fw-bold">#{req.id}</td>
-                      <td>
-                        <div className="fw-bold">{req.title}</div>
-                        <span className="badge bg-light text-dark border small">{req.category}</span>
-                      </td>
-                      <td>{getPriorityBadge(req.priority)}</td>
-                      <td>{getStatusBadge(req.status)}</td>
-                      <td>
-                        <div>{req.hostel_name || 'N/A'}</div>
-                        <small className="text-muted">
-                          {req.room_number ? `Room ${req.room_number}` : ''} {req.bed_number ? `(Bed ${req.bed_number})` : ''}
-                        </small>
-                      </td>
-                      <td>
-                        <div>{req.student_name || req.reporter_name || 'N/A'}</div>
-                      </td>
-                      <td>
-                        {req.assignee_name ? (
-                          <span className="text-dark font-weight-bold">{req.assignee_name}</span>
-                        ) : (
-                          <span className="text-muted italic">Unassigned</span>
-                        )}
-                      </td>
-                      <td>
-                        <small className="text-muted">
-                          {new Date(req.reported_at || req.created_at).toLocaleDateString()}
-                        </small>
-                      </td>
-                      <td className="text-end">
-                        <button
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => openDetail(req)}
-                        >
-                          View & Manage
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Mobile Card List View (< 768px) */}
-          <div className="d-block d-md-none vstack gap-3 mb-4">
-            {requests.map(req => (
-              <div key={req.id} className="card shadow-sm border p-3">
-                <div className="d-flex justify-content-between align-items-start mb-2">
-                  <div>
-                    <span className="badge bg-dark me-2">#{req.id}</span>
-                    <span className="fw-bold">{req.title}</span>
-                  </div>
-                  {getPriorityBadge(req.priority)}
-                </div>
-
-                <p className="text-muted small mb-2">{req.description}</p>
-
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  {getStatusBadge(req.status)}
-                  <span className="badge bg-light text-dark border">{req.category}</span>
-                </div>
-
-                <div className="small text-secondary mb-3">
-                  <div><strong>Hostel:</strong> {req.hostel_name || 'N/A'}</div>
-                  <div><strong>Room:</strong> {req.room_number ? `Room ${req.room_number}` : 'N/A'}</div>
-                  <div><strong>Reported:</strong> {new Date(req.reported_at || req.created_at).toLocaleDateString()}</div>
-                </div>
-
-                <button
-                  className="btn btn-outline-primary btn-sm w-100"
-                  onClick={() => openDetail(req)}
-                >
-                  View Request Details
-                </button>
-              </div>
-            ))}
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="text-muted small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+              <span style={{ color: '#64748b', fontSize: '0.86rem' }}>
                 Showing Page {pagination.page} of {pagination.totalPages} ({pagination.total} total requests)
               </span>
-              <div className="btn-group btn-group-sm">
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  className="btn btn-outline-secondary"
+                  type="button"
+                  className="filter-reset-btn"
                   disabled={pagination.page <= 1}
                   onClick={() => setFilters({ ...filters, page: pagination.page - 1 })}
                 >
                   Previous
                 </button>
                 <button
-                  className="btn btn-outline-secondary"
+                  type="button"
+                  className="filter-reset-btn"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => setFilters({ ...filters, page: pagination.page + 1 })}
                 >

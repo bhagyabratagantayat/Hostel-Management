@@ -11,24 +11,27 @@ const getAllBeds = async (filters, user) => {
   const { id: userId, role } = user;
 
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+  const limitNum = Math.min(2000, Math.max(1, parseInt(limit, 10) || 20));
   const offset = (pageNum - 1) * limitNum;
 
   let query = `
-    SELECT b.*, r.room_number, r.hostel_id, r.floor_id, h.name as hostel_name, f.floor_name,
-           s.id as student_id, s.full_name as student_name
+    SELECT b.*, r.room_number, r.capacity as room_capacity, r.hostel_id, r.floor_id, h.name as hostel_name, IFNULL(f.floor_name, 'No Floor') as floor_name, f.floor_number,
+           s.id as student_id, s.full_name as student_name, s.student_id as student_code, s.roll_number, s.branch, s.course,
+           s.phone as student_phone, s.email as student_email, s.photo_url as student_photo, s.year as student_year,
+           sa.id as allocation_id, sa.allocated_from
     FROM beds b
     JOIN rooms r ON b.room_id = r.id
     JOIN hostels h ON r.hostel_id = h.id
-    JOIN floors f ON r.floor_id = f.id
-    LEFT JOIN students s ON b.id = s.bed_id
+    LEFT JOIN floors f ON r.floor_id = f.id
+    LEFT JOIN students s ON b.id = s.bed_id AND s.status = 'ACTIVE'
+    LEFT JOIN student_allocations sa ON sa.bed_id = b.id AND sa.status = 'ACTIVE'
   `;
   let countQuery = `
     SELECT COUNT(*) as total 
     FROM beds b
     JOIN rooms r ON b.room_id = r.id
     JOIN hostels h ON r.hostel_id = h.id
-    JOIN floors f ON r.floor_id = f.id
+    LEFT JOIN floors f ON r.floor_id = f.id
   `;
   let queryParams = [];
   let conditions = [];
@@ -78,7 +81,7 @@ const getAllBeds = async (filters, user) => {
   const totalItems = countRows[0]?.total || 0;
   const totalPages = Math.ceil(totalItems / limitNum);
 
-  query += whereSql + ' ORDER BY r.hostel_id ASC, b.room_id ASC, b.bed_number ASC LIMIT ? OFFSET ?';
+  query += whereSql + ' ORDER BY r.hostel_id ASC, IFNULL(f.floor_number, 999) ASC, LENGTH(r.room_number) ASC, r.room_number ASC, LENGTH(b.bed_number) ASC, b.bed_number ASC LIMIT ? OFFSET ?';
   const [rows] = await db.pool.query(query, [...queryParams, limitNum, offset]);
 
   return {

@@ -70,8 +70,66 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 1-Click Student Impersonation for Super Admin
+  const impersonateStudent = async (studentId) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post(`/auth/impersonate-student/${studentId}`);
+      if (response.success && response.user) {
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true, user: response.user };
+      }
+      return { success: false, message: response.message || 'Could not switch to student account.' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Impersonation failed.'
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Exit Impersonation and return to Super Admin
+  const exitImpersonation = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/auth/exit-impersonation');
+      if (response.success && response.user) {
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true, user: response.user };
+      }
+      return { success: false, message: response.message || 'Could not restore admin account.' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || 'Failed to exit impersonation.'
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, refreshUser: checkAuthStatus }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      isLoading, 
+      login, 
+      logout, 
+      impersonateStudent, 
+      exitImpersonation,
+      isImpersonating: Boolean(user?.isImpersonating),
+      refreshUser: checkAuthStatus 
+    }}>
       {children}
       {isAuthenticated && Boolean(user?.must_change_password) && (
         <ForcePasswordChangeModal

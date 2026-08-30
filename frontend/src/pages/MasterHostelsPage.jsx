@@ -133,11 +133,11 @@ const MasterHostelsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Hostels</span>
           </div>
-          <h1 className="master-title">🏢 Hostels Administration</h1>
+          <h1 className="master-title">Hostels Administration</h1>
           <p className="master-subtitle">Manage core hostel entities, codes, types, and capacity limits.</p>
         </div>
         <button onClick={handleOpenCreateModal} className="master-btn-primary">
-          <span>➕</span> Add New Hostel
+          <span></span> Add New Hostel
         </button>
       </div>
 
@@ -145,7 +145,7 @@ const MasterHostelsPage = () => {
       <div className="master-filter-card">
         <div className="master-filter-group">
           <div className="master-search-box" style={{ maxWidth: '400px', minWidth: '280px' }}>
-            <span className="master-search-icon">🔍</span>
+            <span className="master-search-icon"></span>
             <input
               type="text"
               className="master-search-input"
@@ -165,7 +165,7 @@ const MasterHostelsPage = () => {
 
       {error && (
         <div className="master-alert-error">
-          <span>⚠️ {error}</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -174,7 +174,7 @@ const MasterHostelsPage = () => {
         <Loading message="Loading hostels list..." />
       ) : hostels.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon">🏢</span>
+          <span className="master-empty-icon"></span>
           <h3 className="master-empty-title">No Hostels Found</h3>
           <p className="master-empty-desc">Try adjusting your search filter or add a new hostel.</p>
         </div>
@@ -198,7 +198,7 @@ const MasterHostelsPage = () => {
                   <tr key={h.id}>
                     <td>
                       <div className="master-cell-room">
-                        <span className="master-room-icon" style={{ background: '#e0e7ff', color: '#4338ca' }}>🏢</span>
+                        <span className="master-room-icon" style={{ background: '#e0e7ff', color: '#4338ca' }}></span>
                         <span>{h.name}</span>
                       </div>
                     </td>
@@ -211,8 +211,7 @@ const MasterHostelsPage = () => {
                       </span>
                     </td>
                     <td>
-                      <span style={{ fontSize: '13px', color: '#334155' }}>
-                        📑 <strong>{h.total_floors ?? 0}</strong> floors • 🚪 <strong>{h.total_rooms ?? 0}</strong> rooms • 🛏️ <strong>{h.total_beds ?? 0}</strong> beds
+                      <span style={{ fontSize: '13px', color: '#334155' }}><strong>{h.total_floors ?? 0}</strong> floors • <strong>{h.total_rooms ?? 0}</strong> rooms • <strong>{h.total_beds ?? 0}</strong> beds
                       </span>
                     </td>
                     <td>
@@ -227,13 +226,13 @@ const MasterHostelsPage = () => {
                           onClick={() => handleOpenEditModal(h)}
                           className="master-action-btn btn-action-edit"
                         >
-                          ✏️ Edit
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDeleteHostel(h.id, h.name)}
                           className="master-action-btn btn-action-delete"
                         >
-                          🗑️ Delete
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -264,10 +263,10 @@ const MasterHostelsPage = () => {
                 </div>
                 <div className="master-mobile-card-actions">
                   <button onClick={() => handleOpenEditModal(h)} className="master-action-btn btn-action-edit">
-                    ✏️ Edit
+                    Edit
                   </button>
                   <button onClick={() => handleDeleteHostel(h.id, h.name)} className="master-action-btn btn-action-delete">
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
               </div>
@@ -305,14 +304,14 @@ const MasterHostelsPage = () => {
           <div className="master-modal-content">
             <div className="master-modal-header">
               <h2 className="master-modal-title">
-                {editingHostel ? '✏️ Edit Hostel' : '➕ Create New Hostel'}
+                {editingHostel ? 'Edit Hostel' : '+ Create New Hostel'}
               </h2>
               <button className="master-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
 
             {modalError && (
               <div className="master-alert-error">
-                <span>⚠️ {modalError}</span>
+                <span>{modalError}</span>
               </div>
             )}
 

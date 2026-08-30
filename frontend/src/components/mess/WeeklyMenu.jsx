@@ -4,9 +4,9 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 const MEAL_TYPES = ['BREAKFAST', 'LUNCH', 'DINNER'];
 
 const MEAL_META = {
-  BREAKFAST: { title: 'Breakfast', icon: '🌅', time: '07:30 AM – 09:30 AM' },
-  LUNCH: { title: 'Lunch', icon: '☀️', time: '12:30 PM – 02:30 PM' },
-  DINNER: { title: 'Dinner', icon: '🌙', time: '07:30 PM – 09:30 PM' }
+  BREAKFAST: { title: 'Breakfast', icon: '', time: '07:30 AM – 09:30 AM' },
+  LUNCH: { title: 'Lunch', icon: '', time: '12:30 PM – 02:30 PM' },
+  DINNER: { title: 'Dinner', icon: '', time: '07:30 PM – 09:30 PM' }
 };
 
 /**
@@ -60,13 +60,13 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
       {/* Timetable Controls & Day Selector */}
       <div className="timetable-header-row flex-between align-center">
         <div className="timetable-legend">
-          <span className="legend-badge breakfast">🌅 Breakfast (7:30–9:30 AM)</span>
-          <span className="legend-badge lunch">☀️ Lunch (12:30–2:30 PM)</span>
-          <span className="legend-badge dinner">🌙 Dinner (7:30–9:30 PM)</span>
+          <span className="legend-badge breakfast"> Breakfast (7:30–9:30 AM)</span>
+          <span className="legend-badge lunch"> Lunch (12:30–2:30 PM)</span>
+          <span className="legend-badge dinner"> Dinner (7:30–9:30 PM)</span>
         </div>
         {canManage && (
           <div className="warden-banner-hint">
-            <span>🛡️ <strong>Warden Controls Active</strong>: Click on ✏️ on any day to modify dishes & timing.</span>
+            <span> <strong>Warden Controls Active</strong>: Click on ️ on any day to modify dishes & timing.</span>
           </div>
         )}
       </div>
@@ -98,8 +98,8 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
         <div className="active-day-header flex-between align-center">
           <div>
             <h3 className="active-day-title">
-              📅 {DAYS[selectedDayTab]}
-              {selectedDayTab === currentDayIndex && <span className="today-badge">🟢 TODAY'S FOOD</span>}
+               {DAYS[selectedDayTab]}
+              {selectedDayTab === currentDayIndex && <span className="today-badge">● TODAY'S FOOD</span>}
             </h3>
             <span className="active-day-date">{activeDayData.dateStr}</span>
           </div>
@@ -126,7 +126,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
                     <span className="tile-icon">{meta.icon}</span>
                     <div>
                       <h4 className="tile-type-name">{meta.title}</h4>
-                      <span className="tile-timing-text">⏰ {meta.time}</span>
+                      <span className="tile-timing-text"> {meta.time}</span>
                     </div>
                   </div>
                   {canManage && (
@@ -138,7 +138,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
                           title="Edit Meal"
                           onClick={() => onEditItem && onEditItem(item)}
                         >
-                          ✏️ Edit
+                          Edit
                         </button>
                       ) : (
                         <button
@@ -180,7 +180,7 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
       {/* Desktop 7-Day Complete Time-Table Matrix Table */}
       <div className="desktop-timetable-matrix-wrapper">
         <div className="matrix-table-title flex-between align-center">
-          <h4>📋 Full 7-Day Hostel Mess Time-Table</h4>
+          <h4> Full 7-Day Hostel Mess Time-Table</h4>
           <span className="text-muted">Monday through Sunday Schedule</span>
         </div>
         <div className="table-responsive">
@@ -190,19 +190,19 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
                 <th className="th-day">Day</th>
                 <th className="th-meal">
                   <div className="th-meal-inner">
-                    <span>🌅 Breakfast</span>
+                    <span> Breakfast</span>
                     <small>07:30 – 09:30 AM</small>
                   </div>
                 </th>
                 <th className="th-meal">
                   <div className="th-meal-inner">
-                    <span>☀️ Lunch</span>
+                    <span> Lunch</span>
                     <small>12:30 – 02:30 PM</small>
                   </div>
                 </th>
                 <th className="th-meal">
                   <div className="th-meal-inner">
-                    <span>🌙 Dinner</span>
+                    <span> Dinner</span>
                     <small>07:30 – 09:30 PM</small>
                   </div>
                 </th>
@@ -239,14 +239,14 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
                                     className="btn-link-edit"
                                     onClick={() => onEditItem && onEditItem(item)}
                                   >
-                                    ✏️ Edit
+                                    Edit
                                   </button>
                                   <button
                                     type="button"
                                     className="btn-link-delete"
                                     onClick={() => onDeleteItem && onDeleteItem(item.id)}
                                   >
-                                    🗑️
+                                    ️
                                   </button>
                                 </div>
                               )}

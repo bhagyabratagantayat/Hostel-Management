@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
@@ -37,7 +38,9 @@ export const COURSE_BRANCH_MAP = {
 };
 
 const StudentsPage = () => {
-  const { user } = useAuth();
+  const { user, impersonateStudent } = useAuth();
+  const navigate = useNavigate();
+  const [impersonatingId, setImpersonatingId] = useState(null);
   
   // Lists and filtering state
   const [students, setStudents] = useState([]);
@@ -79,7 +82,6 @@ const StudentsPage = () => {
   // Form Fields State
   const [formData, setFormData] = useState({
     student_id: '',
-    roll_number: '',
     full_name: '',
     date_of_birth: '',
     email: '',
@@ -95,6 +97,21 @@ const StudentsPage = () => {
     bed_id: '',
     base64Photo: ''
   });
+
+  // Automatically generate/suggest email when typing student full name
+  const handleFullNameChange = (name) => {
+    const cleanName = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const autoEmail = cleanName ? `${cleanName}@bec.ac.in` : '';
+    setFormData(prev => {
+      // Auto-update email whenever it is empty or matches previous @bec.ac.in address
+      const isAuto = !prev.email || prev.email.endsWith('@bec.ac.in') || prev.email === '';
+      return {
+        ...prev,
+        full_name: name,
+        email: isAuto ? autoEmail : prev.email
+      };
+    });
+  };
 
   // Automatically convert DOB (YYYY-MM-DD) into default DDMMYYYY password
   const handleDobChange = (dobString) => {
@@ -284,21 +301,50 @@ const StudentsPage = () => {
     }
   };
 
-  // Convert uploaded image file to base64
+  // Convert uploaded image file to optimized base64
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check size limit: 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      setFormErrors(prev => ({ ...prev, base64Photo: 'Image size exceeds maximum limit of 5MB.' }));
+    // Check size limit: 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      setFormErrors(prev => ({ ...prev, base64Photo: 'Image size exceeds maximum limit of 10MB.' }));
       return;
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, base64Photo: reader.result }));
-      setFormErrors(prev => ({ ...prev, base64Photo: null }));
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 1200;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        setFormData(prev => ({ ...prev, base64Photo: compressedBase64 }));
+        setFormErrors(prev => ({ ...prev, base64Photo: null }));
+      };
+      img.onerror = () => {
+        setFormData(prev => ({ ...prev, base64Photo: event.target.result }));
+        setFormErrors(prev => ({ ...prev, base64Photo: null }));
+      };
+      img.src = event.target.result;
     };
     reader.onerror = () => {
       setFormErrors(prev => ({ ...prev, base64Photo: 'Could not parse image file.' }));
@@ -312,7 +358,6 @@ const StudentsPage = () => {
     const defaultBranch = COURSE_BRANCH_MAP['B.Tech'][0];
     setFormData({
       student_id: '',
-      roll_number: '',
       full_name: '',
       date_of_birth: '',
       email: '',
@@ -358,7 +403,6 @@ const StudentsPage = () => {
 
     setFormData({
       student_id: student.student_id,
-      roll_number: student.roll_number,
       full_name: student.full_name,
       date_of_birth: dobFormatted,
       email: student.email,
@@ -408,10 +452,8 @@ const StudentsPage = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
-    // Validations
+    // Validations (Registration Number is optional)
     const errors = {};
-    if (!formData.student_id.trim()) errors.student_id = 'Registration Number (User ID) is required.';
-    if (!formData.roll_number.trim()) errors.roll_number = 'Roll number is required.';
     if (!formData.full_name.trim()) errors.full_name = 'Full name is required.';
     if (!formData.email.trim()) errors.email = 'Email address is required.';
     if (!formData.date_of_birth) errors.date_of_birth = 'Date of Birth is required.';
@@ -440,6 +482,7 @@ const StudentsPage = () => {
       } else {
         // Prepare update fields (filter out empty password / photo)
         const updatePayload = {
+          student_id: formData.student_id ? formData.student_id.trim() : undefined,
           full_name: formData.full_name,
           date_of_birth: formData.date_of_birth || null,
           phone: formData.phone,
@@ -457,7 +500,8 @@ const StudentsPage = () => {
       setIsAddEditOpen(false);
       fetchStudents();
     } catch (err) {
-      setFormErrors({ form: err.response?.data?.message || err.message || 'Operation failed.' });
+      const errorText = err.message || err.data?.message || err.response?.data?.message || 'Operation failed.';
+      setFormErrors({ form: errorText });
     } finally {
       setActionLoading(false);
     }
@@ -507,6 +551,27 @@ const StudentsPage = () => {
     }
   };
 
+  // 1-Click Login as Student (Super Admin / Warden Impersonation)
+  const handleImpersonateStudent = async (student) => {
+    if (!student) return;
+    if (!window.confirm(`Are you sure you want to 1-Click Login as "${student.full_name}" (${student.student_id})?`)) {
+      return;
+    }
+    setImpersonatingId(student.id);
+    try {
+      const res = await impersonateStudent(student.id);
+      if (res.success) {
+        navigate('/student/dashboard');
+      } else {
+        alert(res.message || 'Failed to login as student.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error occurred during student login.');
+    } finally {
+      setImpersonatingId(null);
+    }
+  };
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-header-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -529,7 +594,7 @@ const StudentsPage = () => {
           <div style={{ flex: '1 1 250px' }}>
             <label className="form-label" style={{ fontSize: '13px' }}>Search Student</label>
             <Input 
-              placeholder="Search by ID, roll, name, email or phone..."
+              placeholder="Search by ID, name, email or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ marginBottom: 0 }}
@@ -647,7 +712,6 @@ const StudentsPage = () => {
                     
                     <td style={{ padding: '16px' }}>
                       <div style={{ fontWeight: '500' }}>{student.course} - {student.branch}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Roll: {student.roll_number}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>Year {student.year}, Sem {student.semester}</div>
                     </td>
 
@@ -673,14 +737,33 @@ const StudentsPage = () => {
                     </td>
 
                     <td style={{ padding: '16px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        {['SUPER_ADMIN', 'SUPERINTENDENT'].includes(user?.role) && (
+                          <Button 
+                            onClick={() => handleImpersonateStudent(student)}
+                            variant="primary" 
+                            className="btn-sm"
+                            style={{ 
+                              padding: '6px 10px', 
+                              fontSize: '12px', 
+                              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', 
+                              border: 'none', 
+                              color: '#ffffff',
+                              fontWeight: 600
+                            }}
+                            isLoading={impersonatingId === student.id}
+                            title={`1-Click Login as ${student.full_name}`}
+                          >
+                            Login
+                          </Button>
+                        )}
                         <Button 
                           onClick={() => { setSelectedStudent(student); setIsDetailsOpen(true); }}
                           variant="secondary" 
                           className="btn-sm"
                           style={{ padding: '6px 10px', fontSize: '12px' }}
                         >
-                          👁️ View
+                          View
                         </Button>
                         <Button 
                           onClick={() => handleOpenEditModal(student)}
@@ -688,7 +771,7 @@ const StudentsPage = () => {
                           className="btn-sm"
                           style={{ padding: '6px 10px', fontSize: '12px' }}
                         >
-                          ✏️ Edit
+                          Edit
                         </Button>
                         <Button 
                           onClick={() => handleOpenTransferModal(student)}
@@ -697,7 +780,7 @@ const StudentsPage = () => {
                           style={{ padding: '6px 10px', fontSize: '12px' }}
                           disabled={student.status !== 'ACTIVE'}
                         >
-                          🔄 Transfer
+                          Transfer
                         </Button>
                         <Button 
                           onClick={() => handleOpenStatusModal(student)}
@@ -705,7 +788,7 @@ const StudentsPage = () => {
                           className="btn-sm"
                           style={{ padding: '6px 10px', fontSize: '12px' }}
                         >
-                          {student.status === 'ACTIVE' ? '🛑 Deactivate' : '⚡ Activate'}
+                          {student.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                         </Button>
                       </div>
                     </td>
@@ -751,7 +834,7 @@ const StudentsPage = () => {
           <div className="custom-modal-container" style={{ maxWidth: '640px' }}>
             <div className="custom-modal-header">
               <div className="custom-modal-header-content">
-                <h2 className="custom-modal-title">🎓 Student Profile Details</h2>
+                <h2 className="custom-modal-title">Student Profile Details</h2>
                 <p className="custom-modal-subtitle">Comprehensive registered student account information.</p>
               </div>
               <button 
@@ -774,9 +857,7 @@ const StudentsPage = () => {
                       className="profile-avatar-img"
                     />
                   ) : (
-                    <div className="profile-avatar-placeholder">
-                      🎓
-                    </div>
+                    <div className="profile-avatar-placeholder"></div>
                   )}
                   <span className={`hostel-gender-badge ${
                     selectedStudent.status === 'ACTIVE' ? 'male' : 'female'
@@ -799,10 +880,6 @@ const StudentsPage = () => {
                     <span className="profile-info-value">
                       {selectedStudent.date_of_birth ? new Date(selectedStudent.date_of_birth).toLocaleDateString('en-GB') : 'Not Specified'}
                     </span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Roll Number</span>
-                    <span className="profile-info-value">{selectedStudent.roll_number}</span>
                   </div>
                   <div className="profile-info-row">
                     <span className="profile-info-label">Email Address</span>
@@ -840,7 +917,24 @@ const StudentsPage = () => {
               </div>
             </div>
 
-            <div className="custom-modal-footer">
+            <div className="custom-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                {['SUPER_ADMIN', 'SUPERINTENDENT'].includes(user?.role) && selectedStudent && (
+                  <Button 
+                    onClick={() => { setIsDetailsOpen(false); handleImpersonateStudent(selectedStudent); }}
+                    variant="primary"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', 
+                      border: 'none', 
+                      color: '#ffffff',
+                      fontWeight: 600
+                    }}
+                    isLoading={impersonatingId === selectedStudent.id}
+                  >
+                    1-Click Login as this Student
+                  </Button>
+                )}
+              </div>
               <Button onClick={() => setIsDetailsOpen(false)} variant="secondary">
                 Close Profile
               </Button>
@@ -856,7 +950,7 @@ const StudentsPage = () => {
             <div className="custom-modal-header">
               <div className="custom-modal-header-content">
                 <h2 className="custom-modal-title">
-                  {modalMode === 'add' ? '✨ Register New Student' : '✏️ Edit Student Details'}
+                  {modalMode === 'add' ? 'Register New Student' : 'Edit Student Details'}
                 </h2>
                 <p className="custom-modal-subtitle">Provide information to register or update the student profile.</p>
               </div>
@@ -874,42 +968,10 @@ const StudentsPage = () => {
               <div className="custom-modal-body">
                 {formErrors.form && (
                   <div className="login-error-alert" style={{ marginBottom: '16px' }}>
-                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-icon">️</span>
                     <span className="alert-text">{formErrors.form}</span>
                   </div>
                 )}
-
-                <div className="modal-form-grid-2">
-                  <div>
-                    <Input 
-                      label="Registration Number (User ID) *"
-                      id="student_id"
-                      name="student_id"
-                      placeholder="e.g. 2301316095"
-                      autoComplete="new-student-id"
-                      value={formData.student_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, student_id: e.target.value }))}
-                      error={formErrors.student_id}
-                      disabled={modalMode === 'edit'}
-                      required
-                    />
-                    <small style={{ display: 'block', marginTop: '-8px', marginBottom: '12px', fontSize: '11px', color: '#64748b' }}>
-                      🔑 Official registration number used for student portal login.
-                    </small>
-                  </div>
-                  
-                  <Input 
-                    label="College Roll Number *"
-                    id="roll_number"
-                    name="roll_number"
-                    placeholder="e.g. CSE-042"
-                    value={formData.roll_number}
-                    onChange={(e) => setFormData(prev => ({ ...prev, roll_number: e.target.value }))}
-                    error={formErrors.roll_number}
-                    disabled={modalMode === 'edit'}
-                    required
-                  />
-                </div>
 
                 <div className="modal-form-grid-2">
                   <Input 
@@ -918,7 +980,7 @@ const StudentsPage = () => {
                     name="full_name"
                     placeholder="e.g. Soumya Ranjan Panda"
                     value={formData.full_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                    onChange={(e) => handleFullNameChange(e.target.value)}
                     error={formErrors.full_name}
                     required
                   />
@@ -939,24 +1001,66 @@ const StudentsPage = () => {
                     />
                     {formErrors.date_of_birth && <span className="form-error-msg">{formErrors.date_of_birth}</span>}
                     <small style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#64748b' }}>
-                      📅 Used as the default login password (format DDMMYYYY).
+                      Used as the default login password (format DDMMYYYY).
                     </small>
                   </div>
                 </div>
 
                 <div className="modal-form-grid-2">
-                  <Input 
-                    label="Email Address *"
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="e.g. student@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    error={formErrors.email}
-                    required
-                  />
+                  <div>
+                    <Input 
+                      label={modalMode === 'add' ? 'Registration Number (User ID) (Optional)' : 'Registration Number (User ID)'}
+                      id="student_id"
+                      name="student_id"
+                      placeholder="e.g. 2301316095 (Auto-generated if empty)"
+                      autoComplete="new-student-id"
+                      value={formData.student_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, student_id: e.target.value }))}
+                      error={formErrors.student_id}
+                    />
+                    <small style={{ display: 'block', marginTop: '-8px', marginBottom: '12px', fontSize: '11px', color: '#64748b' }}>
+                      {modalMode === 'add' 
+                        ? 'Optional for 1st-year students. Auto-generated if left blank.' 
+                        : 'Official college/university registration number. Can be added or updated anytime.'}
+                    </small>
+                  </div>
 
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                      <label className="form-label" htmlFor="email" style={{ marginBottom: 0 }}>
+                        Email Address *
+                      </label>
+                      {formData.full_name && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const clean = formData.full_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            if (clean) setFormData(prev => ({ ...prev, email: `${clean}@bec.ac.in` }));
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '11px', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                          title="Generate email from full name"
+                        >
+                          Auto-fill @bec.ac.in
+                        </button>
+                      )}
+                    </div>
+                    <Input 
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="e.g. fullname@bec.ac.in"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      error={formErrors.email}
+                      required
+                    />
+                    <small style={{ display: 'block', marginTop: '-8px', marginBottom: '12px', fontSize: '11px', color: '#64748b' }}>
+                      Used for student portal login (format <code>fullname@bec.ac.in</code>).
+                    </small>
+                  </div>
+                </div>
+
+                <div className="modal-form-grid-2">
                   <Input 
                     label="Phone Number"
                     id="phone"
@@ -965,57 +1069,62 @@ const StudentsPage = () => {
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                   />
+
+                  {modalMode === 'add' ? (
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" htmlFor="password">
+                        Access Password (Auto-set from DOB) *
+                      </label>
+                      <div style={{ position: 'relative' }}>
+                        <input 
+                          type={showPassword ? 'text' : 'password'}
+                          id="student_access_password"
+                          name="student_access_password"
+                          autoComplete="new-password"
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          className="form-input"
+                          placeholder="Select DOB to auto-generate password"
+                          style={{ width: '100%', height: '42px', padding: '8px 40px 8px 12px' }}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '15px',
+                            color: '#64748b'
+                          }}
+                          title={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? '' : ''}
+                        </button>
+                      </div>
+                      {formErrors.password && <span className="form-error-msg">{formErrors.password}</span>}
+                    </div>
+                  ) : (
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <label className="form-label" style={{ color: '#64748b', fontSize: '13px' }}>Password Management</label>
+                      <div style={{ color: '#94a3b8', fontSize: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                        Password is kept secure. Can be reset via User Management.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {modalMode === 'add' ? (
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label" htmlFor="password">
-                      Access Password (Auto-set from DOB) *
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <input 
-                        type={showPassword ? 'text' : 'password'}
-                        id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        className="form-input"
-                        placeholder="Select DOB to auto-generate password"
-                        style={{ width: '100%', height: '42px', padding: '8px 40px 8px 12px' }}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '15px',
-                          color: '#64748b'
-                        }}
-                        title={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? '👁️' : '🙈'}
-                      </button>
-                    </div>
-                    {formErrors.password && <span className="form-error-msg">{formErrors.password}</span>}
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#0369a1', background: '#f0f9ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
-                      💡 <strong>Student Login Credentials:</strong><br />
-                      • <strong>User ID:</strong> <code>{formData.student_id || 'Enter Registration No.'}</code><br />
-                      • <strong>Default Password:</strong> <code>{formData.password || 'Select Date of Birth (DDMMYYYY)'}</code>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                    <label className="form-label" style={{ color: '#64748b', fontSize: '13px' }}>Password Management</label>
-                    <div style={{ color: '#94a3b8', fontSize: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                      Password is kept secure. Can be reset via User Management by Super Admin.
-                    </div>
+                {modalMode === 'add' && (
+                  <div style={{ marginBottom: '16px', fontSize: '12px', color: '#0369a1', background: '#f0f9ff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bae6fd' }}>
+                    <strong>Student Login Credentials:</strong><br />
+                    • <strong>Login Email:</strong> <code>{formData.email || 'fullname@bec.ac.in'}</code><br />
+                    • <strong>Registration ID:</strong> <code>{formData.student_id || '(Auto-assigned upon registration)'}</code><br />
+                    • <strong>Default Password:</strong> <code>{formData.password || 'Select Date of Birth (format DDMMYYYY)'}</code>
                   </div>
                 )}
 
@@ -1126,7 +1235,7 @@ const StudentsPage = () => {
                 {modalMode === 'add' && (
                   <div className="modal-allocation-card">
                     <h3 className="modal-allocation-title">
-                      🏢 Core Hostel Bed Assignment
+                      Hostel Bed Assignment
                     </h3>
                     
                     <div className="modal-form-grid-2" style={{ marginBottom: '12px' }}>
@@ -1221,7 +1330,7 @@ const StudentsPage = () => {
           <div className="custom-modal-container" style={{ maxWidth: '520px' }}>
             <div className="custom-modal-header">
               <div className="custom-modal-header-content">
-                <h2 className="custom-modal-title">🔄 Transfer Student Bed</h2>
+                <h2 className="custom-modal-title">Transfer Student Bed</h2>
                 <p className="custom-modal-subtitle">Allocate <strong>{selectedStudent.full_name}</strong> to a different bed vacancy.</p>
               </div>
               <button 
@@ -1238,7 +1347,7 @@ const StudentsPage = () => {
               <div className="custom-modal-body">
                 {formErrors.form && (
                   <div className="login-error-alert" style={{ marginBottom: '16px' }}>
-                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-icon">️</span>
                     <span className="alert-text">{formErrors.form}</span>
                   </div>
                 )}
@@ -1331,7 +1440,7 @@ const StudentsPage = () => {
           <div className="custom-modal-container" style={{ maxWidth: '480px' }}>
             <div className="custom-modal-header">
               <div className="custom-modal-header-content">
-                <h2 className="custom-modal-title">⚙️ Update Status / Deactivate</h2>
+                <h2 className="custom-modal-title">Update Status / Deactivate</h2>
                 <p className="custom-modal-subtitle">Alter the account status of <strong>{selectedStudent.full_name}</strong>.</p>
               </div>
               <button 
@@ -1348,7 +1457,7 @@ const StudentsPage = () => {
               <div className="custom-modal-body">
                 {formErrors.form && (
                   <div className="login-error-alert" style={{ marginBottom: '16px' }}>
-                    <span className="alert-icon">⚠️</span>
+                    <span className="alert-icon">️</span>
                     <span className="alert-text">{formErrors.form}</span>
                   </div>
                 )}
@@ -1369,7 +1478,7 @@ const StudentsPage = () => {
                 </div>
 
                 <div style={{ color: '#64748b', fontSize: '13px', lineHeight: '1.5', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  💡 <strong>Important Note:</strong> Switching a student to <code>INACTIVE</code> or <code>GRADUATED</code> will instantly release their currently assigned bed back to the availability pool.
+                  <strong>Important Note:</strong> Switching a student to <code>INACTIVE</code> or <code>GRADUATED</code> will instantly release their currently assigned bed back to the availability pool.
                 </div>
               </div>
 

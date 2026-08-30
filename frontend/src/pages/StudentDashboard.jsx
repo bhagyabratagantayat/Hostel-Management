@@ -8,6 +8,17 @@ import NoticeDetailsModal from '../components/NoticeDetailsModal';
 import VisitorFormModal from '../components/visitors/VisitorFormModal';
 import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
 import Loading from '../components/Loading';
+import {
+  BedDouble,
+  Bell,
+  Wrench,
+  CalendarCheck,
+  Utensils,
+  User,
+  DoorClosed,
+  ArrowRight,
+  AlertTriangle
+} from 'lucide-react';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
@@ -95,7 +106,7 @@ const StudentDashboard = () => {
       <div className="student-welcome-banner">
         <div className="banner-glow"></div>
         <div className="welcome-info">
-          <span className="welcome-greeting-tag">{getGreeting()}, Welcome Back 👋</span>
+          <span className="welcome-greeting-tag">{getGreeting()}, Welcome Back</span>
           <h1 className="welcome-name">{displayName}</h1>
           <div className="welcome-academic-pills">
             <span className="academic-pill highlight">
@@ -105,9 +116,6 @@ const StudentDashboard = () => {
               Year {studentProfile?.year || 1} • Sem {studentProfile?.semester || 1}
             </span>
             <span className="academic-pill">
-              Roll: <strong>{studentProfile?.roll_number || 'N/A'}</strong>
-            </span>
-            <span className="academic-pill">
               Student ID: <strong>{studentProfile?.student_id || user?.username}</strong>
             </span>
           </div>
@@ -115,7 +123,7 @@ const StudentDashboard = () => {
 
         {unreadCount > 0 && (
           <div className="unread-alert-badge-card" onClick={() => navigate('/student/notices')}>
-            <span className="alert-bell">🔔</span>
+            <span className="alert-bell"><Bell size={18} /></span>
             <div className="alert-text">
               <span className="alert-count">{unreadCount} Unread Notice{unreadCount > 1 ? 's' : ''}</span>
               <span className="alert-action">Tap to view →</span>
@@ -125,8 +133,8 @@ const StudentDashboard = () => {
       </div>
 
       {error && (
-        <div className="dashboard-error-banner">
-          ⚠️ {error}
+        <div className="dashboard-error-banner" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertTriangle size={16} /> {error}
         </div>
       )}
 
@@ -175,8 +183,9 @@ const StudentDashboard = () => {
             type="button"
             className="btn-view-accommodation"
             onClick={() => navigate('/student/accommodation')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            Stay Details →
+            Stay Details <ArrowRight size={14} />
           </button>
         </div>
       </div>
@@ -184,7 +193,9 @@ const StudentDashboard = () => {
       {/* 3. Quick Action Navigation Grid */}
       <div className="student-actions-grid">
         <div className="action-tile tile-accommodation" onClick={() => navigate('/student/accommodation')}>
-          <div className="tile-icon">🛏️</div>
+          <div className="tile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <BedDouble size={22} />
+          </div>
           <div className="tile-content">
             <h3>Accommodation</h3>
             <p>{allocation ? `Room ${allocation.room_number}, Bed ${allocation.bed_number}` : 'View room & bed details'}</p>
@@ -192,7 +203,9 @@ const StudentDashboard = () => {
         </div>
 
         <div className="action-tile tile-notices" onClick={() => navigate('/student/notices')}>
-          <div className="tile-icon">📢</div>
+          <div className="tile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Bell size={22} />
+          </div>
           <div className="tile-content">
             <h3>Notice Board</h3>
             <p>Read hostel notices & circulars</p>
@@ -201,7 +214,9 @@ const StudentDashboard = () => {
         </div>
 
         <div className="action-tile tile-complaints" onClick={() => navigate('/student/complaints')}>
-          <div className="tile-icon">🛠️</div>
+          <div className="tile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Wrench size={22} />
+          </div>
           <div className="tile-content">
             <h3>My Complaints</h3>
             <p>Submit & track maintenance</p>
@@ -209,7 +224,9 @@ const StudentDashboard = () => {
         </div>
 
         <div className="action-tile tile-attendance" onClick={() => navigate('/student/attendance')}>
-          <div className="tile-icon">📅</div>
+          <div className="tile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CalendarCheck size={22} />
+          </div>
           <div className="tile-content">
             <h3>My Attendance</h3>
             <p>Daily check-ins & monthly record</p>
@@ -217,15 +234,19 @@ const StudentDashboard = () => {
         </div>
 
         <div className="action-tile tile-mess" onClick={() => navigate('/student/mess')}>
-          <div className="tile-icon">🍽️</div>
+          <div className="tile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Utensils size={22} />
+          </div>
           <div className="tile-content">
             <h3>Hostel Mess</h3>
             <p>Daily meal menu & schedule</p>
           </div>
         </div>
 
-        <div className="action-tile tile-profile" onClick={() => navigate('/student/profile')}>
-          <div className="tile-icon">👤</div>
+        <div className="action-tile tile-profile" onClick={() => navigate('/profile')}>
+          <div className="tile-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <User size={22} />
+          </div>
           <div className="tile-content">
             <h3>My Profile</h3>
             <p>Student ID & personal account</p>
@@ -255,7 +276,9 @@ const StudentDashboard = () => {
           {/* Visitor Pass Quick Action Card */}
           <div className="visitor-quick-banner">
             <div className="visitor-quick-info">
-              <div className="visitor-quick-icon">🚪</div>
+              <div className="visitor-quick-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DoorClosed size={22} />
+              </div>
               <div>
                 <h4>Visitor Gate Passes</h4>
                 <p>Request entry passes for visiting family or guests</p>

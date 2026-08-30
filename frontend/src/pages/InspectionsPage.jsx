@@ -3,6 +3,7 @@ import { getInspections } from '../api/operations';
 import InspectionFormModal from '../components/operations/InspectionFormModal';
 import InspectionHistoryModal from '../components/operations/InspectionHistoryModal';
 import MaintenanceFormModal from '../components/operations/MaintenanceFormModal';
+import './MaintenancePage.css';
 
 export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
   const [inspections, setInspections] = useState([]);
@@ -39,9 +40,9 @@ export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
       const data = await getInspections(filters);
       setInspections(data.inspections || []);
       setPagination({
-        page: data.page,
-        totalPages: data.totalPages,
-        total: data.total
+        page: data.page || 1,
+        totalPages: data.totalPages || 1,
+        total: data.total || 0
       });
     } catch (err) {
       setError(err.message || 'Failed to load room inspections.');
@@ -56,9 +57,12 @@ export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
 
   const renderBadge = (status) => {
     switch (status) {
-      case 'CRITICAL': return <span className="badge bg-danger">CRITICAL</span>;
-      case 'ATTENTION_REQUIRED': return <span className="badge bg-warning text-dark">ATTENTION REQUIRED</span>;
-      default: return <span className="badge bg-success">GOOD</span>;
+      case 'CRITICAL':
+        return <span className="priority-pill priority-urgent">CRITICAL</span>;
+      case 'ATTENTION_REQUIRED':
+        return <span className="priority-pill priority-high">ATTENTION</span>;
+      default:
+        return <span className="status-pill status-resolved">GOOD</span>;
     }
   };
 
@@ -87,43 +91,44 @@ export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
   };
 
   return (
-    <div className="container-fluid py-4">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div className="maintenance-page">
+      {/* Header */}
+      <div className="maintenance-header-row">
         <div>
-          <h2 className="h4 font-weight-bold mb-1">
-            <i className="bi bi-clipboard-check text-dark me-2"></i>
-            Room Health & Inspection Center
-          </h2>
-          <p className="text-muted small mb-0">
-            Conduct daily/weekly room health checklists and track physical asset conditions across hostels.
+          <h1 className="maintenance-title">
+            <span>Room Health & Inspection Center</span>
+          </h1>
+          <p className="maintenance-sub">
+            Conduct room health audits, hygiene inspections, and track physical room asset conditions.
           </p>
         </div>
 
         <button
-          className="btn btn-dark"
+          type="button"
+          className="btn-primary-gradient"
           onClick={() => setIsInspFormOpen(true)}
         >
-          <i className="bi bi-plus-lg me-1"></i>
-          Record Room Inspection
+          <span>+ Record Room Inspection</span>
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="card shadow-sm p-3 mb-4 border">
-        <div className="row g-2 align-items-center">
-          <div className="col-12 col-md-4">
+      <div className="maintenance-filter-card">
+        <div className="filter-grid">
+          <div className="filter-search-wrapper">
+            <span className="filter-search-icon"></span>
             <input
               type="text"
-              className="form-control form-control-sm"
+              className="filter-search-input"
               placeholder="Search hostel, room number, inspector..."
               value={filters.search || ''}
               onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
             />
           </div>
 
-          <div className="col-6 col-md-3">
+          <div>
             <select
-              className="form-select form-select-sm"
+              className="filter-select"
               value={filters.condition || ''}
               onChange={(e) => setFilters({ ...filters, condition: e.target.value, page: 1 })}
             >
@@ -134,9 +139,10 @@ export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
             </select>
           </div>
 
-          <div className="col-6 col-md-2 text-end ms-auto">
+          <div>
             <button
-              className="btn btn-outline-secondary btn-sm w-100"
+              type="button"
+              className="filter-reset-btn"
               onClick={() => setFilters({ page: 1, limit: 20, search: '', hostel_id: '', condition: '', date_from: '', date_to: '' })}
             >
               Reset Filters
@@ -146,88 +152,85 @@ export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
       </div>
 
       {error && (
-        <div className="alert alert-danger p-3 mb-4">
-          <i className="bi bi-exclamation-octagon me-2"></i>
-          {error}
+        <div className="alert-error-custom">
+          <span>️</span>
+          <div>{error}</div>
         </div>
       )}
 
       {/* Inspections List */}
       {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-dark" role="status"></div>
-          <p className="mt-2 text-muted">Loading room inspections...</p>
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '12px' }}></div>
+          <p>Loading room inspections...</p>
         </div>
       ) : inspections.length === 0 ? (
-        <div className="card text-center p-5 border-dashed">
-          <i className="bi bi-clipboard-x text-muted display-4 mb-3"></i>
-          <h5>No Inspection Records Found</h5>
-          <p className="text-muted small">No room inspections match your current filter settings.</p>
+        <div style={{ background: '#ffffff', border: '2px dashed #e2e8f0', borderRadius: '16px', padding: '60px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '12px' }}></div>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>No Inspection Records Found</h3>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>No room inspections match your current filter settings.</p>
         </div>
       ) : (
         <>
-          <div className="row g-3 mb-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', marginBottom: '24px' }}>
             {inspections.map(insp => {
               const overall = calculateOverallCondition(insp);
               return (
-                <div key={insp.id} className="col-12 col-md-6 col-lg-4">
-                  <div className="card shadow-sm border h-100">
-                    <div className="card-header bg-light d-flex justify-content-between align-items-center">
-                      <span className="fw-bold">
-                        <i className="bi bi-door-closed me-1"></i>
-                        Room {insp.room_number} ({insp.hostel_code || insp.hostel_name})
-                      </span>
-                      {renderBadge(overall)}
-                    </div>
+                <div key={insp.id} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '1rem' }}>
+                      Room {insp.room_number} <small style={{ color: '#64748b', fontWeight: 500 }}>({insp.hostel_code || insp.hostel_name})</small>
+                    </span>
+                    {renderBadge(overall)}
+                  </div>
 
-                    <div className="card-body">
-                      <div className="small text-muted mb-2">
-                        <span>Inspector: <strong>{insp.inspector_name}</strong></span>
-                        <span className="float-end">{new Date(insp.inspection_date).toLocaleDateString()}</span>
-                      </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748b' }}>
+                    <span>Inspector: <strong>{insp.inspector_name}</strong></span>
+                    <span>{new Date(insp.inspection_date).toLocaleDateString()}</span>
+                  </div>
 
-                      <div className="row g-2 small mb-3">
-                        <div className="col-6">Cleanliness: {renderBadge(insp.cleanliness_status)}</div>
-                        <div className="col-6">Electrical: {renderBadge(insp.electrical_status)}</div>
-                        <div className="col-6">Plumbing: {renderBadge(insp.plumbing_status)}</div>
-                        <div className="col-6">Furniture: {renderBadge(insp.furniture_status)}</div>
-                        <div className="col-6">Beds: {renderBadge(insp.bed_status)}</div>
-                        <div className="col-6">Safety: {renderBadge(insp.safety_status)}</div>
-                      </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.82rem', background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+                    <div>Clean: {renderBadge(insp.cleanliness_status)}</div>
+                    <div>Electrical: {renderBadge(insp.electrical_status)}</div>
+                    <div>Plumbing: {renderBadge(insp.plumbing_status)}</div>
+                    <div>Furniture: {renderBadge(insp.furniture_status)}</div>
+                    <div>Beds: {renderBadge(insp.bed_status)}</div>
+                    <div>Safety: {renderBadge(insp.safety_status)}</div>
+                  </div>
 
-                      {insp.remarks && (
-                        <p className="text-muted small bg-light p-2 rounded mb-0">
-                          <strong>Remarks:</strong> {insp.remarks}
-                        </p>
-                      )}
-                    </div>
+                  {insp.remarks && (
+                    <p style={{ color: '#475569', fontSize: '0.84rem', margin: 0, background: '#f1f5f9', padding: '8px 10px', borderRadius: '6px' }}>
+                      <strong>Remarks:</strong> {insp.remarks}
+                    </p>
+                  )}
 
-                    <div className="card-footer bg-white border-top-0 d-flex justify-content-between gap-2">
+                  <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '8px' }}>
+                    <button
+                      type="button"
+                      className="filter-reset-btn"
+                      style={{ flex: 1, padding: '7px 10px', fontSize: '0.82rem' }}
+                      onClick={() => openHistory(insp.room_id)}
+                    >
+                      History
+                    </button>
+
+                    {overall !== 'GOOD' && (
                       <button
-                        className="btn btn-outline-secondary btn-sm flex-fill"
-                        onClick={() => openHistory(insp.room_id)}
+                        type="button"
+                        className="btn-action-outline"
+                        style={{ flex: 1, padding: '7px 10px', fontSize: '0.82rem', borderColor: '#ef4444', color: '#dc2626' }}
+                        onClick={() => handleOpenMaintenancePrefill({
+                          category: insp.plumbing_status !== 'GOOD' ? 'PLUMBING' : (insp.electrical_status !== 'GOOD' ? 'ELECTRICAL' : 'ROOM'),
+                          hostel_id: insp.hostel_id,
+                          floor_id: insp.floor_id,
+                          room_id: insp.room_id,
+                          title: `Inspection Issue: Room ${insp.room_number}`,
+                          description: `Created from room inspection on ${new Date(insp.inspection_date).toLocaleDateString()}. Remarks: ${insp.remarks || 'N/A'}`
+                        })}
                       >
-                        <i className="bi bi-clock-history me-1"></i>
-                        View History
+                        Report Issue
                       </button>
-
-                      {overall !== 'GOOD' && (
-                        <button
-                          className="btn btn-outline-danger btn-sm flex-fill text-nowrap"
-                          onClick={() => handleOpenMaintenancePrefill({
-                            category: insp.plumbing_status !== 'GOOD' ? 'PLUMBING' : (insp.electrical_status !== 'GOOD' ? 'ELECTRICAL' : 'ROOM'),
-                            hostel_id: insp.hostel_id,
-                            floor_id: insp.floor_id,
-                            room_id: insp.room_id,
-                            title: `Inspection Issue: Room ${insp.room_number}`,
-                            description: `Created from room inspection on ${new Date(insp.inspection_date).toLocaleDateString()}. Remarks: ${insp.remarks || 'N/A'}`
-                          })}
-                        >
-                          <i className="bi bi-tools me-1"></i>
-                          Report Maintenance
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               );
@@ -236,20 +239,22 @@ export default function InspectionsPage({ role = 'SUPER_ADMIN' }) {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="text-muted small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: '#64748b', fontSize: '0.86rem' }}>
                 Showing Page {pagination.page} of {pagination.totalPages} ({pagination.total} total inspections)
               </span>
-              <div className="btn-group btn-group-sm">
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  className="btn btn-outline-secondary"
+                  type="button"
+                  className="filter-reset-btn"
                   disabled={pagination.page <= 1}
                   onClick={() => setFilters({ ...filters, page: pagination.page - 1 })}
                 >
                   Previous
                 </button>
                 <button
-                  className="btn btn-outline-secondary"
+                  type="button"
+                  className="filter-reset-btn"
                   disabled={pagination.page >= pagination.totalPages}
                   onClick={() => setFilters({ ...filters, page: pagination.page + 1 })}
                 >

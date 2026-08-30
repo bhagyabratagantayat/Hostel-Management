@@ -121,7 +121,7 @@ export default function VisitorsPage() {
       {/* Page Header */}
       <div className="page-header-flex">
         <div>
-          <h1 className="page-title">👥 Hostel Visitor Management</h1>
+          <h1 className="page-title">Hostel Visitor Management</h1>
           <p className="page-subtitle">Track, register, and monitor visitor entry/exit records in real time</p>
         </div>
         <button
@@ -129,14 +129,14 @@ export default function VisitorsPage() {
           className="btn-primary btn-lg"
           onClick={() => setIsFormOpen(true)}
         >
-          {userRole === 'STUDENT' ? '➕ Request Visitor Entry' : '➕ Register Visitor'}
+          {userRole === 'STUDENT' ? '+ Request Visitor Entry' : '+ Register Visitor'}
         </button>
       </div>
 
       {/* KPI Metric Summary Cards */}
       <div className="visitor-summary-cards">
         <div className="summary-card card-current">
-          <div className="summary-icon">🚪</div>
+          <div className="summary-icon"></div>
           <div className="summary-details">
             <span className="summary-value">{summary.current}</span>
             <span className="summary-label">Currently Inside</span>
@@ -144,7 +144,7 @@ export default function VisitorsPage() {
         </div>
 
         <div className={`summary-card card-overdue ${summary.overdue > 0 ? 'pulse-overdue' : ''}`}>
-          <div className="summary-icon">⚠️</div>
+          <div className="summary-icon">️</div>
           <div className="summary-details">
             <span className="summary-value">{summary.overdue}</span>
             <span className="summary-label">Overdue Visitors</span>
@@ -152,7 +152,7 @@ export default function VisitorsPage() {
         </div>
 
         <div className="summary-card card-today">
-          <div className="summary-icon">📅</div>
+          <div className="summary-icon"></div>
           <div className="summary-details">
             <span className="summary-value">{summary.todayVisits}</span>
             <span className="summary-label">Visits Today</span>
@@ -160,7 +160,7 @@ export default function VisitorsPage() {
         </div>
 
         <div className="summary-card card-pending">
-          <div className="summary-icon">⏳</div>
+          <div className="summary-icon"></div>
           <div className="summary-details">
             <span className="summary-value">{summary.pending}</span>
             <span className="summary-label">Pending Approval</span>
@@ -171,7 +171,7 @@ export default function VisitorsPage() {
       {/* Controls Bar: Search & Status Filter Tabs */}
       <div className="visitors-controls-bar">
         <div className="search-box-wrapper">
-          <span className="search-icon">🔍</span>
+          <span className="search-icon"></span>
           <input
             type="text"
             placeholder="Search visitor name, phone, student, room..."
@@ -182,18 +182,18 @@ export default function VisitorsPage() {
             }}
           />
           {searchQuery && (
-            <button type="button" className="clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
+            <button type="button" className="clear-search-btn" onClick={() => setSearchQuery('')}></button>
           )}
         </div>
 
         <div className="status-tabs-wrapper">
           {[
             { id: 'ALL', label: 'All Visits' },
-            { id: 'REQUESTED', label: '⏳ Requested' },
-            { id: 'APPROVED', label: '✅ Approved' },
-            { id: 'CHECKED_IN', label: '🚪 Checked In' },
-            { id: 'CHECKED_OUT', label: '🏁 Checked Out' },
-            { id: 'OVERDUE', label: '⚠️ Overdue' }
+            { id: 'REQUESTED', label: 'Requested' },
+            { id: 'APPROVED', label: 'Approved' },
+            { id: 'CHECKED_IN', label: 'Checked In' },
+            { id: 'CHECKED_OUT', label: 'Checked Out' },
+            { id: 'OVERDUE', label: 'Overdue' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -218,13 +218,13 @@ export default function VisitorsPage() {
         </div>
       ) : error ? (
         <div className="error-state-card">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon">️</span>
           <p>{error}</p>
           <button type="button" className="btn-secondary" onClick={fetchVisitsData}>Retry</button>
         </div>
       ) : visits.length === 0 ? (
         <div className="empty-state-card">
-          <span className="empty-icon">👥</span>
+          <span className="empty-icon"></span>
           <h3>No Visitor Records Found</h3>
           <p>No visitor logs match your search or selected filter tab.</p>
           <button type="button" className="btn-primary" onClick={() => setIsFormOpen(true)}>
@@ -258,7 +258,7 @@ export default function VisitorsPage() {
                 disabled={page <= 1}
                 onClick={() => setPage(prev => Math.max(prev - 1, 1))}
               >
-                ◀ Previous
+                Previous
               </button>
               <span className="pagination-info">
                 Page {page} of {totalPages}
@@ -269,7 +269,7 @@ export default function VisitorsPage() {
                 disabled={page >= totalPages}
                 onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
               >
-                Next ▶
+                Next
               </button>
             </div>
           )}

@@ -295,7 +295,7 @@ const getAvailableBeds = async (hostelId, roomId, user) => {
     queryParams.push(Number(roomId));
   }
 
-  query += ' ORDER BY r.room_number ASC, b.bed_number ASC';
+  query += ' ORDER BY LENGTH(r.room_number) ASC, r.room_number ASC, LENGTH(b.bed_number) ASC, b.bed_number ASC';
 
   const [rows] = await db.pool.query(query, queryParams);
   return rows;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createMaintenanceRequest } from '../../api/operations';
+import '../../pages/MaintenancePage.css';
 
 const CATEGORIES = [
   'ELECTRICAL', 'PLUMBING', 'FURNITURE', 'BED', 'ROOM',
@@ -60,127 +61,158 @@ export default function MaintenanceFormModal({
   };
 
   return (
-    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} role="dialog" aria-modal="true">
-      <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="modal-content shadow">
-          <div className="modal-header bg-primary text-white">
-            <h5 className="modal-title">
-              <i className="bi bi-tools me-2"></i>
-              {prefill ? 'Create Maintenance from Inspection' : 'Submit Maintenance Request'}
-            </h5>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Close"></button>
-          </div>
+    <div className="modal-backdrop-custom" onClick={onClose}>
+      <div 
+        className="modal-dialog-custom" 
+        style={{ maxWidth: '680px' }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog" 
+        aria-modal="true"
+      >
+        {/* Modal Header */}
+        <div className="modal-header-custom">
+          <h2 className="modal-title-custom">
+            <span> {prefill ? 'Create Maintenance from Inspection' : 'Submit Maintenance Request'}</span>
+          </h2>
+          <button 
+            type="button" 
+            className="modal-close-btn-custom" 
+            onClick={onClose} 
+            aria-label="Close modal"
+          >
+            &times;
+          </button>
+        </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              {error && (
-                <div className="alert alert-danger p-2 small mb-3">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  {error}
-                </div>
-              )}
-
-              {/* Title & Category */}
-              <div className="row g-3 mb-3">
-                <div className="col-12 col-md-8">
-                  <label className="form-label font-weight-bold">Title <span className="text-danger">*</span></label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. Broken ceiling fan / Leaking bathroom tap"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="col-12 col-md-4">
-                  <label className="form-label font-weight-bold">Category</label>
-                  <select
-                    className="form-select"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    {CATEGORIES.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+          <div className="modal-body-custom">
+            {error && (
+              <div className="alert-error-custom">
+                <span>️</span>
+                <div>{error}</div>
               </div>
+            )}
 
-              {/* Description */}
-              <div className="mb-3">
-                <label className="form-label font-weight-bold">Description <span className="text-danger">*</span></label>
-                <textarea
-                  className="form-control"
-                  rows="3"
-                  placeholder="Provide detailed description of the physical maintenance issue..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            {/* Title & Category */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Issue Title <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="filter-search-input"
+                  style={{ paddingLeft: '14px' }}
+                  placeholder="e.g. Broken ceiling fan / Leaking tap"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
-                ></textarea>
+                />
               </div>
 
-              {/* Priority */}
-              <div className="row g-3 mb-3">
-                <div className="col-12 col-md-6">
-                  <label className="form-label font-weight-bold">Priority</label>
-                  <select
-                    className="form-select"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  >
-                    <option value="LOW">LOW</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                    <option value="HIGH">HIGH</option>
-                    {isStaff && <option value="URGENT">URGENT (Staff Elevation)</option>}
-                  </select>
-                  {!isStaff && (
-                    <small className="text-muted d-block mt-1">
-                      Students can select LOW, MEDIUM, or HIGH. Staff will elevate to URGENT if required.
-                    </small>
-                  )}
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Category
+                </label>
+                <select
+                  className="filter-select"
+                  style={{ width: '100%' }}
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-                {/* Location fields for staff */}
-                {isStaff && (
-                  <div className="col-12 col-md-6">
-                    <label className="form-label font-weight-bold">Hostel <span className="text-danger">*</span></label>
-                    <select
-                      className="form-select"
-                      value={formData.hostel_id}
-                      onChange={(e) => setFormData({ ...formData, hostel_id: e.target.value })}
-                      required={isStaff}
-                    >
-                      <option value="">Select Hostel</option>
-                      {hostels.map(h => (
-                        <option key={h.id} value={h.id}>{h.name}</option>
-                      ))}
-                    </select>
-                  </div>
+            {/* Description */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                Detailed Description <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                className="resolution-textarea"
+                rows="3"
+                placeholder="Provide detailed description of the physical maintenance or repair required..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                required
+              />
+            </div>
+
+            {/* Priority & Hostel (if Staff) */}
+            <div style={{ display: 'grid', gridTemplateColumns: isStaff ? '1fr 1fr' : '1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                  Priority Level
+                </label>
+                <select
+                  className="filter-select"
+                  style={{ width: '100%' }}
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                >
+                  <option value="LOW">LOW</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                  {isStaff && <option value="URGENT">URGENT (Staff Elevation)</option>}
+                </select>
+                {!isStaff && (
+                  <small style={{ color: '#64748b', fontSize: '0.78rem', display: 'block', marginTop: '4px' }}>
+                    Students can set Low/Medium/High. Staff will elevate to Urgent if needed.
+                  </small>
                 )}
               </div>
 
-              {!isStaff && (
-                <div className="alert alert-info p-2 small mb-0">
-                  <i className="bi bi-info-circle me-1"></i>
-                  Location details (Hostel, Room, Bed) will be automatically attached from your current active room allocation.
+              {isStaff && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                    Assigned Hostel <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    className="filter-select"
+                    style={{ width: '100%' }}
+                    value={formData.hostel_id}
+                    onChange={(e) => setFormData({ ...formData, hostel_id: e.target.value })}
+                    required={isStaff}
+                  >
+                    <option value="">Select Hostel</option>
+                    {hostels.map(h => (
+                      <option key={h.id} value={h.id}>{h.name}</option>
+                    ))}
+                  </select>
                 </div>
               )}
             </div>
 
-            <div className="modal-footer bg-light">
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>
-                {submitting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Submitting...
-                  </>
-                ) : 'Submit Maintenance Request'}
-              </button>
-            </div>
-          </form>
-        </div>
+            {!isStaff && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '10px 14px', borderRadius: '8px', fontSize: '0.82rem' }}>
+                Location details (Hostel, Room, Bed) will be automatically assigned from your current active room allocation.
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="modal-footer-custom">
+            <button 
+              type="button" 
+              className="filter-reset-btn"
+              onClick={onClose} 
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="btn-primary-gradient"
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'Submit Maintenance Request'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

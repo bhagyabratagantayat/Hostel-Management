@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../pages/MaintenancePage.css';
 
 const CATEGORIES = [
   'ELECTRICAL', 'PLUMBING', 'FURNITURE', 'BED', 'ROOM',
@@ -33,16 +34,15 @@ export default function MaintenanceFilterBar({
   };
 
   return (
-    <div className="card shadow-sm p-3 mb-4 bg-body rounded border">
-      <div className="row g-2 align-items-center">
+    <div className="maintenance-filter-card">
+      <div className="filter-grid">
         {/* Search */}
-        <div className="col-12 col-md-3">
-          <label htmlFor="search-maint" className="form-label small text-muted mb-1">Search</label>
+        <div className="filter-search-wrapper">
+          <span className="filter-search-icon"></span>
           <input
-            id="search-maint"
             type="text"
-            className="form-control form-control-sm"
-            placeholder="Title, student, room..."
+            className="filter-search-input"
+            placeholder="Search by title, student, room..."
             value={filters.search || ''}
             onChange={(e) => handleChange('search', e.target.value)}
           />
@@ -50,11 +50,9 @@ export default function MaintenanceFilterBar({
 
         {/* Hostel Filter (Staff only) */}
         {isStaff && (
-          <div className="col-6 col-md-2">
-            <label htmlFor="filter-hostel" className="form-label small text-muted mb-1">Hostel</label>
+          <div>
             <select
-              id="filter-hostel"
-              className="form-select form-select-sm"
+              className="filter-select"
               value={filters.hostel_id || ''}
               onChange={(e) => handleChange('hostel_id', e.target.value)}
             >
@@ -67,11 +65,9 @@ export default function MaintenanceFilterBar({
         )}
 
         {/* Category */}
-        <div className="col-6 col-md-2">
-          <label htmlFor="filter-category" className="form-label small text-muted mb-1">Category</label>
+        <div>
           <select
-            id="filter-category"
-            className="form-select form-select-sm"
+            className="filter-select"
             value={filters.category || ''}
             onChange={(e) => handleChange('category', e.target.value)}
           >
@@ -83,11 +79,9 @@ export default function MaintenanceFilterBar({
         </div>
 
         {/* Priority */}
-        <div className="col-6 col-md-2">
-          <label htmlFor="filter-priority" className="form-label small text-muted mb-1">Priority</label>
+        <div>
           <select
-            id="filter-priority"
-            className="form-select form-select-sm"
+            className="filter-select"
             value={filters.priority || ''}
             onChange={(e) => handleChange('priority', e.target.value)}
           >
@@ -99,29 +93,27 @@ export default function MaintenanceFilterBar({
         </div>
 
         {/* Status */}
-        <div className="col-6 col-md-2">
-          <label htmlFor="filter-status" className="form-label small text-muted mb-1">Status</label>
+        <div>
           <select
-            id="filter-status"
-            className="form-select form-select-sm"
+            className="filter-select"
             value={filters.status || ''}
             onChange={(e) => handleChange('status', e.target.value)}
           >
             <option value="">All Statuses</option>
             {STATUSES.map(s => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{s.replace('_', ' ')}</option>
             ))}
           </select>
         </div>
 
         {/* Reset Button */}
-        <div className="col-12 col-md-1 text-end">
+        <div>
           <button
             type="button"
-            className="btn btn-outline-secondary btn-sm w-100 mt-md-4"
+            className="filter-reset-btn"
             onClick={handleReset}
           >
-            Reset
+            Reset Filters
           </button>
         </div>
       </div>

@@ -49,6 +49,12 @@ const requireAuth = async (req, res, next) => {
     }
 
     const user = users[0];
+    if (decoded.isImpersonating) {
+      user.isImpersonating = true;
+      user.originalAdminId = decoded.originalAdminId;
+      user.originalAdminUsername = decoded.originalAdminUsername;
+      user.originalAdminRole = decoded.originalAdminRole;
+    }
     if (user.role === 'SUPERINTENDENT') {
       const [shRows] = await db.pool.query(
         `SELECT hostel_id FROM superintendent_hostels WHERE user_id = ?`,

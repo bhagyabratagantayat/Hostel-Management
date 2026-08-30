@@ -30,8 +30,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    const serverMessage = error.response?.data?.message || error.response?.data?.error || error.message;
     const customError = {
-      message: error.response?.data?.message || 'An error occurred while communicating with the server.',
+      message: serverMessage || 'An error occurred while communicating with the server.',
       status: error.response?.status || 500,
       data: error.response?.data || null,
       response: error.response

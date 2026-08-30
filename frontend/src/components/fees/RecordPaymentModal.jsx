@@ -55,7 +55,7 @@ const RecordPaymentModal = ({ isOpen, onClose, onSubmit, fee }) => {
     <div className="modal-backdrop">
       <div className="modal-box glassmorphic">
         <div className="modal-header">
-          <h3>💵 Record Fee Payment</h3>
+          <h3>Record Fee Payment</h3>
           <button className="btn-close" onClick={onClose}>&times;</button>
         </div>
 

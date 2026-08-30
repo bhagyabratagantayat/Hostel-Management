@@ -39,7 +39,7 @@ const AllocationDetailsModal = ({ isOpen, onClose, allocation }) => {
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0F172A' }}>{allocation.student_name}</h3>
               <div style={{ fontSize: '0.88rem', color: '#64748B', marginTop: '2px' }}>
-                ID: <strong>{allocation.student_code}</strong> &bull; Roll: <strong>{allocation.roll_number}</strong>
+                ID: <strong>{allocation.student_code}</strong>
               </div>
               <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '2px' }}>
                 Course: {allocation.course || 'B.Tech'} ({allocation.branch || 'CSE'})
@@ -48,7 +48,7 @@ const AllocationDetailsModal = ({ isOpen, onClose, allocation }) => {
           </div>
 
           <h4 style={{ fontSize: '1rem', color: '#1E293B', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            📜 Complete Accommodation Lifecycle History
+             Complete Accommodation Lifecycle History
           </h4>
 
           {loading ? (

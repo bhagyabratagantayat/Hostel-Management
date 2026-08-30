@@ -99,7 +99,7 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
     <div className="card dashboard-section-card mess-dashboard-widget">
       <div className="card-header flex-between align-center">
         <div>
-          <h3>🍽️ Today's Food Schedule</h3>
+          <h3>Today's Food Schedule</h3>
           <span className="subtitle">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
@@ -111,7 +111,7 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
               className="btn btn-sm btn-outline-warning"
               onClick={onOpenMessComplaint}
             >
-              ⚠️ Report Mess Issue
+              Report Mess Issue
             </button>
           )}
           <button
@@ -119,7 +119,7 @@ const RecentMessSection = ({ userRole = 'STUDENT', hostelId = null, onOpenMessCo
             className="btn btn-sm btn-primary"
             onClick={() => navigate(getMessPath())}
           >
-            📅 View Weekly Time-Table →
+            View Weekly Time-Table →
           </button>
         </div>
       </div>
