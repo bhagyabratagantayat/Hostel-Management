@@ -6,13 +6,16 @@ const { requireAuth } = require('../middleware/authMiddleware');
 // All attendance routes require authentication
 router.use(requireAuth);
 
+// GET student self attendance history
+router.get('/me', attendanceController.getMyAttendance);
+
 // GET hostel attendance (list for a date)
 router.get('/hostel/:hostelId', attendanceController.getHostelAttendance);
 
 // GET hostel summary
 router.get('/hostel/:hostelId/summary', attendanceController.getHostelSummary);
 
-// GET student attendance history
+// GET student attendance history by ID
 router.get('/student/:studentId', attendanceController.getStudentAttendance);
 
 // POST bulk attendance

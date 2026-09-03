@@ -83,7 +83,10 @@ const DataIntegrityPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Data Integrity</span>
           </div>
-          <h1 className="master-title"> Data Integrity Diagnostic Center</h1>
+          <h1 className="master-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-stethoscope text-indigo-600"></i>
+            <span>Data Integrity Diagnostic Center</span>
+          </h1>
           <p className="master-subtitle">
             Scan and detect relational inconsistencies, ghost allocations, orphaned records, and schema gaps.
           </p>
@@ -92,9 +95,10 @@ const DataIntegrityPage = () => {
           onClick={runDiagnosticCheck}
           disabled={scanning}
           className="master-btn-primary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          <span>{scanning ? '' : ''}</span>
-          {scanning ? 'Scanning System...' : 'Run Integrity Scan'}
+          <i className={`fa-solid ${scanning ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'}`}></i>
+          <span>{scanning ? 'Scanning System...' : 'Run Integrity Scan'}</span>
         </button>
       </div>
 

@@ -7,12 +7,12 @@ import ReportChart from '../components/reports/ReportChart';
 import './ReportsPage.css';
 
 const TABS = [
-  { id: 'overview', label: 'Overview', icon: '' },
-  { id: 'students', label: 'Students', icon: '' },
-  { id: 'attendance', label: 'Attendance', icon: '' },
-  { id: 'occupancy', label: 'Occupancy', icon: '' },
-  { id: 'complaints', label: 'Complaints', icon: '' },
-  { id: 'visitors', label: 'Visitors', icon: '' },
+  { id: 'overview', label: 'Overview', icon: 'fa-chart-pie' },
+  { id: 'students', label: 'Students', icon: 'fa-user-graduate' },
+  { id: 'attendance', label: 'Attendance', icon: 'fa-calendar-check' },
+  { id: 'occupancy', label: 'Occupancy', icon: 'fa-bed' },
+  { id: 'complaints', label: 'Complaints', icon: 'fa-triangle-exclamation' },
+  { id: 'visitors', label: 'Visitors', icon: 'fa-user-check' },
 ];
 
 const ReportsPage = () => {
@@ -58,34 +58,38 @@ const ReportsPage = () => {
 
   // Fetch report data for active tab
   const fetchReportData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    const queryParams = { ...filters };
-
     try {
+      setLoading(true);
+      setError(null);
+
+      const params = {
+        hostel_id: filters.hostel_id !== 'all' ? filters.hostel_id : undefined,
+        date_from: filters.date_from || undefined,
+        date_to: filters.date_to || undefined
+      };
+
       if (activeTab === 'overview') {
-        const res = await api.getOverviewReport(queryParams);
+        const res = await api.getReportOverview(params);
         if (res.success) setOverviewData(res.data);
       } else if (activeTab === 'students') {
-        const res = await api.getStudentReport(queryParams);
+        const res = await api.getReportStudents(params);
         if (res.success) setStudentData(res.data);
       } else if (activeTab === 'attendance') {
-        const res = await api.getAttendanceReport(queryParams);
+        const res = await api.getReportAttendance(params);
         if (res.success) setAttendanceData(res.data);
       } else if (activeTab === 'occupancy') {
-        const res = await api.getOccupancyReport(queryParams);
+        const res = await api.getReportOccupancy(params);
         if (res.success) setOccupancyData(res.data);
       } else if (activeTab === 'complaints') {
-        const res = await api.getComplaintReport(queryParams);
+        const res = await api.getReportComplaints(params);
         if (res.success) setComplaintData(res.data);
       } else if (activeTab === 'visitors') {
-        const res = await api.getVisitorReport(queryParams);
+        const res = await api.getReportVisitors(params);
         if (res.success) setVisitorData(res.data);
       }
     } catch (err) {
-      console.error(`Error loading ${activeTab} report:`, err);
-      setError(err.response?.data?.message || `Unable to load ${activeTab} report.`);
+      console.error(`Failed to fetch report [${activeTab}]:`, err);
+      setError(err.message || 'Unable to load report data.');
     } finally {
       setLoading(false);
     }
@@ -95,23 +99,17 @@ const ReportsPage = () => {
     fetchReportData();
   }, [fetchReportData]);
 
-  // Currency Formatter
-  const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2
-    }).format(Number(val) || 0);
-  };
-
   return (
     <div className="reports-page-container">
       {/* Page Header */}
       <div className="reports-page-header">
         <div>
+          <div className="page-intro-badge">
+            <i className="fa-solid fa-chart-line"></i> Analytics & Insights
+          </div>
           <h1 className="reports-page-title">Reports & Analytics Center</h1>
           <p className="reports-page-subtitle">
-            Comprehensive hostel performance, financial overview, and operational analytics.
+            Comprehensive hostel performance, occupancy overview, and operational analytics.
           </p>
         </div>
       </div>
@@ -135,7 +133,7 @@ const ReportsPage = () => {
               className={`reports-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-icon"><i className={`fa-solid ${tab.icon}`}></i></span>
               <span className="tab-label">{tab.label}</span>
             </button>
           ))}
@@ -146,11 +144,11 @@ const ReportsPage = () => {
       {error && (
         <div className="report-error-alert card">
           <div className="error-alert-content">
-            <span className="error-icon">️</span>
+            <span className="error-icon"><i className="fa-solid fa-triangle-exclamation"></i></span>
             <span>{error}</span>
           </div>
           <button className="btn btn-secondary btn-sm" onClick={fetchReportData}>
-            Retry
+            <i className="fa-solid fa-rotate-right mr-1"></i> Retry
           </button>
         </div>
       )}
@@ -166,7 +164,7 @@ const ReportsPage = () => {
                 title="Total Hostels"
                 value={overviewData?.infrastructure?.totalHostels ?? '-'}
                 subtitle="Active facilities"
-                icon=""
+                icon="fa-solid fa-building"
                 color="primary"
                 loading={loading}
               />
@@ -174,7 +172,7 @@ const ReportsPage = () => {
                 title="Total Students"
                 value={overviewData?.infrastructure?.totalStudents ?? '-'}
                 subtitle="Active registrations"
-                icon=""
+                icon="fa-solid fa-user-graduate"
                 color="info"
                 loading={loading}
               />
@@ -182,7 +180,7 @@ const ReportsPage = () => {
                 title="Beds Occupancy"
                 value={`${overviewData?.infrastructure?.occupancyPercentage ?? 0}%`}
                 subtitle={`${overviewData?.infrastructure?.occupiedBeds || 0} / ${overviewData?.infrastructure?.usableBeds || (overviewData?.infrastructure?.occupiedBeds + overviewData?.infrastructure?.availableBeds) || 0} usable beds`}
-                icon=""
+                icon="fa-solid fa-bed"
                 color="success"
                 loading={loading}
               />
@@ -190,7 +188,7 @@ const ReportsPage = () => {
                 title="Today's Attendance"
                 value={`${overviewData?.attendance?.attendancePercentage ?? 0}%`}
                 subtitle={`${overviewData?.attendance?.presentToday || 0} Present, ${overviewData?.attendance?.absentToday || 0} Absent`}
-                icon=""
+                icon="fa-solid fa-calendar-check"
                 color="warning"
                 loading={loading}
               />
@@ -198,7 +196,7 @@ const ReportsPage = () => {
                 title="Open Complaints"
                 value={overviewData?.complaints?.openComplaints ?? '-'}
                 subtitle={`${overviewData?.complaints?.urgentComplaints || 0} urgent unresolved`}
-                icon=""
+                icon="fa-solid fa-triangle-exclamation"
                 color="danger"
                 loading={loading}
               />
@@ -214,7 +212,7 @@ const ReportsPage = () => {
                 title="Total Students"
                 value={studentData?.totalStudents ?? '-'}
                 subtitle="Enrolled active students"
-                icon=""
+                icon="fa-solid fa-user-graduate"
                 color="primary"
                 loading={loading}
               />
@@ -222,7 +220,7 @@ const ReportsPage = () => {
                 title="Branches Tracked"
                 value={studentData?.byBranch?.length ?? '-'}
                 subtitle="Academic departments"
-                icon=""
+                icon="fa-solid fa-code-branch"
                 color="info"
                 loading={loading}
               />
@@ -286,7 +284,7 @@ const ReportsPage = () => {
                 title="Present Today"
                 value={attendanceData?.summary?.present ?? '-'}
                 subtitle={`${attendanceData?.summary?.attendancePercentage ?? 0}% Present Rate`}
-                icon=""
+                icon="fa-solid fa-user-check"
                 color="success"
                 loading={loading}
               />
@@ -294,7 +292,7 @@ const ReportsPage = () => {
                 title="Absent Today"
                 value={attendanceData?.summary?.absent ?? '-'}
                 subtitle="Marked absent"
-                icon=""
+                icon="fa-solid fa-user-xmark"
                 color="danger"
                 loading={loading}
               />
@@ -302,7 +300,7 @@ const ReportsPage = () => {
                 title="Not Marked Today"
                 value={attendanceData?.summary?.notMarked ?? '-'}
                 subtitle="Pending roll call"
-                icon=""
+                icon="fa-solid fa-clock"
                 color="warning"
                 loading={loading}
               />
@@ -357,7 +355,7 @@ const ReportsPage = () => {
                 title="Total Capacity"
                 value={occupancyData?.overall?.totalBeds ?? '-'}
                 subtitle="Total registered beds"
-                icon=""
+                icon="fa-solid fa-hotel"
                 color="primary"
                 loading={loading}
               />
@@ -365,7 +363,7 @@ const ReportsPage = () => {
                 title="Occupied Beds"
                 value={occupancyData?.overall?.occupied ?? '-'}
                 subtitle={`${occupancyData?.overall?.occupancyPercentage ?? 0}% Occupancy Rate`}
-                icon=""
+                icon="fa-solid fa-bed"
                 color="success"
                 loading={loading}
               />
@@ -373,7 +371,7 @@ const ReportsPage = () => {
                 title="Available Beds"
                 value={occupancyData?.overall?.available ?? '-'}
                 subtitle="Ready for allocation"
-                icon=""
+                icon="fa-solid fa-door-open"
                 color="info"
                 loading={loading}
               />
@@ -381,7 +379,7 @@ const ReportsPage = () => {
                 title="Maintenance Beds"
                 value={occupancyData?.overall?.maintenance ?? '-'}
                 subtitle="Excluded from usable percentage"
-                icon=""
+                icon="fa-solid fa-wrench"
                 color="warning"
                 loading={loading}
               />
@@ -427,7 +425,7 @@ const ReportsPage = () => {
                 title="Total Complaints"
                 value={complaintData?.summary?.totalComplaints ?? '-'}
                 subtitle={`Resolution Rate: ${complaintData?.summary?.resolutionRate ?? 0}%`}
-                icon=""
+                icon="fa-solid fa-clipboard-list"
                 color="primary"
                 loading={loading}
               />
@@ -435,7 +433,7 @@ const ReportsPage = () => {
                 title="Open & In Progress"
                 value={(complaintData?.summary?.open || 0) + (complaintData?.summary?.inProgress || 0)}
                 subtitle={`${complaintData?.summary?.urgent || 0} urgent items`}
-                icon=""
+                icon="fa-solid fa-spinner"
                 color="warning"
                 loading={loading}
               />
@@ -443,7 +441,7 @@ const ReportsPage = () => {
                 title="Resolved / Closed"
                 value={(complaintData?.summary?.resolved || 0) + (complaintData?.summary?.closed || 0)}
                 subtitle="Successfully completed"
-                icon=""
+                icon="fa-solid fa-circle-check"
                 color="success"
                 loading={loading}
               />
@@ -514,7 +512,7 @@ const ReportsPage = () => {
                 title="Total Visits"
                 value={visitorData?.summary?.totalVisits ?? '-'}
                 subtitle="Total registered visits"
-                icon=""
+                icon="fa-solid fa-users"
                 color="primary"
                 loading={loading}
               />
@@ -522,7 +520,7 @@ const ReportsPage = () => {
                 title="Currently Checked In"
                 value={visitorData?.summary?.currentVisitors ?? '-'}
                 subtitle={`${visitorData?.summary?.overdueVisitors || 0} overdue inside`}
-                icon=""
+                icon="fa-solid fa-right-to-bracket"
                 color="info"
                 loading={loading}
               />
@@ -530,7 +528,7 @@ const ReportsPage = () => {
                 title="Checked Out"
                 value={visitorData?.summary?.checkedOut ?? '-'}
                 subtitle="Completed visits"
-                icon=""
+                icon="fa-solid fa-right-from-bracket"
                 color="success"
                 loading={loading}
               />
@@ -546,8 +544,6 @@ const ReportsPage = () => {
             />
           </div>
         )}
-
-        {/* End of report sections */}
 
       </div>
     </div>

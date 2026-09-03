@@ -133,19 +133,22 @@ const MasterHostelsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Hostels</span>
           </div>
-          <h1 className="master-title">Hostels Administration</h1>
+          <h1 className="master-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-building text-indigo-600"></i>
+            <span>Hostels Administration</span>
+          </h1>
           <p className="master-subtitle">Manage core hostel entities, codes, types, and capacity limits.</p>
         </div>
-        <button onClick={handleOpenCreateModal} className="master-btn-primary">
-          <span></span> Add New Hostel
+        <button onClick={handleOpenCreateModal} className="master-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <i className="fa-solid fa-plus"></i> Add New Hostel
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="master-filter-card">
         <div className="master-filter-group">
-          <div className="master-search-box" style={{ maxWidth: '400px', minWidth: '280px' }}>
-            <span className="master-search-icon"></span>
+          <div className="master-search-box" style={{ maxWidth: '400px', minWidth: '280px', position: 'relative' }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
             <input
               type="text"
               className="master-search-input"
@@ -155,6 +158,7 @@ const MasterHostelsPage = () => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
+              style={{ paddingLeft: '40px' }}
             />
           </div>
         </div>
@@ -165,6 +169,7 @@ const MasterHostelsPage = () => {
 
       {error && (
         <div className="master-alert-error">
+          <i className="fa-solid fa-triangle-exclamation mr-2"></i>
           <span>{error}</span>
         </div>
       )}
@@ -174,7 +179,7 @@ const MasterHostelsPage = () => {
         <Loading message="Loading hostels list..." />
       ) : hostels.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon"></span>
+          <i className="fa-solid fa-building-circle-xmark text-slate-300" style={{ fontSize: '3rem', marginBottom: '12px' }}></i>
           <h3 className="master-empty-title">No Hostels Found</h3>
           <p className="master-empty-desc">Try adjusting your search filter or add a new hostel.</p>
         </div>
@@ -198,7 +203,9 @@ const MasterHostelsPage = () => {
                   <tr key={h.id}>
                     <td>
                       <div className="master-cell-room">
-                        <span className="master-room-icon" style={{ background: '#e0e7ff', color: '#4338ca' }}></span>
+                        <span className="master-room-icon" style={{ background: '#e0e7ff', color: '#4338ca', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <i className="fa-solid fa-building"></i>
+                        </span>
                         <span>{h.name}</span>
                       </div>
                     </td>

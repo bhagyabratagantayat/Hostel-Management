@@ -163,8 +163,8 @@ const HostelsPage = () => {
           </p>
         </div>
         {isSuperAdmin && (
-          <Button onClick={handleOpenAddModal} variant="primary">
-            + Add New Hostel
+          <Button onClick={handleOpenAddModal} variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-plus"></i> Add New Hostel
           </Button>
         )}
       </div>
@@ -184,18 +184,18 @@ const HostelsPage = () => {
 
       {filteredHostels.length === 0 ? (
         <div className="empty-hostels-state" style={{ background: '#ffffff', border: '1px dashed #cbd5e1', borderRadius: '12px', padding: '54px 24px', textAlign: 'center', marginTop: '16px' }}>
-          <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}></span>
+          <i className="fa-solid fa-hotel text-slate-300" style={{ fontSize: '3.5rem', display: 'block', marginBottom: '12px' }}></i>
           <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', margin: '0 0 6px 0' }}>
             {searchQuery ? 'No Hostels Found' : 'No Hostels Configured Yet'}
           </h3>
           <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 18px 0' }}>
             {searchQuery 
               ? 'No hostels match your search query. Try clearing the search box.' 
-              : 'Your database is now clean! Click the button below to create your first real hostel.'}
+              : 'Click the button below to configure and create your hostel residence.'}
           </p>
           {isSuperAdmin && !searchQuery && (
-            <Button onClick={handleOpenAddModal} variant="primary">
-              + Add New Hostel
+            <Button onClick={handleOpenAddModal} variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <i className="fa-solid fa-plus"></i> Add New Hostel
             </Button>
           )}
         </div>
@@ -209,24 +209,24 @@ const HostelsPage = () => {
                 title={hostel.name} 
                 className="hostel-card"
                 footer={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <span className="hostel-code-badge">{hostel.code}</span>
                       <span className={`hostel-gender-badge ${hostel.gender.toLowerCase()}`}>
                         {hostel.gender}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <Button onClick={() => handleViewDetails(hostel.id)} variant="secondary" className="btn-sm" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                        View
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Button onClick={() => handleViewDetails(hostel.id)} variant="secondary" className="btn-sm" style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <i className="fa-solid fa-eye"></i> View
                       </Button>
                       {isSuperAdmin && (
                         <>
-                          <Button onClick={() => handleOpenEditModal(hostel)} variant="secondary" className="btn-sm" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                            Edit
+                          <Button onClick={() => handleOpenEditModal(hostel)} variant="secondary" className="btn-sm" style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <i className="fa-solid fa-pen"></i> Edit
                           </Button>
-                          <Button onClick={() => handleDeleteHostel(hostel.id, hostel.name)} variant="danger" className="btn-sm" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                            Delete
+                          <Button onClick={() => handleDeleteHostel(hostel.id, hostel.name)} variant="danger" className="btn-sm" style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <i className="fa-solid fa-trash-can"></i> Delete
                           </Button>
                         </>
                       )}
@@ -254,12 +254,18 @@ const HostelsPage = () => {
                 </div>
                 <div className="hostel-detail-item">
                   <span className="detail-label">Beds Configured:</span>
-                  <span className="detail-value">{hostel.total_beds || 0}</span>
+                  <span className="detail-value">{hostel.total_beds || 0} Beds</span>
                 </div>
                 <div className="hostel-detail-item">
-                  <span className="detail-label">Available / Occupied Beds:</span>
-                  <span className="detail-value">
-                    <span style={{ color: 'var(--success-color)' }}>{hostel.available_beds || 0}</span> / <span style={{ color: 'var(--text-secondary)' }}>{hostel.occupied_beds || 0}</span>
+                  <span className="detail-label">Occupied Beds:</span>
+                  <span className="detail-value" style={{ color: '#d97706', fontWeight: 700 }}>
+                    {hostel.occupied_beds || 0} <span style={{ color: '#64748b', fontWeight: 400, fontSize: '12px' }}>({hostel.total_beds ? Math.round(((hostel.occupied_beds || 0) / hostel.total_beds) * 100) : 0}%)</span>
+                  </span>
+                </div>
+                <div className="hostel-detail-item">
+                  <span className="detail-label">Available Beds:</span>
+                  <span className="detail-value" style={{ color: '#16a34a', fontWeight: 700 }}>
+                    {hostel.available_beds || 0} Available
                   </span>
                 </div>
               </Card>

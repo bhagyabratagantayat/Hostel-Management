@@ -58,20 +58,20 @@ const ProfilePage = () => {
       
       // Format DOB for date input (YYYY-MM-DD)
       if (st?.date_of_birth) {
-        const d = new Date(st.date_of_birth);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        setDobVal(`${yyyy}-${mm}-${dd}`);
-      } else {
-        setDobVal('');
+        try {
+          const d = new Date(st.date_of_birth);
+          setDobVal(d.toISOString().split('T')[0]);
+        } catch (e) {
+          setDobVal('');
+        }
       }
-
-      if (st?.photo_url) {
-        setPhotoPreview(st.photo_url);
+      
+      if (userData?.photo_url) {
+        setPhotoPreview(userData.photo_url);
       }
     } catch (err) {
-      setError(err.message || err.data?.message || 'Failed to load profile details.');
+      console.error('Failed to load profile:', err);
+      setError('Unable to load profile data.');
     } finally {
       setLoading(false);
     }
@@ -81,13 +81,12 @@ const ProfilePage = () => {
     fetchProfile();
   }, []);
 
-  // Handle Photo selection & compression
   const handlePhotoSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Selected image exceeds 10MB limit.');
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Photo size must be under 2MB.');
       return;
     }
 
@@ -221,7 +220,10 @@ const ProfilePage = () => {
               className="change-photo-btn"
               onClick={() => fileInputRef.current?.click()}
               title="Upload / Change Profile Photo"
-            ><span>Change Photo</span>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            >
+              <i className="fa-solid fa-camera"></i>
+              <span>Change Photo</span>
             </button>
             <input 
               type="file" 
@@ -237,13 +239,15 @@ const ProfilePage = () => {
               <h1 className="hero-name">{displayName}</h1>
               <div className="hero-badges">
                 <span className={`badge badge-role role-${profile?.role?.toLowerCase()}`}>
+                  <i className="fa-solid fa-shield-halved mr-1"></i>
                   {profile?.role}
                 </span>
                 <span className={`badge badge-status status-${profile?.status?.toLowerCase()}`}>
-                  ● {profile?.status}
+                  <i className="fa-solid fa-circle text-xs mr-1"></i> {profile?.status}
                 </span>
                 {profile?.gender && (
                   <span className={`badge badge-gender gender-${profile.gender.toLowerCase()}`}>
+                    <i className={`fa-solid ${profile.gender === 'MALE' ? 'fa-mars' : profile.gender === 'FEMALE' ? 'fa-venus' : 'fa-genderless'} mr-1`}></i>
                     {profile.gender === 'MALE' ? 'Male' : profile.gender === 'FEMALE' ? 'Female' : 'Other'}
                   </span>
                 )}
@@ -252,20 +256,24 @@ const ProfilePage = () => {
 
             <div className="hero-meta-row">
               <span className="meta-item">
+                <i className="fa-solid fa-hashtag text-indigo-300 mr-1"></i>
                 <strong>ID:</strong> #{profile?.id}
               </span>
               <span className="meta-divider">•</span>
               <span className="meta-item">
+                <i className="fa-solid fa-user text-indigo-300 mr-1"></i>
                 <strong>Username:</strong> {profile?.username}
               </span>
               <span className="meta-divider">•</span>
               <span className="meta-item">
+                <i className="fa-solid fa-envelope text-indigo-300 mr-1"></i>
                 <strong>Email:</strong> {profile?.email}
               </span>
               {(st?.student_code || st?.student_id || (profile?.role === 'STUDENT' && profile?.username)) && (
                 <>
                   <span className="meta-divider">•</span>
                   <span className="meta-item">
+                    <i className="fa-solid fa-id-badge text-indigo-300 mr-1"></i>
                     <strong>Reg No:</strong> {st?.student_code || st?.student_id || profile?.username}
                   </span>
                 </>
@@ -280,8 +288,9 @@ const ProfilePage = () => {
             type="button"
             className={`tab-nav-btn ${activeTab === 'edit-profile' ? 'active' : ''}`}
             onClick={() => { setActiveTab('edit-profile'); setError(''); setSuccess(''); }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            Edit Profile Info
+            <i className="fa-solid fa-user-pen"></i> Edit Profile Info
           </button>
           
           {profile?.role === 'STUDENT' && (
@@ -289,8 +298,9 @@ const ProfilePage = () => {
               type="button"
               className={`tab-nav-btn ${activeTab === 'academic-hostel' ? 'active' : ''}`}
               onClick={() => { setActiveTab('academic-hostel'); setError(''); setSuccess(''); }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              Accommodation & Academics
+              <i className="fa-solid fa-graduation-cap"></i> Accommodation & Academics
             </button>
           )}
 
@@ -298,23 +308,24 @@ const ProfilePage = () => {
             type="button"
             className={`tab-nav-btn ${activeTab === 'security-pass' ? 'active' : ''}`}
             onClick={() => { setActiveTab('security-pass'); setError(''); setSuccess(''); }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            Security & Password
+            <i className="fa-solid fa-lock"></i> Security & Password
           </button>
         </div>
       </div>
 
       {/* Global Alerts */}
       {error && (
-        <div className="profile-alert alert-error">
-          <span className="alert-icon">️</span>
+        <div className="profile-alert alert-error" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <i className="fa-solid fa-triangle-exclamation text-rose-500"></i>
           <div className="alert-content">{error}</div>
           <button type="button" className="alert-close" onClick={() => setError('')}>×</button>
         </div>
       )}
       {success && (
-        <div className="profile-alert alert-success">
-          <span className="alert-icon"></span>
+        <div className="profile-alert alert-success" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <i className="fa-solid fa-circle-check text-emerald-500"></i>
           <div className="alert-content">{success}</div>
           <button type="button" className="alert-close" onClick={() => setSuccess('')}>×</button>
         </div>
@@ -329,8 +340,8 @@ const ProfilePage = () => {
               <p className="tab-subtitle">Update your personal identity, contact number, gender, registration number and details.</p>
             </div>
             {base64Photo && (
-              <span className="pending-photo-badge">
-                New photo selected (Click Save to update)
+              <span className="pending-photo-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <i className="fa-solid fa-image"></i> New photo selected (Click Save to update)
               </span>
             )}
           </div>
@@ -368,9 +379,9 @@ const ProfilePage = () => {
                   onChange={(e) => setGenderVal(e.target.value)}
                 >
                   <option value="">-- Select Gender --</option>
-                  <option value="MALE">Male ()</option>
-                  <option value="FEMALE">Female ()</option>
-                  <option value="OTHER">Other ()</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
 
@@ -432,7 +443,9 @@ const ProfilePage = () => {
                 type="submit" 
                 className="btn-save-profile" 
                 disabled={updatingProfile}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
+                <i className="fa-solid fa-floppy-disk"></i>
                 {updatingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
               </button>
             </div>
@@ -452,7 +465,9 @@ const ProfilePage = () => {
 
           <div className="academics-grid">
             <div className="academic-card">
-              <span className="card-icon"></span>
+              <span className="card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-hotel text-indigo-600"></i>
+              </span>
               <div className="card-info">
                 <span className="card-label">Assigned Hostel</span>
                 <span className="card-val highlight">{st?.hostel_name || 'Not Allocated'}</span>
@@ -460,7 +475,9 @@ const ProfilePage = () => {
             </div>
 
             <div className="academic-card">
-              <span className="card-icon"></span>
+              <span className="card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-bed text-indigo-600"></i>
+              </span>
               <div className="card-info">
                 <span className="card-label">Room & Bed No</span>
                 <span className="card-val">
@@ -470,7 +487,9 @@ const ProfilePage = () => {
             </div>
 
             <div className="academic-card">
-              <span className="card-icon"></span>
+              <span className="card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-graduation-cap text-indigo-600"></i>
+              </span>
               <div className="card-info">
                 <span className="card-label">Course & Branch</span>
                 <span className="card-val">{st?.course || 'B.Tech'} - {st?.branch || 'General'}</span>
@@ -478,7 +497,9 @@ const ProfilePage = () => {
             </div>
 
             <div className="academic-card">
-              <span className="card-icon"></span>
+              <span className="card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-calendar-check text-indigo-600"></i>
+              </span>
               <div className="card-info">
                 <span className="card-label">Academic Year</span>
                 <span className="card-val">Year {st?.year_of_study || 1}</span>
@@ -486,7 +507,9 @@ const ProfilePage = () => {
             </div>
 
             <div className="academic-card">
-              <span className="card-icon"></span>
+              <span className="card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-id-card text-indigo-600"></i>
+              </span>
               <div className="card-info">
                 <span className="card-label">Registration No (User ID)</span>
                 <span className="card-val">{st?.student_code || profile?.username}</span>
@@ -494,7 +517,9 @@ const ProfilePage = () => {
             </div>
 
             <div className="academic-card">
-              <span className="card-icon"></span>
+              <span className="card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className="fa-solid fa-cake-candles text-indigo-600"></i>
+              </span>
               <div className="card-info">
                 <span className="card-label">Date of Birth</span>
                 <span className="card-val">
@@ -533,8 +558,9 @@ const ProfilePage = () => {
                     type="button" 
                     className="pass-toggle-btn"
                     onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    {showCurrentPass ? '' : ''}
+                    <i className={`fa-solid ${showCurrentPass ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
               </div>
@@ -554,8 +580,9 @@ const ProfilePage = () => {
                     type="button" 
                     className="pass-toggle-btn"
                     onClick={() => setShowNewPass(!showNewPass)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    {showNewPass ? '' : ''}
+                    <i className={`fa-solid ${showNewPass ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                   </button>
                 </div>
               </div>
@@ -576,20 +603,25 @@ const ProfilePage = () => {
             <div className="password-requirements-box">
               <div className="req-title">Password Strength Requirements:</div>
               <div className="req-grid">
-                <span className={`req-item ${passReqs.length ? 'met' : ''}`}>
-                  {passReqs.length ? '' : '○'} At least 8 characters
+                <span className={`req-item ${passReqs.length ? 'met' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <i className={`fa-solid ${passReqs.length ? 'fa-circle-check text-emerald-500' : 'fa-circle-dot text-slate-400'}`}></i>
+                  At least 8 characters
                 </span>
-                <span className={`req-item ${passReqs.upper ? 'met' : ''}`}>
-                  {passReqs.upper ? '' : '○'} 1 uppercase letter
+                <span className={`req-item ${passReqs.upper ? 'met' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <i className={`fa-solid ${passReqs.upper ? 'fa-circle-check text-emerald-500' : 'fa-circle-dot text-slate-400'}`}></i>
+                  1 uppercase letter
                 </span>
-                <span className={`req-item ${passReqs.lower ? 'met' : ''}`}>
-                  {passReqs.lower ? '' : '○'} 1 lowercase letter
+                <span className={`req-item ${passReqs.lower ? 'met' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <i className={`fa-solid ${passReqs.lower ? 'fa-circle-check text-emerald-500' : 'fa-circle-dot text-slate-400'}`}></i>
+                  1 lowercase letter
                 </span>
-                <span className={`req-item ${passReqs.number ? 'met' : ''}`}>
-                  {passReqs.number ? '' : '○'} 1 number (0-9)
+                <span className={`req-item ${passReqs.number ? 'met' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <i className={`fa-solid ${passReqs.number ? 'fa-circle-check text-emerald-500' : 'fa-circle-dot text-slate-400'}`}></i>
+                  1 number (0-9)
                 </span>
-                <span className={`req-item ${passReqs.match ? 'met' : ''}`}>
-                  {passReqs.match ? '' : '○'} Passwords match
+                <span className={`req-item ${passReqs.match ? 'met' : ''}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <i className={`fa-solid ${passReqs.match ? 'fa-circle-check text-emerald-500' : 'fa-circle-dot text-slate-400'}`}></i>
+                  Passwords match
                 </span>
               </div>
             </div>
@@ -599,7 +631,9 @@ const ProfilePage = () => {
                 type="submit" 
                 className="btn-save-profile" 
                 disabled={!isPassFormValid || changingPass}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
+                <i className="fa-solid fa-key"></i>
                 {changingPass ? 'Updating Password...' : 'Update Password'}
               </button>
             </div>
@@ -611,4 +645,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-

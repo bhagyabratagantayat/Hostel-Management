@@ -101,14 +101,7 @@ const Login = () => {
           </Button>
         </form>
 
-        <div className="login-footer">
-          <p>Quick Test Credentials:</p>
-          <ul className="dev-accounts-list">
-            <li><strong>Super Admin:</strong> <code>superadmin</code> / <code>password123</code></li>
-            <li><strong>Warden:</strong> <code>warden</code> / <code>password123</code></li>
-            <li><strong>Student:</strong> <code>student@hostel.com</code> / <code>password123</code></li>
-          </ul>
-        </div>
+
       </div>
     </div>
   );

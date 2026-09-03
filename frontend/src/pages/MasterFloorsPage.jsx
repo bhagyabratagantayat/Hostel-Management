@@ -185,15 +185,18 @@ const MasterFloorsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Floors</span>
           </div>
-          <h1 className="master-title">Floor Management</h1>
+          <h1 className="master-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-layer-group text-indigo-600"></i>
+            <span>Floor Management</span>
+          </h1>
           <p className="master-subtitle">Manage hostel floor levels, floor numbers, and floor names.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button onClick={handleGenerateDefaultFloors} className="master-action-btn btn-action-edit">
-            <span></span> Generate Ground to 10th
+          <button onClick={handleGenerateDefaultFloors} className="master-action-btn btn-action-edit" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-wand-magic-sparkles"></i> Generate Ground to 10th
           </button>
-          <button onClick={handleOpenCreateModal} className="master-btn-primary">
-            <span></span> Add New Floor
+          <button onClick={handleOpenCreateModal} className="master-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-plus"></i> Add New Floor
           </button>
         </div>
       </div>
@@ -217,8 +220,8 @@ const MasterFloorsPage = () => {
           </select>
 
           {/* Search Input */}
-          <div className="master-search-box">
-            <span className="master-search-icon"></span>
+          <div className="master-search-box" style={{ position: 'relative' }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
             <input
               type="text"
               className="master-search-input"
@@ -228,6 +231,7 @@ const MasterFloorsPage = () => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
+              style={{ paddingLeft: '40px' }}
             />
           </div>
         </div>
@@ -239,6 +243,7 @@ const MasterFloorsPage = () => {
 
       {error && (
         <div className="master-alert-error">
+          <i className="fa-solid fa-triangle-exclamation mr-2"></i>
           <span>{error}</span>
         </div>
       )}
@@ -248,15 +253,15 @@ const MasterFloorsPage = () => {
         <Loading message="Loading floors list..." />
       ) : floors.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon"></span>
+          <i className="fa-solid fa-layer-group text-slate-300" style={{ fontSize: '3rem', marginBottom: '12px' }}></i>
           <h3 className="master-empty-title">No Floors Found</h3>
           <p className="master-empty-desc">Select another hostel filter or generate default floors.</p>
           <button
             onClick={handleGenerateDefaultFloors}
             className="master-btn-primary"
-            style={{ marginTop: '16px' }}
+            style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            Generate Ground to 10th Floor
+            <i className="fa-solid fa-wand-magic-sparkles"></i> Generate Ground to 10th Floor
           </button>
         </div>
       ) : (
@@ -279,7 +284,9 @@ const MasterFloorsPage = () => {
                   <tr key={f.id}>
                     <td>
                       <div className="master-cell-room">
-                        <span className="master-room-icon" style={{ background: '#ede9fe', color: '#6d28d9' }}></span>
+                        <span className="master-room-icon" style={{ background: '#ede9fe', color: '#6d28d9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <i className="fa-solid fa-layer-group"></i>
+                        </span>
                         <span>{f.floor_name}</span>
                       </div>
                     </td>

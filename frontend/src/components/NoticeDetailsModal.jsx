@@ -5,22 +5,23 @@ import './NoticeDetailsModal.css';
 const PriorityBadge = ({ priority }) => {
   const norm = (priority || 'GENERAL').toUpperCase();
   let label = 'GENERAL';
-  let icon = '';
+  let icon = 'fa-bell';
   let className = 'priority-general';
 
   if (norm === 'URGENT') {
     label = 'URGENT';
-    icon = '';
+    icon = 'fa-triangle-exclamation';
     className = 'priority-urgent';
   } else if (norm === 'IMPORTANT') {
     label = 'IMPORTANT';
-    icon = '️';
+    icon = 'fa-circle-exclamation';
     className = 'priority-important';
   }
 
   return (
-    <span className={`detail-priority-badge ${className}`}>
-      <span>{icon}</span> {label}
+    <span className={`detail-priority-badge ${className}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+      <i className={`fa-solid ${icon}`}></i>
+      <span>{label}</span>
     </span>
   );
 };
@@ -56,9 +57,7 @@ const NoticeDetailsModal = ({
     });
   };
 
-  const targetLabel = notice.hostel_id === null
-    ? ' All Hostels (College Wide)'
-    : ` ${notice.hostel_name || `Hostel #${notice.hostel_id}`}`;
+  const isAllHostels = notice.hostel_id === null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -66,10 +65,15 @@ const NoticeDetailsModal = ({
         <div className="detail-modal-header">
           <div className="detail-header-tags">
             <PriorityBadge priority={notice.priority} />
-            <span className="detail-target-tag">{targetLabel}</span>
+            <span className="detail-target-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <i className={`fa-solid ${isAllHostels ? 'fa-users' : 'fa-building'}`}></i>
+              {isAllHostels ? 'All Hostels (College Wide)' : (notice.hostel_name || `Hostel #${notice.hostel_id}`)}
+            </span>
           </div>
 
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close"></button>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
         <div className="detail-modal-body">
@@ -77,21 +81,27 @@ const NoticeDetailsModal = ({
 
           <div className="detail-meta-grid">
             <div className="meta-item">
-              <span className="meta-label">Published Date:</span>
-              <span className="meta-value"> {formatDate(notice.published_at || notice.created_at)}</span>
+              <span className="meta-label">
+                <i className="fa-regular fa-calendar text-slate-400 mr-1"></i> Published Date:
+              </span>
+              <span className="meta-value">{formatDate(notice.published_at || notice.created_at)}</span>
             </div>
 
             {notice.creator_name && (
               <div className="meta-item">
-                <span className="meta-label">Issued By:</span>
-                <span className="meta-value"> {notice.creator_name}</span>
+                <span className="meta-label">
+                  <i className="fa-solid fa-user-tie text-indigo-500 mr-1"></i> Issued By:
+                </span>
+                <span className="meta-value">{notice.creator_name}</span>
               </div>
             )}
 
             {notice.expires_at && (
               <div className="meta-item">
-                <span className="meta-label">Expires On:</span>
-                <span className="meta-value expires-value"> {formatDate(notice.expires_at)}</span>
+                <span className="meta-label">
+                  <i className="fa-regular fa-clock text-amber-500 mr-1"></i> Expires On:
+                </span>
+                <span className="meta-value expires-value">{formatDate(notice.expires_at)}</span>
               </div>
             )}
           </div>

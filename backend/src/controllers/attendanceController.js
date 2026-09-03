@@ -1,5 +1,4 @@
 const attendanceService = require('../services/attendanceService');
-// const { validationResult } = require('express-validator'); // removed unused dependency
 
 /**
  * GET /api/attendance/hostel/:hostelId?date=YYYY-MM-DD
@@ -7,9 +6,33 @@ const attendanceService = require('../services/attendanceService');
 async function getHostelAttendance(req, res) {
   try {
     const hostelId = Number(req.params.hostelId);
-    const date = req.query.date;
+    const date = req.query.date || new Date().toISOString().split('T')[0];
     const data = await attendanceService.getHostelAttendance(hostelId, date, req.user);
-    res.json({ success: true, attendance: data });
+    const list = Array.isArray(data) ? data : (data.attendance || []);
+    const markedRows = list.filter(r => Boolean(r.status));
+    const lastMarked = markedRows[markedRows.length - 1];
+    const sessionInfo = {
+      isLocked: markedRows.length > 0,
+      markedBy: lastMarked?.marked_by_name || null,
+      markedAt: lastMarked?.marked_at || null,
+      markedCount: markedRows.length,
+      totalStudents: list.length,
+      isComplete: list.length > 0 && markedRows.length === list.length
+    };
+    res.json({ success: true, attendance: list, sessionInfo });
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' });
+  }
+}
+
+/**
+ * GET /api/attendance/me
+ */
+async function getMyAttendance(req, res) {
+  try {
+    const data = await attendanceService.getMyAttendance(req.user);
+    res.json({ success: true, ...data });
   } catch (err) {
     console.error(err);
     res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' });
@@ -36,13 +59,12 @@ async function getStudentAttendance(req, res) {
  */
 async function bulkMark(req, res) {
   try {
-    // Simple validation – in a real project you'd use express-validator middleware
-    const { date, records } = req.body;
+    const { date, records, hostelId } = req.body;
     if (!date || !Array.isArray(records) || records.length === 0) {
-      return res.status(400).json({ success: false, message: 'Invalid payload' });
+      return res.status(400).json({ success: false, message: 'Invalid attendance payload' });
     }
-    await attendanceService.bulkMark(date, records, req.user);
-    res.json({ success: true, message: 'Attendance recorded' });
+    await attendanceService.bulkMark(date, records, req.user, hostelId);
+    res.json({ success: true, message: `Successfully recorded attendance for ${records.length} student(s).` });
   } catch (err) {
     console.error(err);
     res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' });
@@ -57,10 +79,10 @@ async function updateAttendance(req, res) {
     const id = Number(req.params.id);
     const { status } = req.body;
     if (!['PRESENT', 'ABSENT'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
+      return res.status(400).json({ success: false, message: 'Invalid attendance status' });
     }
     await attendanceService.updateAttendance(id, status, req.user);
-    res.json({ success: true, message: 'Attendance updated' });
+    res.json({ success: true, message: 'Attendance record updated' });
   } catch (err) {
     console.error(err);
     res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' });
@@ -73,7 +95,7 @@ async function updateAttendance(req, res) {
 async function getHostelSummary(req, res) {
   try {
     const hostelId = Number(req.params.hostelId);
-    const date = req.query.date;
+    const date = req.query.date || new Date().toISOString().split('T')[0];
     const data = await attendanceService.getHostelSummary(hostelId, date, req.user);
     res.json({ success: true, summary: data });
   } catch (err) {
@@ -84,6 +106,7 @@ async function getHostelSummary(req, res) {
 
 module.exports = {
   getHostelAttendance,
+  getMyAttendance,
   getStudentAttendance,
   bulkMark,
   updateAttendance,

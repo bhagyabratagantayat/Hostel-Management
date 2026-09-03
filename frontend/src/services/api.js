@@ -115,13 +115,36 @@ api.getFeeSummary = (params = {}) => api.get('/fees/summary', { params });
 
 // Reports & Analytics Center API methods
 api.getOverviewReport = (params = {}) => api.get('/reports/overview', { params });
+api.getReportOverview = api.getOverviewReport;
+
 api.getStudentReport = (params = {}) => api.get('/reports/students', { params });
+api.getReportStudents = api.getStudentReport;
+
 api.getAttendanceReport = (params = {}) => api.get('/reports/attendance', { params });
+api.getReportAttendance = api.getAttendanceReport;
+
 api.getOccupancyReport = (params = {}) => api.get('/reports/occupancy', { params });
+api.getReportOccupancy = api.getOccupancyReport;
+
 api.getComplaintReport = (params = {}) => api.get('/reports/complaints', { params });
+api.getReportComplaints = api.getComplaintReport;
+
 api.getVisitorReport = (params = {}) => api.get('/reports/visitors', { params });
+api.getReportVisitors = api.getVisitorReport;
+
 api.getMessReport = (params = {}) => api.get('/reports/mess', { params });
+api.getReportMess = api.getMessReport;
+
 api.getFeeReport = (params = {}) => api.get('/reports/fees', { params });
+api.getReportFees = api.getFeeReport;
+
+// Attendance Management API methods
+api.getHostelAttendance = (hostelId, date) => api.get(`/attendance/hostel/${hostelId}`, { params: { date } });
+api.getHostelAttendanceSummary = (hostelId, date) => api.get(`/attendance/hostel/${hostelId}/summary`, { params: { date } });
+api.getStudentAttendance = (studentId) => api.get(`/attendance/student/${studentId}`);
+api.getMyAttendance = () => api.get('/attendance/me');
+api.bulkMarkAttendance = (data) => api.post('/attendance/bulk', data);
+api.updateAttendanceRecord = (id, status) => api.put(`/attendance/${id}`, { status });
 
 // Student Allocations, Transfers & Checkout API methods
 api.getAllocations = (params = {}) => api.get('/allocations', { params });
@@ -138,6 +161,7 @@ api.getAllocationConsistency = () => api.get('/allocations/consistency');
 api.getStudents = (params = {}) => api.get('/students', { params });
 api.getStudentById = (id) => api.get(`/students/${id}`);
 api.createStudent = (data) => api.post('/students', data);
+api.bulkImportStudents = (records) => api.post('/students/bulk-import', { records });
 api.updateStudent = (id, data) => api.put(`/students/${id}`, data);
 api.deactivateStudent = (id, status) => api.patch(`/students/${id}/deactivate`, { status });
 

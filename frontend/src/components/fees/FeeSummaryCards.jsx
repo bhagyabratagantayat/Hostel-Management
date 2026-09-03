@@ -16,7 +16,9 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
     return (
       <div className="fee-summary-grid">
         <div className="fee-stat-card primary">
-          <div className="fee-stat-icon"></div>
+          <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="fa-solid fa-file-invoice-dollar"></i>
+          </div>
           <div className="fee-stat-content">
             <span className="fee-stat-label">Total Assigned Fees</span>
             <span className="fee-stat-value">{formatCurrency(totalFees)}</span>
@@ -24,7 +26,9 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
         </div>
 
         <div className="fee-stat-card success">
-          <div className="fee-stat-icon"></div>
+          <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="fa-solid fa-circle-check"></i>
+          </div>
           <div className="fee-stat-content">
             <span className="fee-stat-label">Total Amount Paid</span>
             <span className="fee-stat-value">{formatCurrency(totalPaid)}</span>
@@ -32,7 +36,9 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
         </div>
 
         <div className="fee-stat-card warning">
-          <div className="fee-stat-icon"></div>
+          <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="fa-solid fa-hourglass-half"></i>
+          </div>
           <div className="fee-stat-content">
             <span className="fee-stat-label">Remaining Balance</span>
             <span className="fee-stat-value">{formatCurrency(totalPending)}</span>
@@ -40,7 +46,9 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
         </div>
 
         <div className={`fee-stat-card ${totalOverdue > 0 ? 'danger' : 'info'}`}>
-          <div className="fee-stat-icon">{totalOverdue > 0 ? '️' : ''}</div>
+          <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className={`fa-solid ${totalOverdue > 0 ? 'fa-triangle-exclamation' : 'fa-shield-halved'}`}></i>
+          </div>
           <div className="fee-stat-content">
             <span className="fee-stat-label">Overdue Dues</span>
             <span className="fee-stat-value">{formatCurrency(totalOverdue)}</span>
@@ -58,7 +66,9 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
   return (
     <div className="fee-summary-grid">
       <div className="fee-stat-card primary">
-        <div className="fee-stat-icon"></div>
+        <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <i className="fa-solid fa-file-invoice-dollar"></i>
+        </div>
         <div className="fee-stat-content">
           <span className="fee-stat-label">Total Expected Fees</span>
           <span className="fee-stat-value">{formatCurrency(totalAssigned)}</span>
@@ -66,16 +76,23 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
       </div>
 
       <div className="fee-stat-card success">
-        <div className="fee-stat-icon"></div>
+        <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <i className="fa-solid fa-circle-check"></i>
+        </div>
         <div className="fee-stat-content">
           <span className="fee-stat-label">Total Collected</span>
           <span className="fee-stat-value">{formatCurrency(totalCollected)}</span>
-          <span className="fee-stat-subtext">{collectionPercentage}% collection rate</span>
+          <span className="fee-stat-subtext">
+            <i className="fa-solid fa-arrow-trend-up text-emerald-600 mr-1"></i>
+            {collectionPercentage}% collection rate
+          </span>
         </div>
       </div>
 
       <div className="fee-stat-card warning">
-        <div className="fee-stat-icon"></div>
+        <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <i className="fa-solid fa-hourglass-half"></i>
+        </div>
         <div className="fee-stat-content">
           <span className="fee-stat-label">Pending Dues</span>
           <span className="fee-stat-value">{formatCurrency(totalPending)}</span>
@@ -83,7 +100,9 @@ const FeeSummaryCards = ({ summary, isStudent = false }) => {
       </div>
 
       <div className="fee-stat-card danger">
-        <div className="fee-stat-icon"></div>
+        <div className="fee-stat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <i className="fa-solid fa-triangle-exclamation"></i>
+        </div>
         <div className="fee-stat-content">
           <span className="fee-stat-label">Overdue Amount</span>
           <span className="fee-stat-value">{formatCurrency(totalOverdue)}</span>

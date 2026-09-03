@@ -17,8 +17,8 @@ const getAllRooms = async (filters, user) => {
   let query = `
     SELECT r.*, h.name as hostel_name, IFNULL(f.floor_name, 'No Floor') as floor_name, f.floor_number,
            (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id) as total_beds,
-           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'OCCUPIED') as occupied_beds,
-           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'AVAILABLE') as available_beds
+           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND (b.status = 'OCCUPIED' OR b.id IN (SELECT bed_id FROM students WHERE status = 'ACTIVE' AND bed_id IS NOT NULL))) as occupied_beds,
+           (SELECT COUNT(*) FROM beds b WHERE b.room_id = r.id AND b.status = 'AVAILABLE' AND b.id NOT IN (SELECT bed_id FROM students WHERE status = 'ACTIVE' AND bed_id IS NOT NULL)) as available_beds
     FROM rooms r
     JOIN hostels h ON r.hostel_id = h.id
     LEFT JOIN floors f ON r.floor_id = f.id

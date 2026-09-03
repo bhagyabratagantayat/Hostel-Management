@@ -216,11 +216,14 @@ const MasterRoomsPage = () => {
             <span className="master-breadcrumbs-separator">/</span>
             <span>Rooms</span>
           </div>
-          <h1 className="master-title">Room Management</h1>
+          <h1 className="master-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-door-open text-indigo-600"></i>
+            <span>Room Management</span>
+          </h1>
           <p className="master-subtitle">Manage room numbers, bed capacities, and operational status.</p>
         </div>
-        <button onClick={handleOpenCreateModal} className="master-btn-primary">
-          <span></span> Add New Room
+        <button onClick={handleOpenCreateModal} className="master-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <i className="fa-solid fa-plus"></i> Add New Room
         </button>
       </div>
 
@@ -259,8 +262,8 @@ const MasterRoomsPage = () => {
           </select>
 
           {/* Search Input */}
-          <div className="master-search-box">
-            <span className="master-search-icon"></span>
+          <div className="master-search-box" style={{ position: 'relative' }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
             <input
               type="text"
               className="master-search-input"
@@ -270,6 +273,7 @@ const MasterRoomsPage = () => {
                 setSearchTerm(e.target.value);
                 setPage(1);
               }}
+              style={{ paddingLeft: '40px' }}
             />
           </div>
         </div>
@@ -281,6 +285,7 @@ const MasterRoomsPage = () => {
 
       {error && (
         <div className="master-alert-error">
+          <i className="fa-solid fa-triangle-exclamation mr-2"></i>
           <span>{error}</span>
         </div>
       )}
@@ -290,7 +295,7 @@ const MasterRoomsPage = () => {
         <Loading message="Loading rooms list..." />
       ) : rooms.length === 0 ? (
         <div className="master-empty-state">
-          <span className="master-empty-icon"></span>
+          <i className="fa-solid fa-door-closed text-slate-300" style={{ fontSize: '3rem', marginBottom: '12px' }}></i>
           <h3 className="master-empty-title">No Rooms Found</h3>
           <p className="master-empty-desc">Adjust your filters or create a new room in this floor.</p>
         </div>
@@ -321,7 +326,9 @@ const MasterRoomsPage = () => {
                     <tr key={r.id}>
                       <td>
                         <div className="master-cell-room">
-                          <span className="master-room-icon"></span>
+                          <span className="master-room-icon" style={{ background: '#cff4fc', color: '#055160', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <i className="fa-solid fa-door-open"></i>
+                          </span>
                           <span>Room {r.room_number}</span>
                         </div>
                       </td>

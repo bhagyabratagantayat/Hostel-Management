@@ -152,6 +152,30 @@ const deactivateStudent = async (req, res, next) => {
   }
 };
 
+/**
+ * Bulk import students from Excel/CSV parsed records.
+ */
+const bulkImportStudents = async (req, res, next) => {
+  try {
+    const { records } = req.body;
+    if (!records || !Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bad Request: Please provide an array of student records to import.'
+      });
+    }
+
+    const summary = await studentService.bulkImportStudents(records, req.user);
+    return res.status(200).json({
+      success: true,
+      message: `Mass import completed: ${summary.importedCount} imported, ${summary.skippedCount} skipped.`,
+      data: summary
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllStudents,
   getStudentById,
@@ -159,5 +183,6 @@ module.exports = {
   createStudent,
   updateStudent,
   transferStudent,
-  deactivateStudent
+  deactivateStudent,
+  bulkImportStudents
 };

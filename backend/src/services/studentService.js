@@ -716,11 +716,248 @@ const deactivateStudent = async (studentId, newStatus, user) => {
   return updateStudent(studentId, { status: newStatus }, user);
 };
 
+/**
+ * Mass import students from parsed Excel/CSV data (12 Fields).
+ */
+const bulkImportStudents = async (records, creator) => {
+  if (!records || !Array.isArray(records) || records.length === 0) {
+    const error = new Error('No student records provided for import.');
+    error.status = 400;
+    throw error;
+  }
+
+  const connection = await db.pool.getConnection();
+  const summary = {
+    total: records.length,
+    importedCount: 0,
+    skippedCount: 0,
+    errors: []
+  };
+
+  try {
+    const [roleRows] = await connection.query("SELECT id FROM roles WHERE name = 'STUDENT'");
+    const studentRoleId = roleRows[0] ? roleRows[0].id : 4;
+
+    // Cache hostels, floors, rooms, beds for speed
+    const [allHostels] = await connection.query('SELECT id, name, code FROM hostels');
+
+    for (let idx = 0; idx < records.length; idx++) {
+      const rec = records[idx];
+      const rowNum = idx + 1;
+
+      // Map 12 fields (support various casing / column names from Google Form)
+      const fullName = (rec['Student Name\n'] || rec['Student Name'] || rec.name || rec.full_name || '').toString().trim();
+      const rawDob = rec['D.O.B'] || rec.dob || rec.date_of_birth;
+      let rawRegNo = (rec['Registration No.(1st year student add N/A)'] || rec['Registration No.'] || rec['Registration No'] || rec.registrationNo || rec.student_id || rec.roll_number || '').toString().trim();
+      if (rawRegNo.toUpperCase() === 'N/A' || rawRegNo.toUpperCase() === 'NA') {
+        rawRegNo = '';
+      }
+
+      const rawEmail = (rec['Email Id'] || rec['Email ID'] || rec['Email'] || rec.email || '').toString().trim().toLowerCase();
+      const course = (rec['Course'] || rec.course || 'B.Tech').toString().trim();
+      const branch = (rec['stream'] || rec.stream || rec.branch || 'CSE').toString().trim();
+      const year = parseInt(rec['Year'] || rec.year || 1, 10) || 1;
+      const semester = parseInt(rec['Semister'] || rec.semester || 1, 10) || 1;
+      const hostelInput = (rec['Hostel Choose'] || rec['Hostel'] || rec.hostel || 'Main Hostel').toString().trim();
+      const floorInput = (rec['Floor  Choose'] || rec['Floor Choose'] || rec['Floor'] || rec.floor || 'Floor 1').toString().trim();
+      const photoUrl = (rec['Passport Size Photo'] || rec.photoUrl || rec.photo_url || '').toString().trim();
+      const roomNoInput = (rec['ROOM NO'] || rec['Room No'] || rec.roomNo || rec.room_number || '101').toString().trim();
+
+      if (!fullName) {
+        summary.skippedCount++;
+        summary.errors.push({ row: rowNum, name: 'N/A', regNo: rawRegNo || 'N/A', reason: 'Missing Student Name' });
+        continue;
+      }
+
+      // Generate Registration No if missing
+      let finalRegNo = rawRegNo;
+      if (!finalRegNo) {
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+        finalRegNo = `REG${randomDigits}`;
+      }
+
+      // Generate Email if missing
+      let finalEmail = rawEmail;
+      if (!finalEmail) {
+        const cleanName = fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        finalEmail = `${cleanName || 'student'}_${finalRegNo.toLowerCase()}@bec.ac.in`;
+      }
+
+      // Parse DOB & default password
+      let dobStr = null;
+      let defaultPass = 'password123';
+      if (rawDob) {
+        if (typeof rawDob === 'number') {
+          const dateObj = new Date(Math.round((rawDob - 25569) * 86400 * 1000));
+          const yyyy = dateObj.getFullYear();
+          const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const dd = String(dateObj.getDate()).padStart(2, '0');
+          dobStr = `${yyyy}-${mm}-${dd}`;
+          defaultPass = `${dd}${mm}${yyyy}`;
+        } else {
+          const str = String(rawDob).trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+            dobStr = str;
+            const [y, m, d] = str.split('-');
+            defaultPass = `${d}${m}${y}`;
+          } else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(str)) {
+            const parts = str.split(/[\/\-]/);
+            const d = parts[0].padStart(2, '0');
+            const m = parts[1].padStart(2, '0');
+            const y = parts[2];
+            dobStr = `${y}-${m}-${d}`;
+            defaultPass = `${d}${m}${y}`;
+          }
+        }
+      }
+
+      await connection.beginTransaction();
+
+      try {
+        // Check uniqueness of student_id and email
+        const [existing] = await connection.query(
+          'SELECT id FROM users WHERE username = ? OR email = ?',
+          [finalRegNo, finalEmail]
+        );
+        if (existing.length > 0) {
+          await connection.rollback();
+          summary.skippedCount++;
+          summary.errors.push({ row: rowNum, name: fullName, regNo: finalRegNo, reason: `Registration No or Email '${finalRegNo}'/'${finalEmail}' already exists` });
+          continue;
+        }
+
+        // 1. Resolve Hostel (Auto-create if not found)
+        let targetHostel = allHostels.find(h => 
+          h.name.toLowerCase() === hostelInput.toLowerCase() || 
+          h.code.toLowerCase() === hostelInput.toLowerCase()
+        );
+        if (!targetHostel) {
+          const isGirls = hostelInput.toLowerCase().includes('girls') || hostelInput.toLowerCase().includes('female');
+          const hostelGender = isGirls ? 'FEMALE' : 'MALE';
+          const cleanName = hostelInput || (isGirls ? 'Baramunda Girls Hostel' : 'Baramunda Boys Hostel');
+          let hostelCode = cleanName.split(/\s+/).map(w => w[0]).join('').toUpperCase().substring(0, 8);
+          if (!hostelCode || allHostels.some(h => h.code === hostelCode)) {
+            hostelCode = `${hostelCode || 'HST'}${allHostels.length + 1}`;
+          }
+
+          const [newHostelRes] = await connection.query(
+            'INSERT INTO hostels (name, code, gender, location, status) VALUES (?, ?, ?, ?, "ACTIVE")',
+            [cleanName, hostelCode, hostelGender, 'Bhubaneswar, Odisha, India']
+          );
+          targetHostel = {
+            id: newHostelRes.insertId,
+            name: cleanName,
+            code: hostelCode
+          };
+          allHostels.push(targetHostel);
+        }
+
+        // 2. Resolve Floor
+        let targetFloorId = null;
+        let floorNum = parseInt(floorInput.replace(/[^0-9]/g, '') || '1', 10);
+        const [floors] = await connection.query(
+          'SELECT id FROM floors WHERE hostel_id = ? AND (floor_name = ? OR floor_number = ?)',
+          [targetHostel.id, floorInput, floorNum]
+        );
+        if (floors.length > 0) {
+          targetFloorId = floors[0].id;
+        } else {
+          // Auto-create floor if not found
+          const [newFloorRes] = await connection.query(
+            'INSERT INTO floors (hostel_id, floor_name, floor_number, status) VALUES (?, ?, ?, "ACTIVE")',
+            [targetHostel.id, floorInput || `Floor ${floorNum}`, floorNum]
+          );
+          targetFloorId = newFloorRes.insertId;
+        }
+
+        // 3. Resolve Room
+        let targetRoomId = null;
+        const roomNumStr = roomNoInput || '101';
+        const [rooms] = await connection.query(
+          'SELECT id FROM rooms WHERE hostel_id = ? AND room_number = ?',
+          [targetHostel.id, roomNumStr]
+        );
+        if (rooms.length > 0) {
+          targetRoomId = rooms[0].id;
+        } else {
+          // Auto-create room if not found
+          const [newRoomRes] = await connection.query(
+            'INSERT INTO rooms (hostel_id, floor_id, room_number, capacity, status) VALUES (?, ?, ?, 4, "ACTIVE")',
+            [targetHostel.id, targetFloorId, roomNumStr]
+          );
+          targetRoomId = newRoomRes.insertId;
+        }
+
+        // 4. Resolve Bed
+        let targetBedId = null;
+        const [availBeds] = await connection.query(
+          'SELECT id FROM beds WHERE room_id = ? AND status = "AVAILABLE" ORDER BY id ASC LIMIT 1',
+          [targetRoomId]
+        );
+        if (availBeds.length > 0) {
+          targetBedId = availBeds[0].id;
+        } else {
+          // Auto-create bed if full or none available
+          const [allRoomBeds] = await connection.query('SELECT COUNT(*) as cnt FROM beds WHERE room_id = ?', [targetRoomId]);
+          const bedCount = (allRoomBeds[0]?.cnt || 0) + 1;
+          const [newBedRes] = await connection.query(
+            'INSERT INTO beds (room_id, bed_number, status) VALUES (?, ?, "AVAILABLE")',
+            [targetRoomId, `Bed ${bedCount}`]
+          );
+          targetBedId = newBedRes.insertId;
+        }
+
+        // Hash password
+        const passwordHash = await passwordUtil.hashPassword(defaultPass);
+
+        // Create User
+        const [userRes] = await connection.query(
+          `INSERT INTO users (role_id, username, email, full_name, password_hash, status)
+           VALUES (?, ?, ?, ?, ?, "ACTIVE")`,
+          [studentRoleId, finalRegNo, finalEmail, fullName, passwordHash]
+        );
+        const newUserId = userRes.insertId;
+
+        // Create Student
+        const [studentRes] = await connection.query(
+          `INSERT INTO students (user_id, student_id, roll_number, full_name, date_of_birth, photo_url, phone, email, branch, course, year, semester, bed_id, admission_date, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, "ACTIVE")`,
+          [newUserId, finalRegNo, finalRegNo, fullName, dobStr, photoUrl || null, '0000000000', finalEmail, branch, course, year, semester, targetBedId]
+        );
+        const newStudentId = studentRes.insertId;
+
+        // Mark Bed as OCCUPIED
+        await connection.query('UPDATE beds SET status = "OCCUPIED" WHERE id = ?', [targetBedId]);
+
+        // Insert Allocation record
+        const todayStr = new Date().toISOString().slice(0, 10);
+        await connection.query(
+          `INSERT INTO student_allocations (student_id, hostel_id, room_id, bed_id, allocated_from, status, allocated_by)
+           VALUES (?, ?, ?, ?, ?, "ACTIVE", ?)`,
+          [newStudentId, targetHostel.id, targetRoomId, targetBedId, todayStr, creator?.id || 1]
+        );
+
+        await connection.commit();
+        summary.importedCount++;
+      } catch (err) {
+        await connection.rollback();
+        summary.skippedCount++;
+        summary.errors.push({ row: rowNum, name: fullName, regNo: finalRegNo, reason: err.message });
+      }
+    }
+
+    return summary;
+  } finally {
+    connection.release();
+  }
+};
+
 module.exports = {
   getAllStudents,
   getStudentById,
   createStudent,
   updateStudent,
   transferStudent,
-  deactivateStudent
+  deactivateStudent,
+  bulkImportStudents
 };

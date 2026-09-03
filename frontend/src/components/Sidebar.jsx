@@ -158,9 +158,15 @@ const Sidebar = ({ isOpen, onClose }) => {
         
         <div className="sidebar-footer">
           <div className="sidebar-user-badge">
-            <div className="avatar-mini">{user?.username ? user.username.substring(0, 2).toUpperCase() : 'U'}</div>
+            <div className="avatar-mini">
+              {user?.full_name 
+                ? user.full_name.substring(0, 2).toUpperCase() 
+                : (user?.username ? user.username.substring(0, 2).toUpperCase() : 'AD')}
+            </div>
             <div className="badge-meta">
-              <span className="badge-name">{user?.username || 'User'}</span>
+              <span className="badge-name" title={user?.full_name || user?.email || user?.username || 'User'}>
+                {user?.full_name || user?.username || 'User'}
+              </span>
               <span className="badge-role">{user?.role || 'Guest'}</span>
             </div>
           </div>

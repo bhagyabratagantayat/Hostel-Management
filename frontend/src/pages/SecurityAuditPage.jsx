@@ -65,10 +65,12 @@ const SecurityAuditPage = () => {
     <div className="audit-page-container">
       <div className="audit-header">
         <div>
-          <button className="btn btn-sm btn-secondary mb-2" onClick={() => navigate('/admin/users')}>
-            ← Back to User Management
+          <button className="btn btn-sm btn-secondary mb-2" onClick={() => navigate('/admin/users')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-arrow-left"></i> Back to User Management
           </button>
-          <h1>Centralized Security Audit Trail</h1>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-shield-halved text-indigo-600"></i> Centralized Security Audit Trail
+          </h1>
           <p className="subtitle">Real-time log of security-sensitive system events, logins, role modifications, and password resets.</p>
         </div>
       </div>

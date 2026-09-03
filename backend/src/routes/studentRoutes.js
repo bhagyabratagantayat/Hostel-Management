@@ -19,6 +19,9 @@ router.get('/:id/summary', requireAuth, studentController.getStudentById);
 // Create student account and assignment (Super Admin or Superintendent only)
 router.post('/', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.createStudent);
 
+// Bulk import students from Excel/CSV (Super Admin or Superintendent only)
+router.post('/bulk-import', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.bulkImportStudents);
+
 // Update student record (Super Admin or Superintendent only)
 router.put('/:id', requireAuth, requireRole('SUPER_ADMIN', 'SUPERINTENDENT'), studentController.updateStudent);
 

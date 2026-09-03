@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
@@ -55,13 +56,112 @@ const StudentsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   // Modal control states
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+
+  // Mass Bulk Import States
+  const [parsedStudents, setParsedStudents] = useState([]);
+  const [importSummary, setImportSummary] = useState(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState(null);
+
+  const handleOpenBulkImportModal = () => {
+    setParsedStudents([]);
+    setImportSummary(null);
+    setImportError(null);
+    setIsBulkImportOpen(true);
+  };
+
+  const downloadSampleTemplate = () => {
+    const sampleData = [
+      {
+        'Student Name': 'Bhagyabrata Gantayat',
+        'D.O.B': '2004-05-15',
+        'Registration No.': 'REG2026101',
+        'Email Id': 'bhagya@bec.ac.in',
+        'Course': 'B.Tech',
+        'stream': 'Computer Science & Engineering (CSE)',
+        'Year': '1',
+        'Semister': '1',
+        'Hostel': 'BARAMUNDA BOYS HOSTEL',
+        'Floor': 'Floor 1',
+        'Passport Size Photo': 'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+        'ROOM NO': '101'
+      },
+      {
+        'Student Name': 'Jitendra Nial',
+        'D.O.B': '2003-08-22',
+        'Registration No.': 'REG2026102',
+        'Email Id': 'jitendra@bec.ac.in',
+        'Course': 'B.Tech',
+        'stream': 'Mechanical Engineering',
+        'Year': '2',
+        'Semister': '3',
+        'Hostel': 'BARAMUNDA BOYS HOSTEL',
+        'Floor': 'Floor 2',
+        'Passport Size Photo': 'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+        'ROOM NO': '201'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students_Import_Template');
+    XLSX.writeFile(workbook, 'BEC_Hostel_Student_Import_Template.xlsx');
+  };
+
+  const handleExcelFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportError(null);
+    setImportSummary(null);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonRecords = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+        if (!jsonRecords || jsonRecords.length === 0) {
+          setImportError('The uploaded file is empty or has no readable rows.');
+          return;
+        }
+
+        setParsedStudents(jsonRecords);
+      } catch (err) {
+        setImportError('Failed to parse Excel/CSV file. Please check file format.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleConfirmBulkImport = async () => {
+    if (!parsedStudents || parsedStudents.length === 0) return;
+
+    setImportLoading(true);
+    setImportError(null);
+    setImportSummary(null);
+
+    try {
+      const res = await api.bulkImportStudents(parsedStudents);
+      setImportSummary(res.data);
+      fetchStudents();
+    } catch (err) {
+      setImportError(err.message || 'Mass import operation failed.');
+    } finally {
+      setImportLoading(false);
+    }
+  };
   
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [modalMode, setModalMode] = useState('add'); // 'add' | 'edit'
@@ -217,7 +317,7 @@ const StudentsPage = () => {
 
   useEffect(() => {
     fetchStudents();
-  }, [currentPage, hostelFilter, statusFilter, courseFilter]);
+  }, [currentPage, limit, hostelFilter, statusFilter, courseFilter]);
 
   // Handle live search execution
   const handleSearchSubmit = (e) => {
@@ -583,9 +683,14 @@ const StudentsPage = () => {
               : 'Warden console: View and register students allocated to your assigned hostels.'}
           </p>
         </div>
-        <Button onClick={handleOpenAddModal} variant="primary">
-          + Add New Student
-        </Button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <Button onClick={handleOpenBulkImportModal} variant="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}>
+            <i className="fa-solid fa-file-excel"></i> Import Excel / CSV
+          </Button>
+          <Button onClick={handleOpenAddModal} variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-user-plus"></i> Add New Student
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search panel */}
@@ -646,8 +751,27 @@ const StudentsPage = () => {
             </select>
           </div>
 
+          <div style={{ width: '150px' }}>
+            <label className="form-label" style={{ fontSize: '13px' }}>Show per Page</label>
+            <select
+              value={limit}
+              onChange={(e) => { setLimit(Number(e.target.value)); setCurrentPage(1); }}
+              className="form-input"
+              style={{ width: '100%', height: '40px', padding: '8px 12px', fontWeight: '700', color: '#1e293b' }}
+            >
+              <option value={10}>10 per page</option>
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
+              <option value={200}>200 per page</option>
+              <option value={1000}>All ({totalStudents})</option>
+            </select>
+          </div>
+
           <div style={{ display: 'flex', gap: '8px' }}>
-            <Button type="submit" variant="primary">Search</Button>
+            <Button type="submit" variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <i className="fa-solid fa-magnifying-glass"></i> Search
+            </Button>
             <Button 
               type="button" 
               variant="secondary" 
@@ -658,8 +782,9 @@ const StudentsPage = () => {
                 setCourseFilter('');
                 setCurrentPage(1);
               }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              Reset
+              <i className="fa-solid fa-rotate-left"></i> Reset
             </Button>
           </div>
         </form>
@@ -749,45 +874,49 @@ const StudentsPage = () => {
                               background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', 
                               border: 'none', 
                               color: '#ffffff',
-                              fontWeight: 600
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
                             }}
                             isLoading={impersonatingId === student.id}
                             title={`1-Click Login as ${student.full_name}`}
                           >
-                            Login
+                            <i className="fa-solid fa-right-to-bracket"></i> Login
                           </Button>
                         )}
                         <Button 
                           onClick={() => { setSelectedStudent(student); setIsDetailsOpen(true); }}
                           variant="secondary" 
                           className="btn-sm"
-                          style={{ padding: '6px 10px', fontSize: '12px' }}
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         >
-                          View
+                          <i className="fa-solid fa-eye"></i> View
                         </Button>
                         <Button 
                           onClick={() => handleOpenEditModal(student)}
                           variant="secondary" 
                           className="btn-sm"
-                          style={{ padding: '6px 10px', fontSize: '12px' }}
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         >
-                          Edit
+                          <i className="fa-solid fa-pen"></i> Edit
                         </Button>
                         <Button 
                           onClick={() => handleOpenTransferModal(student)}
                           variant="secondary" 
                           className="btn-sm"
-                          style={{ padding: '6px 10px', fontSize: '12px' }}
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                           disabled={student.status !== 'ACTIVE'}
                         >
-                          Transfer
+                          <i className="fa-solid fa-right-left"></i> Transfer
                         </Button>
                         <Button 
                           onClick={() => handleOpenStatusModal(student)}
                           variant={student.status === 'ACTIVE' ? 'danger' : 'primary'}
                           className="btn-sm"
-                          style={{ padding: '6px 10px', fontSize: '12px' }}
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         >
+                          <i className={`fa-solid ${student.status === 'ACTIVE' ? 'fa-user-slash' : 'fa-user-check'}`}></i>
                           {student.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                         </Button>
                       </div>
@@ -798,29 +927,51 @@ const StudentsPage = () => {
             </table>
           </Card>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', flexWrap: 'wrap', gap: '12px' }}>
-              <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                Showing <strong>{students.length}</strong> of <strong>{totalStudents}</strong> student accounts.
-              </span>
-              <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Pagination Controls & Rows Per Page Dropdown */}
+          {totalStudents > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', flexWrap: 'wrap', gap: '12px', background: '#ffffff', padding: '12px 18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                  Showing <strong>{students.length}</strong> of <strong>{totalStudents}</strong> student accounts
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <label htmlFor="limit-footer-select" style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>Show:</label>
+                  <select
+                    id="limit-footer-select"
+                    value={limit}
+                    onChange={(e) => { setLimit(Number(e.target.value)); setCurrentPage(1); }}
+                    className="form-input"
+                    style={{ height: '34px', padding: '2px 10px', fontSize: '13px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}
+                  >
+                    <option value={10}>10 per page</option>
+                    <option value={20}>20 per page</option>
+                    <option value={50}>50 per page</option>
+                    <option value={100}>100 per page</option>
+                    <option value={200}>200 per page</option>
+                    <option value={1000}>All Students ({totalStudents})</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <Button 
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
                   variant="secondary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', fontSize: '13px' }}
                 >
-                  Previous
+                  <i className="fa-solid fa-chevron-left"></i> Previous
                 </Button>
-                <span style={{ alignSelf: 'center', fontSize: '14px', padding: '0 8px' }}>
-                  Page {currentPage} of {totalPages}
+                <span style={{ alignSelf: 'center', fontSize: '13px', padding: '0 8px', fontWeight: 600, color: '#334155' }}>
+                  Page {currentPage} of {totalPages || 1}
                 </span>
                 <Button 
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage === totalPages || totalPages <= 1}
                   variant="secondary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', fontSize: '13px' }}
                 >
-                  Next
+                  Next <i className="fa-solid fa-chevron-right"></i>
                 </Button>
               </div>
             </div>
@@ -848,70 +999,108 @@ const StudentsPage = () => {
             </div>
 
             <div className="custom-modal-body">
-              <div className="profile-modal-grid">
-                <div className="profile-avatar-container">
-                  {selectedStudent.photo_url ? (
+              {/* Header Profile Card */}
+              <div className="profile-header-card">
+                <div className="profile-header-avatar">
+                  {formatPhotoUrl(selectedStudent.photo_url) ? (
                     <img 
-                      src={selectedStudent.photo_url} 
-                      alt={selectedStudent.full_name} 
-                      className="profile-avatar-img"
+                      src={formatPhotoUrl(selectedStudent.photo_url)} 
+                      alt={selectedStudent.full_name}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    <div className="profile-avatar-placeholder"></div>
-                  )}
-                  <span className={`hostel-gender-badge ${
-                    selectedStudent.status === 'ACTIVE' ? 'male' : 'female'
-                  }`} style={{ fontSize: '12px', padding: '6px 12px', textTransform: 'uppercase', borderRadius: '20px', fontWeight: 600 }}>
-                    ● {selectedStudent.status}
-                  </span>
+                  ) : null}
+                  <div className="avatar-fallback" style={{ display: formatPhotoUrl(selectedStudent.photo_url) ? 'none' : 'flex' }}>
+                    {selectedStudent.full_name ? selectedStudent.full_name.substring(0, 2).toUpperCase() : 'ST'}
+                  </div>
                 </div>
 
-                <div className="profile-info-list">
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Full Name</span>
-                    <span className="profile-info-value">{selectedStudent.full_name}</span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Registration No. (User ID)</span>
-                    <span className="profile-info-value"><code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#0284c7' }}>{selectedStudent.student_id}</code></span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Date of Birth</span>
-                    <span className="profile-info-value">
-                      {selectedStudent.date_of_birth ? new Date(selectedStudent.date_of_birth).toLocaleDateString('en-GB') : 'Not Specified'}
+                <div className="profile-header-info">
+                  <h3 className="profile-header-name">{selectedStudent.full_name}</h3>
+                  <div className="profile-header-tags">
+                    <span className="profile-tag tag-reg">
+                      <i className="fa-solid fa-id-card"></i> ID: <code>{selectedStudent.student_id}</code>
+                    </span>
+                    <span className={`profile-tag ${selectedStudent.status === 'ACTIVE' ? 'tag-active' : 'tag-inactive'}`}>
+                      ● {selectedStudent.status}
                     </span>
                   </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Email Address</span>
-                    <span className="profile-info-value">{selectedStudent.email}</span>
+                </div>
+              </div>
+
+              {/* 3 Organized Section Cards */}
+              <div className="profile-sections-wrapper">
+                {/* Section 1: Academic Standing */}
+                <div className="profile-section-card">
+                  <h4 className="profile-section-title">
+                    <i className="fa-solid fa-graduation-cap text-indigo-600"></i>
+                    Academic Profile
+                  </h4>
+                  <div className="profile-info-grid-2">
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Course Program</span>
+                      <span className="profile-info-value">{selectedStudent.course || 'B.Tech'}</span>
+                    </div>
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Branch / Stream</span>
+                      <span className="profile-info-value">{selectedStudent.branch || 'N/A'}</span>
+                    </div>
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Year & Semester</span>
+                      <span className="profile-info-value">Year {selectedStudent.year || 1}, Sem {selectedStudent.semester || 1}</span>
+                    </div>
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Admission Date</span>
+                      <span className="profile-info-value">{selectedStudent.admission_date ? new Date(selectedStudent.admission_date).toLocaleDateString('en-GB') : 'N/A'}</span>
+                    </div>
                   </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Phone Number</span>
-                    <span className="profile-info-value">{selectedStudent.phone || 'N/A'}</span>
+                </div>
+
+                {/* Section 2: Hostel & Accommodation */}
+                <div className="profile-section-card">
+                  <h4 className="profile-section-title">
+                    <i className="fa-solid fa-building-user text-indigo-600"></i>
+                    Hostel & Accommodation
+                  </h4>
+                  <div className="profile-info-grid-2">
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Assigned Hostel</span>
+                      <span className="profile-info-value" style={{ color: '#2563eb' }}>{selectedStudent.hostel_name || 'Not Allocated'}</span>
+                    </div>
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Room & Bed</span>
+                      <span className="profile-info-value">
+                        {selectedStudent.room_number 
+                          ? `Room ${selectedStudent.room_number} • Bed ${selectedStudent.bed_number}`
+                          : 'Unassigned'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Course & Branch</span>
-                    <span className="profile-info-value">{selectedStudent.course || 'N/A'} ({selectedStudent.branch || 'N/A'})</span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Year & Semester</span>
-                    <span className="profile-info-value">Year {selectedStudent.year}, Semester {selectedStudent.semester}</span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Assigned Hostel</span>
-                    <span className="profile-info-value" style={{ color: '#2563eb' }}>{selectedStudent.hostel_name || 'Not Allocated'}</span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Room & Bed</span>
-                    <span className="profile-info-value">
-                      {selectedStudent.room_number 
-                        ? `Room ${selectedStudent.room_number}, Bed ${selectedStudent.bed_number}`
-                        : 'Unassigned'}
-                    </span>
-                  </div>
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Admission Date</span>
-                    <span className="profile-info-value">{selectedStudent.admission_date ? new Date(selectedStudent.admission_date).toLocaleDateString() : 'N/A'}</span>
+                </div>
+
+                {/* Section 3: Personal & Contact Info */}
+                <div className="profile-section-card">
+                  <h4 className="profile-section-title">
+                    <i className="fa-solid fa-user-gear text-indigo-600"></i>
+                    Contact & Personal Details
+                  </h4>
+                  <div className="profile-info-grid-2">
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Date of Birth</span>
+                      <span className="profile-info-value">
+                        {selectedStudent.date_of_birth ? new Date(selectedStudent.date_of_birth).toLocaleDateString('en-GB') : 'Not Specified'}
+                      </span>
+                    </div>
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Email Address</span>
+                      <span className="profile-info-value" style={{ fontSize: '0.85rem' }}>{selectedStudent.email}</span>
+                    </div>
+                    <div className="profile-info-item">
+                      <span className="profile-info-label">Phone Number</span>
+                      <span className="profile-info-value">{selectedStudent.phone || 'N/A'}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1491,6 +1680,173 @@ const StudentsPage = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Mass Student Excel / CSV Import Modal */}
+      {isBulkImportOpen && (
+        <div className="custom-modal-overlay" onClick={() => setIsBulkImportOpen(false)}>
+          <div className="custom-modal-container" style={{ maxWidth: '900px' }} onClick={e => e.stopPropagation()}>
+            <div className="custom-modal-header">
+              <div className="custom-modal-header-content">
+                <h2 className="custom-modal-title">
+                  <i className="fa-solid fa-file-excel text-emerald-600"></i>
+                  Mass Student Excel / CSV Import
+                </h2>
+                <p className="custom-modal-subtitle">
+                  Upload Google Form responses export (.xlsx, .csv) to register and allocate students in bulk.
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsBulkImportOpen(false)}
+                className="custom-modal-close-btn"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="custom-modal-body">
+              {/* Step 1: Template download banner */}
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <i className="fa-solid fa-circle-info text-emerald-600 text-lg"></i>
+                  <div>
+                    <strong style={{ color: '#15803d', fontSize: '14px' }}>Need the exact Excel format?</strong>
+                    <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#166534' }}>
+                      Download our sample template matching all 12 Google Form fields.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadSampleTemplate}
+                  className="master-action-btn"
+                  style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <i className="fa-solid fa-download"></i> Download Sample Template (.xlsx)
+                </button>
+              </div>
+
+              {/* Step 2: File Drag & Drop Input Zone */}
+              <div className="bulk-drop-zone" onClick={() => document.getElementById('excel-file-input').click()}>
+                <i className="fa-solid fa-cloud-arrow-up bulk-drop-icon"></i>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
+                  {parsedStudents.length > 0 ? `Selected File (${parsedStudents.length} Students Parsed)` : 'Click to select or drag & drop Excel / CSV file'}
+                </h4>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+                  Supports .xlsx, .xls, and .csv files containing your 12 Google Form columns
+                </p>
+                <input 
+                  id="excel-file-input"
+                  type="file"
+                  accept=".xlsx, .xls, .csv"
+                  onChange={handleExcelFileSelect}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
+              {/* Import Alerts & Error Display */}
+              {importError && (
+                <div className="login-error-alert" style={{ marginBottom: '16px' }}>
+                  <span className="alert-icon">⚠️</span>
+                  <span className="alert-text">{importError}</span>
+                </div>
+              )}
+
+              {importSummary && (
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                    <span className="bulk-summary-badge badge-success">
+                      <i className="fa-solid fa-circle-check"></i> Imported: {importSummary.importedCount}
+                    </span>
+                    <span className="bulk-summary-badge badge-warning">
+                      <i className="fa-solid fa-circle-exclamation"></i> Skipped: {importSummary.skippedCount}
+                    </span>
+                    <span className="bulk-summary-badge badge-danger">
+                      <i className="fa-solid fa-list-ol"></i> Total: {importSummary.total}
+                    </span>
+                  </div>
+
+                  {importSummary.errors && importSummary.errors.length > 0 && (
+                    <div style={{ maxHeight: '140px', overflowY: 'auto', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#9f1239' }}>
+                      <strong style={{ display: 'block', marginBottom: '4px' }}>Skipped / Error Rows:</strong>
+                      {importSummary.errors.map((errItem, eIdx) => (
+                        <div key={eIdx}>
+                          • Row {errItem.row} ({errItem.name} - {errItem.regNo}): {errItem.reason}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 3: Parsed Data Live Preview Table */}
+              {parsedStudents.length > 0 && !importSummary && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
+                      Parsed Student Roster Preview ({parsedStudents.length} Records)
+                    </h4>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>Showing top 50 records</span>
+                  </div>
+
+                  <div className="bulk-preview-wrapper">
+                    <table className="bulk-preview-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Student Name</th>
+                          <th>Registration No</th>
+                          <th>D.O.B</th>
+                          <th>Email</th>
+                          <th>Course</th>
+                          <th>Stream</th>
+                          <th>Year/Sem</th>
+                          <th>Hostel</th>
+                          <th>Floor</th>
+                          <th>Room No</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedStudents.slice(0, 50).map((row, rIdx) => (
+                          <tr key={rIdx}>
+                            <td>{rIdx + 1}</td>
+                            <td style={{ fontWeight: '700', color: '#0f172a' }}>{row['Student Name'] || row.name || 'N/A'}</td>
+                            <td><code>{row['Registration No.'] || row['Registration No'] || row.registrationNo || 'AUTO'}</code></td>
+                            <td>{row['D.O.B'] || row.dob || 'N/A'}</td>
+                            <td>{row['Email Id'] || row['Email ID'] || row.email || 'AUTO'}</td>
+                            <td>{row['Course'] || row.course || 'B.Tech'}</td>
+                            <td>{row['stream'] || row.stream || row.branch || 'CSE'}</td>
+                            <td>Yr {row['Year'] || 1}, Sem {row['Semister'] || 1}</td>
+                            <td>{row['Hostel'] || row.hostel || 'Main Hostel'}</td>
+                            <td>{row['Floor'] || row.floor || 'Floor 1'}</td>
+                            <td>Room {row['ROOM NO'] || row.roomNo || '101'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="custom-modal-footer">
+              <Button onClick={() => setIsBulkImportOpen(false)} variant="secondary" type="button">
+                Close
+              </Button>
+              {parsedStudents.length > 0 && !importSummary && (
+                <Button 
+                  onClick={handleConfirmBulkImport} 
+                  variant="primary" 
+                  isLoading={importLoading}
+                  style={{ background: '#10b981', borderColor: '#10b981' }}
+                >
+                  <i className="fa-solid fa-cloud-arrow-up mr-1"></i>
+                  Confirm & Import ({parsedStudents.length} Students)
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}

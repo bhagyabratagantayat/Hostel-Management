@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* College Hostel Management System - Premium CSS Design System */
 
 :root {
@@ -13,18 +17,18 @@
   --warning-light: #fef3c7;
   
   /* Neutral Palette */
-  --bg-app: #f9fafb;
+  --bg-app: #f8fafc;
   --bg-card: #ffffff;
   --bg-sidebar: #1e1b4b; /* Deep Indigo Navy */
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-light: #9ca3af;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-light: #94a3b8;
   --text-white: #ffffff;
-  --border-color: #e5e7eb;
+  --border-color: #e2e8f0;
   --border-focus: #818cf8;
   
   /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   
   /* Layout */
   --sidebar-width: 260px;
@@ -391,27 +395,56 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
 }
 
 .avatar-mini {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   background-color: var(--primary-color);
   color: var(--text-white);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .badge-meta {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.badge-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+
+.badge-role {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .badge-name {
@@ -1050,8 +1083,9 @@ select option,
 /* Hostels Grid */
 .hostels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 24px;
+  width: 100%;
 }
 
 @media (max-width: 480px) {
@@ -2944,8 +2978,8 @@ select option,
 .hostels-grid,
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
   width: 100%;
 }
 
@@ -2972,7 +3006,7 @@ select option,
 
   .hostels-grid,
   .cards-grid {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 

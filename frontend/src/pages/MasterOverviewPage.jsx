@@ -33,21 +33,21 @@ const MasterOverviewPage = () => {
   if (loading) return <Loading message="Loading Master Data Metrics..." />;
 
   const metricItems = [
-    { label: 'Total Hostels', value: summary?.totalHostels ?? summary?.hostels ?? 0, icon: '', bg: '#e0e7ff', color: '#4338ca' },
-    { label: 'Total Floors', value: summary?.totalFloors ?? summary?.floors ?? 0, icon: '', bg: '#dbeafe', color: '#1e40af' },
-    { label: 'Total Rooms', value: summary?.totalRooms ?? summary?.rooms ?? 0, icon: '', bg: '#cff4fc', color: '#055160' },
-    { label: 'Total Beds', value: summary?.totalBeds ?? summary?.beds ?? 0, icon: '', bg: '#f3e8ff', color: '#6b21a8' },
-    { label: 'Available Beds', value: summary?.availableBeds ?? 0, icon: '', bg: '#d1fae5', color: '#065f46' },
-    { label: 'Occupied Beds', value: summary?.occupiedBeds ?? 0, icon: '', bg: '#fef3c7', color: '#92400e' },
-    { label: 'Maintenance Beds', value: summary?.maintenanceBeds ?? 0, icon: '', bg: '#ffe4e6', color: '#9f1239' },
-    { label: 'Unallocated Students', value: summary?.unallocatedStudents ?? 0, icon: '', bg: '#ffedd5', color: '#9a3412' }
+    { label: 'Total Hostels', value: summary?.totalHostels ?? summary?.hostels ?? 0, icon: 'fa-building', bg: '#e0e7ff', color: '#4338ca' },
+    { label: 'Total Floors', value: summary?.totalFloors ?? summary?.floors ?? 0, icon: 'fa-layer-group', bg: '#dbeafe', color: '#1e40af' },
+    { label: 'Total Rooms', value: summary?.totalRooms ?? summary?.rooms ?? 0, icon: 'fa-door-open', bg: '#cff4fc', color: '#055160' },
+    { label: 'Total Beds', value: summary?.totalBeds ?? summary?.beds ?? 0, icon: 'fa-bed', bg: '#f3e8ff', color: '#6b21a8' },
+    { label: 'Available Beds', value: summary?.availableBeds ?? 0, icon: 'fa-circle-check', bg: '#d1fae5', color: '#065f46' },
+    { label: 'Occupied Beds', value: summary?.occupiedBeds ?? 0, icon: 'fa-user-check', bg: '#fef3c7', color: '#92400e' },
+    { label: 'Maintenance Beds', value: summary?.maintenanceBeds ?? 0, icon: 'fa-wrench', bg: '#ffe4e6', color: '#9f1239' },
+    { label: 'Unallocated Students', value: summary?.unallocatedStudents ?? 0, icon: 'fa-user-clock', bg: '#ffedd5', color: '#9a3412' }
   ];
 
   const steps = [
-    { title: 'Hostels', step: 'Step 1', icon: '', path: '/admin/master/hostels', desc: 'Manage hostels, codes, capacity, and active status.' },
-    { title: 'Floors', step: 'Step 2', icon: '', path: '/admin/master/floors', desc: 'Manage hostel floors, level numbers, and floor naming.' },
-    { title: 'Rooms', step: 'Step 3', icon: '', path: '/admin/master/rooms', desc: 'Manage room numbers, capacity limits, and room status.' },
-    { title: 'Beds', step: 'Step 4', icon: '', path: '/admin/master/beds', desc: 'Manage bed identifiers, occupancy status, and assignments.' }
+    { title: 'Hostels', step: 'Step 1', icon: 'fa-building', path: '/admin/master/hostels', desc: 'Manage hostels, codes, capacity, and active status.' },
+    { title: 'Floors', step: 'Step 2', icon: 'fa-layer-group', path: '/admin/master/floors', desc: 'Manage hostel floors, level numbers, and floor naming.' },
+    { title: 'Rooms', step: 'Step 3', icon: 'fa-door-open', path: '/admin/master/rooms', desc: 'Manage room numbers, capacity limits, and room status.' },
+    { title: 'Beds', step: 'Step 4', icon: 'fa-bed', path: '/admin/master/beds', desc: 'Manage bed identifiers, occupancy status, and assignments.' }
   ];
 
   return (
@@ -55,18 +55,23 @@ const MasterOverviewPage = () => {
       {/* Header */}
       <div className="master-header">
         <div className="master-header-left">
-          <h1 className="master-title">Master Data Hub</h1>
+          <h1 className="master-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-cubes text-indigo-600"></i>
+            <span>Master Data Hub</span>
+          </h1>
           <p className="master-subtitle">
             Centralized administration and infrastructure hierarchy management.
           </p>
         </div>
-        <Link to="/admin/master/data-integrity" className="master-btn-primary" style={{ textDecoration: 'none' }}>
-          <span></span> Data Integrity Center
+        <Link to="/admin/master/data-integrity" className="master-btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <i className="fa-solid fa-stethoscope"></i>
+          <span>Data Integrity Center</span>
         </Link>
       </div>
 
       {error && (
         <div className="master-alert-error">
+          <i className="fa-solid fa-triangle-exclamation mr-2"></i>
           <span>{error}</span>
           <button className="master-action-btn btn-action-edit" style={{ marginLeft: '12px' }} onClick={fetchSummary}>
             Retry
@@ -105,7 +110,7 @@ const MasterOverviewPage = () => {
               fontSize: '22px',
               flexShrink: 0
             }}>
-              {item.icon}
+              <i className={`fa-solid ${item.icon}`}></i>
             </div>
             <div>
               <div style={{ fontSize: '12px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -120,8 +125,9 @@ const MasterOverviewPage = () => {
       </div>
 
       {/* Infrastructure Hierarchy Cards */}
-      <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '16px' }}>
-        Infrastructure Hierarchy Management
+      <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <i className="fa-solid fa-sitemap text-indigo-600"></i>
+        <span>Infrastructure Hierarchy Management</span>
       </h2>
 
       <div style={{
@@ -154,7 +160,9 @@ const MasterOverviewPage = () => {
             e.currentTarget.style.transform = 'none';
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '28px' }}>{s.icon}</span>
+              <span style={{ fontSize: '24px', color: '#4f46e5' }}>
+                <i className={`fa-solid ${s.icon}`}></i>
+              </span>
               <span className="badge-status badge-available">{s.step}</span>
             </div>
             <div>
@@ -179,7 +187,9 @@ const MasterOverviewPage = () => {
         alignItems: 'center',
         gap: '14px'
       }}>
-        <span style={{ fontSize: '24px' }}></span>
+        <span style={{ fontSize: '24px', color: '#4338ca' }}>
+          <i className="fa-solid fa-shield-halved"></i>
+        </span>
         <div>
           <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#3730a3', margin: 0 }}>
             Safety & Infrastructure Hierarchy Active

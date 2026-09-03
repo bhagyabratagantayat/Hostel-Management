@@ -18,8 +18,8 @@ const getAllHostels = async (filters, user) => {
     (SELECT COUNT(*) FROM floors f WHERE f.hostel_id = h.id) as total_floors,
     (SELECT COUNT(*) FROM rooms r WHERE r.hostel_id = h.id) as total_rooms,
     (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id) as total_beds,
-    (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id AND b.status = 'AVAILABLE') as available_beds,
-    (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id AND b.status = 'OCCUPIED') as occupied_beds,
+    (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id AND b.status = 'AVAILABLE' AND b.id NOT IN (SELECT bed_id FROM students WHERE status = 'ACTIVE' AND bed_id IS NOT NULL)) as available_beds,
+    (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id AND (b.status = 'OCCUPIED' OR b.id IN (SELECT bed_id FROM students WHERE status = 'ACTIVE' AND bed_id IS NOT NULL))) as occupied_beds,
     (SELECT COUNT(*) FROM beds b JOIN rooms r ON b.room_id = r.id WHERE r.hostel_id = h.id AND b.status = 'MAINTENANCE') as maintenance_beds
   `;
 

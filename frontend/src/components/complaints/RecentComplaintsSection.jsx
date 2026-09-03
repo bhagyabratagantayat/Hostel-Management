@@ -34,11 +34,14 @@ const RecentComplaintsSection = ({ user, complaintsPath = '/admin/complaints' })
     <div className="dashboard-section complaints-dashboard-section">
       <div className="section-header flex-between mb-4">
         <div>
-          <h2 className="section-title">Complaint & Grievance Summary</h2>
+          <h2 className="section-title">
+            <i className="fa-solid fa-clipboard-list text-indigo-600 mr-2"></i>
+            Complaint & Grievance Summary
+          </h2>
           <p className="section-sub">Track active maintenance requests and issues</p>
         </div>
-        <Link to={complaintsPath} className="btn btn-sm btn-outline-primary">
-          View All Complaints ➔
+        <Link to={complaintsPath} className="btn btn-sm btn-outline-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          View All <i className="fa-solid fa-arrow-right"></i>
         </Link>
       </div>
 
@@ -46,19 +49,31 @@ const RecentComplaintsSection = ({ user, complaintsPath = '/admin/complaints' })
       {summary && (
         <div className="summary-cards-grid mb-4">
           <div className="summary-kpi-card kpi-open">
-            <span className="kpi-count">{summary.open}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="kpi-count">{summary.open}</span>
+              <i className="fa-solid fa-envelope-open" style={{ fontSize: '1.25rem', opacity: 0.6 }}></i>
+            </div>
             <span className="kpi-label">Open Complaints</span>
           </div>
           <div className="summary-kpi-card kpi-progress">
-            <span className="kpi-count">{summary.inProgress}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="kpi-count">{summary.inProgress}</span>
+              <i className="fa-solid fa-spinner" style={{ fontSize: '1.25rem', opacity: 0.6 }}></i>
+            </div>
             <span className="kpi-label">In Progress</span>
           </div>
           <div className="summary-kpi-card kpi-resolved">
-            <span className="kpi-count">{summary.resolved}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="kpi-count">{summary.resolved}</span>
+              <i className="fa-solid fa-circle-check" style={{ fontSize: '1.25rem', opacity: 0.6 }}></i>
+            </div>
             <span className="kpi-label">Resolved</span>
           </div>
           <div className="summary-kpi-card kpi-urgent">
-            <span className="kpi-count">{summary.urgent}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="kpi-count">{summary.urgent}</span>
+              <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: '1.25rem', opacity: 0.6 }}></i>
+            </div>
             <span className="kpi-label">Urgent Issues</span>
           </div>
         </div>
@@ -71,9 +86,9 @@ const RecentComplaintsSection = ({ user, complaintsPath = '/admin/complaints' })
           <span className="ml-2 text-muted">Loading complaints...</span>
         </div>
       ) : complaints.length === 0 ? (
-        <div className="empty-state-box">
-          <span className="empty-icon"></span>
-          <p className="empty-text">No active complaints found.</p>
+        <div className="empty-state-box" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+          <i className="fa-solid fa-circle-check text-emerald-400" style={{ fontSize: '2.25rem', marginBottom: '0.5rem', display: 'block' }}></i>
+          <p className="empty-text" style={{ color: '#64748b', margin: 0 }}>No active complaints found.</p>
         </div>
       ) : (
         <div className="complaints-grid">

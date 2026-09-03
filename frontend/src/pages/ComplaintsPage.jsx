@@ -23,11 +23,11 @@ const CATEGORY_OPTIONS = [
 ];
 
 const STATUS_TABS = [
-  { id: 'ALL', label: 'All Complaints' },
-  { id: 'OPEN', label: 'Open' },
-  { id: 'IN_PROGRESS', label: 'In Progress' },
-  { id: 'RESOLVED', label: 'Resolved' },
-  { id: 'CLOSED', label: 'Closed' }
+  { id: 'ALL', label: 'All Complaints', icon: 'fa-list' },
+  { id: 'OPEN', label: 'Open', icon: 'fa-envelope-open' },
+  { id: 'IN_PROGRESS', label: 'In Progress', icon: 'fa-spinner' },
+  { id: 'RESOLVED', label: 'Resolved', icon: 'fa-circle-check' },
+  { id: 'CLOSED', label: 'Closed', icon: 'fa-lock' }
 ];
 
 const ComplaintsPage = () => {
@@ -88,6 +88,9 @@ const ComplaintsPage = () => {
       {/* Top Banner */}
       <div className="page-header flex-between align-center mb-4">
         <div>
+          <div className="page-intro-badge">
+            <i className="fa-solid fa-headset"></i> Support & Maintenance
+          </div>
           <h1 className="page-title">Hostel Complaint & Grievance Portal</h1>
           <p className="page-sub">
             {isStudent 
@@ -100,8 +103,9 @@ const ComplaintsPage = () => {
           <button
             className="btn btn-primary btn-lg"
             onClick={() => setIsSubmitModalOpen(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
           >
-             Submit New Complaint
+            <i className="fa-solid fa-plus"></i> Submit New Complaint
           </button>
         )}
       </div>
@@ -109,20 +113,32 @@ const ComplaintsPage = () => {
       {/* KPI Cards Banner */}
       {summary && (
         <div className="summary-cards-grid mb-4">
-          <div className="summary-kpi-card kpi-open" onClick={() => setActiveTab('OPEN')}>
-            <span className="kpi-count">{summary.open}</span>
+          <div className="summary-kpi-card kpi-open" onClick={() => setActiveTab('OPEN')} role="button" tabIndex={0}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="kpi-count">{summary.open}</span>
+              <i className="fa-solid fa-envelope-open" style={{ fontSize: '1.4rem', opacity: 0.7 }}></i>
+            </div>
             <span className="kpi-label">Open Complaints</span>
           </div>
-          <div className="summary-kpi-card kpi-progress" onClick={() => setActiveTab('IN_PROGRESS')}>
-            <span className="kpi-count">{summary.inProgress}</span>
+          <div className="summary-kpi-card kpi-progress" onClick={() => setActiveTab('IN_PROGRESS')} role="button" tabIndex={0}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="kpi-count">{summary.inProgress}</span>
+              <i className="fa-solid fa-spinner" style={{ fontSize: '1.4rem', opacity: 0.7 }}></i>
+            </div>
             <span className="kpi-label">In Progress</span>
           </div>
-          <div className="summary-kpi-card kpi-resolved" onClick={() => setActiveTab('RESOLVED')}>
-            <span className="kpi-count">{summary.resolved}</span>
+          <div className="summary-kpi-card kpi-resolved" onClick={() => setActiveTab('RESOLVED')} role="button" tabIndex={0}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="kpi-count">{summary.resolved}</span>
+              <i className="fa-solid fa-circle-check" style={{ fontSize: '1.4rem', opacity: 0.7 }}></i>
+            </div>
             <span className="kpi-label">Resolved</span>
           </div>
-          <div className="summary-kpi-card kpi-urgent">
-            <span className="kpi-count">{summary.urgent}</span>
+          <div className="summary-kpi-card kpi-urgent" onClick={() => setActiveTab('ALL')} role="button" tabIndex={0}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="kpi-count">{summary.urgent}</span>
+              <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: '1.4rem', opacity: 0.7 }}></i>
+            </div>
             <span className="kpi-label">Urgent Issues</span>
           </div>
         </div>
@@ -135,7 +151,9 @@ const ComplaintsPage = () => {
             key={tab.id}
             className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
+            <i className={`fa-solid ${tab.icon}`}></i>
             {tab.label}
           </button>
         ))}
@@ -143,15 +161,21 @@ const ComplaintsPage = () => {
 
       {/* Filter & Search Bar */}
       <div className="filter-bar mb-4">
-        <form onSubmit={handleSearchSubmit} className="search-form flex-grow">
-          <input
-            type="text"
-            className="form-control search-input"
-            placeholder={isStudent ? "Search by complaint title..." : "Search by title, student name, ID, room..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit" className="btn btn-secondary">Search</button>
+        <form onSubmit={handleSearchSubmit} className="search-form flex-grow" style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ position: 'relative', flexGrow: 1 }}>
+            <i className="fa-solid fa-magnifying-glass" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
+            <input
+              type="text"
+              className="form-control search-input"
+              style={{ paddingLeft: '36px' }}
+              placeholder={isStudent ? "Search by complaint title..." : "Search by title, student name, ID, room..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <i className="fa-solid fa-filter"></i> Search
+          </button>
         </form>
 
         <div className="filter-dropdowns">
@@ -186,10 +210,15 @@ const ComplaintsPage = () => {
           <p className="text-muted">Loading complaints...</p>
         </div>
       ) : error ? (
-        <div className="alert alert-danger my-4">{error}</div>
+        <div className="alert alert-danger my-4">
+          <i className="fa-solid fa-triangle-exclamation mr-2"></i>
+          {error}
+        </div>
       ) : complaints.length === 0 ? (
         <div className="empty-state-card py-5 text-center">
-          <div className="empty-state-icon"></div>
+          <div className="empty-state-icon" style={{ fontSize: '3rem', color: '#cbd5e1', marginBottom: '1rem' }}>
+            <i className="fa-solid fa-folder-open"></i>
+          </div>
           <h3>No complaints found</h3>
           <p className="text-muted">
             {activeTab !== 'ALL' || categoryFilter !== 'ALL' || priorityFilter !== 'ALL'

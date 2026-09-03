@@ -7,22 +7,22 @@ import './NoticeCard.css';
 const PriorityBadge = ({ priority }) => {
   const normalized = (priority || 'GENERAL').toUpperCase();
   let label = 'GENERAL';
-  let icon = '';
+  let icon = 'fa-bell';
   let className = 'priority-general';
 
   if (normalized === 'URGENT') {
     label = 'URGENT';
-    icon = '';
+    icon = 'fa-triangle-exclamation';
     className = 'priority-urgent';
   } else if (normalized === 'IMPORTANT') {
     label = 'IMPORTANT';
-    icon = '️';
+    icon = 'fa-circle-exclamation';
     className = 'priority-important';
   }
 
   return (
-    <span className={`notice-priority-badge ${className}`}>
-      <span className="priority-icon" aria-hidden="true">{icon}</span>
+    <span className={`notice-priority-badge ${className}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+      <i className={`fa-solid ${icon}`}></i>
       <span className="priority-text">{label}</span>
     </span>
   );
@@ -33,8 +33,10 @@ const PriorityBadge = ({ priority }) => {
  */
 const StatusBadge = ({ status }) => {
   const norm = (status || 'DRAFT').toUpperCase();
+  const icon = norm === 'PUBLISHED' ? 'fa-circle-check' : norm === 'ARCHIVED' ? 'fa-box-archive' : 'fa-pen-ruler';
   return (
-    <span className={`notice-status-badge status-${norm.toLowerCase()}`}>
+    <span className={`notice-status-badge status-${norm.toLowerCase()}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+      <i className={`fa-solid ${icon}`}></i>
       {norm}
     </span>
   );
@@ -64,9 +66,7 @@ const NoticeCard = ({
     });
   };
 
-  const targetLabel = notice.hostel_id === null
-    ? ' All Hostels'
-    : ` ${notice.hostel_name || `Hostel #${notice.hostel_id}`}`;
+  const isAllHostels = notice.hostel_id === null;
 
   return (
     <div className={`notice-card ${isUnread ? 'unread-card' : ''}`}>
@@ -75,7 +75,7 @@ const NoticeCard = ({
           <PriorityBadge priority={notice.priority} />
 
           {isStudent && (
-            <span className={`read-state-badge ${isUnread ? 'unread' : 'read'}`}>
+            <span className={`read-state-badge ${isUnread ? 'unread' : 'read'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               <span className="read-state-dot" />
               {isUnread ? 'UNREAD' : 'READ'}
             </span>
@@ -86,7 +86,10 @@ const NoticeCard = ({
           )}
         </div>
 
-        <span className="notice-target-tag">{targetLabel}</span>
+        <span className="notice-target-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <i className={`fa-solid ${isAllHostels ? 'fa-users' : 'fa-building'}`}></i>
+          {isAllHostels ? 'All Hostels' : (notice.hostel_name || `Hostel #${notice.hostel_id}`)}
+        </span>
       </div>
 
       <div className="notice-card-body">
@@ -101,12 +104,14 @@ const NoticeCard = ({
 
       <div className="notice-card-footer">
         <div className="notice-timestamps">
-          <span className="notice-date">
-            <span className="calendar-icon"></span> {formatDate(notice.published_at || notice.created_at)}
+          <span className="notice-date" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <i className="fa-regular fa-calendar text-slate-400"></i>
+            {formatDate(notice.published_at || notice.created_at)}
           </span>
           {notice.expires_at && (
-            <span className="notice-expiration" title="Expiration date">
-               Expires {formatDate(notice.expires_at)}
+            <span className="notice-expiration" title="Expiration date" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <i className="fa-regular fa-clock text-amber-500"></i>
+              Expires {formatDate(notice.expires_at)}
             </span>
           )}
         </div>
@@ -117,8 +122,9 @@ const NoticeCard = ({
             className="notice-btn btn-view"
             onClick={() => onView && onView(notice)}
             aria-label={`View notice ${notice.title}`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
           >
-            View Details
+            <i className="fa-solid fa-eye"></i> View Details
           </button>
 
           {!isStudent && (
@@ -129,8 +135,9 @@ const NoticeCard = ({
                   className="notice-btn btn-edit"
                   onClick={() => onEdit(notice)}
                   title="Edit Notice"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  Edit
+                  <i className="fa-solid fa-pen"></i> Edit
                 </button>
               )}
 
@@ -140,8 +147,9 @@ const NoticeCard = ({
                   className="notice-btn btn-publish"
                   onClick={() => onStatusChange(notice.id, 'PUBLISHED')}
                   title="Publish Notice"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                   Publish
+                  <i className="fa-solid fa-paper-plane"></i> Publish
                 </button>
               )}
 
@@ -151,8 +159,9 @@ const NoticeCard = ({
                   className="notice-btn btn-archive"
                   onClick={() => onStatusChange(notice.id, 'ARCHIVED')}
                   title="Archive Notice"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                   Archive
+                  <i className="fa-solid fa-box-archive"></i> Archive
                 </button>
               )}
 
@@ -162,8 +171,9 @@ const NoticeCard = ({
                   className="notice-btn btn-delete"
                   onClick={() => onDelete(notice.id)}
                   title="Delete Notice"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  ️
+                  <i className="fa-solid fa-trash-can"></i>
                 </button>
               )}
             </>

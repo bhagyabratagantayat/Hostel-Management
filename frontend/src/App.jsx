@@ -31,6 +31,8 @@ import MasterRoomsPage from './pages/MasterRoomsPage';
 import MasterBedsPage from './pages/MasterBedsPage';
 import DataIntegrityPage from './pages/DataIntegrityPage';
 import MessPage from './pages/MessPage';
+import AttendancePage from './pages/AttendancePage';
+import StudentAttendancePage from './pages/StudentAttendancePage';
 import Loading from './components/Loading';
 
 /**
@@ -102,7 +104,7 @@ function App() {
                     <Route path="students"            element={<StudentsPage />} />
                     <Route path="allocations"         element={<AllocationsPage />} />
                     <Route path="reports"             element={<ReportsPage />} />
-                    <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
+                    <Route path="attendance"          element={<AttendancePage />} />
                     <Route path="notices"             element={<NoticesPage />} />
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="complaints"          element={<ComplaintsPage />} />
@@ -137,7 +139,7 @@ function App() {
                     <Route path="students"            element={<StudentsPage />} />
                     <Route path="allocations"         element={<AllocationsPage />} />
                     <Route path="reports"             element={<ReportsPage />} />
-                    <Route path="attendance"          element={<RoutePlaceholder title="Attendance Management" />} />
+                    <Route path="attendance"          element={<AttendancePage />} />
                     <Route path="notices"             element={<NoticesPage />} />
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="complaints"          element={<ComplaintsPage />} />
@@ -169,7 +171,7 @@ function App() {
                     <Route path="maintenance"   element={<MaintenancePage role="STUDENT" />} />
                     <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
                     <Route path="profile"       element={<Navigate to="/profile" replace />} />
-                    <Route path="attendance"    element={<RoutePlaceholder title="My Attendance" />} />
+                    <Route path="attendance"          element={<StudentAttendancePage />} />
                     <Route path="*"             element={<Navigate to="/student/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
