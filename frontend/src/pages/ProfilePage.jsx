@@ -246,7 +246,7 @@ const ProfilePage = () => {
                   <i className="fa-solid fa-circle text-xs mr-1"></i> {profile?.status}
                 </span>
                 {profile?.gender && (
-                  <span className={`badge badge-gender gender-${profile.gender.toLowerCase()}`}>
+                  <span className={`badge badge-gender gender-${profile.gender?.toLowerCase() || 'male'}`}>
                     <i className={`fa-solid ${profile.gender === 'MALE' ? 'fa-mars' : profile.gender === 'FEMALE' ? 'fa-venus' : 'fa-genderless'} mr-1`}></i>
                     {profile.gender === 'MALE' ? 'Male' : profile.gender === 'FEMALE' ? 'Female' : 'Other'}
                   </span>

@@ -195,8 +195,8 @@ const DashboardPlaceholder = () => {
               footer={
                 <div className="hostel-card-footer">
                   <span className="hostel-code-badge">{hostel.code}</span>
-                  <span className={`hostel-gender-badge ${hostel.gender.toLowerCase()}`}>
-                    {hostel.gender}
+                  <span className={`hostel-gender-badge ${(hostel.gender || 'MALE').toLowerCase()}`}>
+                    {hostel.gender || 'MALE'}
                   </span>
                 </div>
               }

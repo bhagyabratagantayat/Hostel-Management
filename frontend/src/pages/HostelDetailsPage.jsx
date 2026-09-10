@@ -862,7 +862,7 @@ const HostelDetailsPage = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {roomBeds.map(b => (
                             <div key={b.id} className={`room-occupant-row ${b.status === 'OCCUPIED' ? 'occ' : 'vac'}`}>
-                              <span style={{ fontWeight: 700 }}>{b.bed_number.toLowerCase().startsWith('bed') ? b.bed_number : `Bed ${b.bed_number}`}:</span>
+                              <span style={{ fontWeight: 700 }}>{String(b.bed_number || '').toLowerCase().startsWith('bed') ? b.bed_number : `Bed ${b.bed_number}`}:</span>
                               {b.status === 'OCCUPIED' ? (
                                 <span style={{ color: '#166534', fontWeight: 600 }}>
                                   {b.student_name} {b.student_code ? `(${b.student_code})` : ''}

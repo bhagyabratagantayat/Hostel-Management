@@ -802,9 +802,21 @@ const bulkImportStudents = async (records, creator) => {
             defaultPass = `${d}${m}${y}`;
           } else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(str)) {
             const parts = str.split(/[\/\-]/);
-            const d = parts[0].padStart(2, '0');
-            const m = parts[1].padStart(2, '0');
+            const num1 = parseInt(parts[0], 10);
+            const num2 = parseInt(parts[1], 10);
             const y = parts[2];
+            let d, m;
+            if (num1 > 12) {
+              d = String(num1).padStart(2, '0');
+              m = String(num2).padStart(2, '0');
+            } else if (num2 > 12) {
+              m = String(num1).padStart(2, '0');
+              d = String(num2).padStart(2, '0');
+            } else {
+              // Default Google Form export (MM/DD/YYYY)
+              m = String(num1).padStart(2, '0');
+              d = String(num2).padStart(2, '0');
+            }
             dobStr = `${y}-${m}-${d}`;
             defaultPass = `${d}${m}${y}`;
           }

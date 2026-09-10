@@ -212,8 +212,8 @@ const HostelsPage = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <span className="hostel-code-badge">{hostel.code}</span>
-                      <span className={`hostel-gender-badge ${hostel.gender.toLowerCase()}`}>
-                        {hostel.gender}
+                      <span className={`hostel-gender-badge ${(hostel.gender || 'MALE').toLowerCase()}`}>
+                        {hostel.gender || 'MALE'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
