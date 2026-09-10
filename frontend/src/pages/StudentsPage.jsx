@@ -38,6 +38,18 @@ export const COURSE_BRANCH_MAP = {
   ]
 };
 
+const formatPhotoUrl = (url) => {
+  if (!url) return null;
+  const str = String(url).trim();
+  if (str.includes('drive.google.com')) {
+    const match = str.match(/id=([a-zA-Z0-9_-]+)/) || str.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+  }
+  return str;
+};
+
 const StudentsPage = () => {
   const { user, impersonateStudent } = useAuth();
   const navigate = useNavigate();
