@@ -9,6 +9,9 @@ router.use(requireAuth);
 // GET student self attendance history
 router.get('/me', attendanceController.getMyAttendance);
 
+// GET multi-day attendance range
+router.get('/range', attendanceController.getAttendanceRange);
+
 // GET hostel attendance (list for a date)
 router.get('/hostel/:hostelId', attendanceController.getHostelAttendance);
 

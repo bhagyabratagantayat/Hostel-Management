@@ -90,14 +90,18 @@ async function updateAttendance(req, res) {
 }
 
 /**
- * GET /api/attendance/hostel/:hostelId/summary?date=YYYY-MM-DD
+ * GET /api/attendance/range?hostel_id=X&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
  */
-async function getHostelSummary(req, res) {
+async function getAttendanceRange(req, res) {
   try {
-    const hostelId = Number(req.params.hostelId);
-    const date = req.query.date || new Date().toISOString().split('T')[0];
-    const data = await attendanceService.getHostelSummary(hostelId, date, req.user);
-    res.json({ success: true, summary: data });
+    const hostelId = Number(req.query.hostel_id);
+    const dateFrom = req.query.date_from || new Date().toISOString().split('T')[0];
+    const dateTo = req.query.date_to || new Date().toISOString().split('T')[0];
+    if (!hostelId) {
+      return res.status(400).json({ success: false, message: 'hostel_id parameter is required' });
+    }
+    const data = await attendanceService.getAttendanceRange(hostelId, dateFrom, dateTo, req.user);
+    res.json({ success: true, records: data });
   } catch (err) {
     console.error(err);
     res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' });
@@ -110,5 +114,6 @@ module.exports = {
   getStudentAttendance,
   bulkMark,
   updateAttendance,
-  getHostelSummary
+  getHostelSummary,
+  getAttendanceRange
 };

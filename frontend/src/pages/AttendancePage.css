@@ -7,29 +7,113 @@
   padding-bottom: 90px; /* Space for sticky bottom bar */
 }
 
-.attendance-header-section {
+/* Premium Header & Layout Styling */
+.attendance-header-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.attendance-header-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4f46e5 0%, #06b6d4 100%);
+}
+
+.header-flex-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 20px;
 }
 
-.attendance-title-group h1 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #0f172a;
+.header-main-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 6px 0;
+  gap: 14px;
 }
 
-.attendance-title-group p {
+.header-icon-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.3);
+  flex-shrink: 0;
+}
+
+.attendance-title {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.5px;
+}
+
+.attendance-subtitle {
   color: #64748b;
   font-size: 0.925rem;
   margin: 0;
+  font-weight: 500;
+}
+
+.mode-switcher-container {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.mode-switch-btn {
+  padding: 8px 18px;
+  border-radius: 9px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.mode-switch-btn:hover {
+  color: #1e293b;
+}
+
+.mode-switch-btn.active {
+  background: #ffffff;
+  color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.period-filter-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
 }
 
 /* Session Lock Banner & Unlock Button */

@@ -211,11 +211,52 @@ async function getHostelSummary(hostelId, date, user) {
   return { ...row, percentage };
 }
 
+/**
+ * Retrieves attendance records for a hostel across a date range.
+ */
+async function getAttendanceRange(hostelId, dateFrom, dateTo, user) {
+  if (!await hasHostelAccess(user, hostelId)) {
+    const err = new Error('Unauthorized');
+    err.status = 403;
+    throw err;
+  }
+
+  const sql = `
+    SELECT 
+      s.id AS studentId,
+      s.full_name,
+      s.student_code,
+      s.course,
+      s.branch,
+      s.year,
+      fl.floor_number,
+      rm.room_number,
+      b.bed_number,
+      h.name AS hostel_name,
+      h.code AS hostel_code,
+      a.attendance_date,
+      a.status,
+      a.marked_at
+    FROM students s
+    JOIN beds b ON s.bed_id = b.id
+    JOIN rooms rm ON b.room_id = rm.id
+    JOIN floors fl ON rm.floor_id = fl.id
+    JOIN hostels h ON rm.hostel_id = h.id
+    LEFT JOIN attendance a ON s.id = a.student_id AND a.attendance_date BETWEEN ? AND ?
+    WHERE rm.hostel_id = ? AND s.status = 'ACTIVE'
+    ORDER BY fl.floor_number, rm.room_number, s.full_name, a.attendance_date;
+  `;
+
+  const [rows] = await db.pool.query(sql, [dateFrom, dateTo, hostelId]);
+  return rows;
+}
+
 module.exports = {
   bulkMark,
   getHostelAttendance,
   getStudentAttendance,
   getMyAttendance,
   updateAttendance,
-  getHostelSummary
+  getHostelSummary,
+  getAttendanceRange
 };

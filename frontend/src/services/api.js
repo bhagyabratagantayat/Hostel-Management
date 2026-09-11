@@ -143,6 +143,7 @@ api.getHostelAttendance = (hostelId, date) => api.get(`/attendance/hostel/${host
 api.getHostelAttendanceSummary = (hostelId, date) => api.get(`/attendance/hostel/${hostelId}/summary`, { params: { date } });
 api.getStudentAttendance = (studentId) => api.get(`/attendance/student/${studentId}`);
 api.getMyAttendance = () => api.get('/attendance/me');
+api.getAttendanceRange = (params = {}) => api.get('/attendance/range', { params });
 api.bulkMarkAttendance = (data) => api.post('/attendance/bulk', data);
 api.updateAttendanceRecord = (id, status) => api.put(`/attendance/${id}`, { status });
 
