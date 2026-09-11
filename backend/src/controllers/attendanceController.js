@@ -90,6 +90,21 @@ async function updateAttendance(req, res) {
 }
 
 /**
+ * GET /api/attendance/hostel/:hostelId/summary?date=YYYY-MM-DD
+ */
+async function getHostelSummary(req, res) {
+  try {
+    const hostelId = Number(req.params.hostelId);
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const data = await attendanceService.getHostelSummary(hostelId, date, req.user);
+    res.json({ success: true, summary: data });
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 500).json({ success: false, message: err.message || 'Server error' });
+  }
+}
+
+/**
  * GET /api/attendance/range?hostel_id=X&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
  */
 async function getAttendanceRange(req, res) {
