@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import ReportFilterBar from '../components/reports/ReportFilterBar';
@@ -316,7 +317,17 @@ const ReportsPage = () => {
             />
 
             <div className="card report-table-card">
-              <h4 className="card-title">Hostel Attendance Comparison</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h4 className="card-title" style={{ margin: 0 }}>Hostel Attendance Comparison</h4>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ background: '#059669', borderColor: '#059669', padding: '6px 14px', fontSize: '0.85rem', fontWeight: 600 }}
+                  onClick={downloadAttendanceComparisonReport}
+                >
+                  <i className="fa-solid fa-file-excel mr-1"></i> Export Attendance Comparison (Excel)
+                </button>
+              </div>
               <div className="table-responsive">
                 <table className="report-table">
                   <thead>

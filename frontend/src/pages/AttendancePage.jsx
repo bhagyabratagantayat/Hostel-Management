@@ -214,9 +214,10 @@ const AttendancePage = () => {
   };
 
   const downloadAttendanceRoster = () => {
-    if (!attendanceList || attendanceList.length === 0) return;
+    const listToExport = filteredStudents && filteredStudents.length > 0 ? filteredStudents : attendanceList;
+    if (!listToExport || listToExport.length === 0) return;
     const currentHostelObj = hostels.find(h => Number(h.id) === Number(selectedHostelId));
-    const exportData = attendanceList.map((st, idx) => ({
+    const exportData = listToExport.map((st, idx) => ({
       'S.No': idx + 1,
       'Student Name': st.full_name,
       'Registration / Roll No': st.student_code || `#${st.studentId}`,
@@ -276,27 +277,24 @@ const AttendancePage = () => {
 
   return (
     <div className="attendance-page-container">
-      {/* Header Title & Real-Time Clock Section */}
-      <div className="attendance-header-section">
-        <div className="attendance-title-group">
-          <h1>
-            <i className="fa-solid fa-calendar-check text-indigo-600"></i>
-            Hostel Daily Attendance Console
-          </h1>
-          <p>
-            {user.role === 'SUPER_ADMIN' 
-              ? 'Campus-wide attendance management, daily roll call, and historical records.' 
-              : 'Warden roll-call console: Real-time night roll call & floor monitoring.'}
-          </p>
-        </div>
-
-        {/* Real-Time Live Clock Widget */}
-        <div className="realtime-clock-widget">
-          <div className="clock-digits">
-            {formatClockTime(now)}
+      {/* Page Header */}
+      <div className="attendance-header-card">
+        <div className="header-flex-row">
+          <div>
+            <h1 className="attendance-title">Hostel Attendance Register</h1>
+            <p className="attendance-subtitle">
+              Daily digital roll call, live status verification, and automated compliance logging
+            </p>
           </div>
-          <div className="clock-meta">
-            <span className="clock-date">{formatClockDate(now)}</span>
+
+          <div className="live-clock-badge card-glass">
+            <div className="clock-icon">
+              <i className="fa-solid fa-clock font-semibold"></i>
+            </div>
+            <div>
+              <div className="clock-time">{formatClockTime(now)}</div>
+              <div className="clock-date">{formatClockDate(now)}</div>
+            </div>
             <span className="clock-status-live">
               <span className="pulse-dot"></span> Realtime Sync Active
             </span>
@@ -381,7 +379,7 @@ const AttendancePage = () => {
             </select>
           </div>
 
-          <div className="control-item-group">
+          <div className="control-item-group" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <span className="control-label">Roll Call Date:</span>
             <input 
               type="date"
@@ -403,6 +401,16 @@ const AttendancePage = () => {
               onClick={() => setAttendanceDate(getYesterdayString())}
             >
               <i className="fa-solid fa-rotate-left"></i> Yesterday
+            </button>
+
+            <button 
+              type="button" 
+              className="quick-date-btn"
+              onClick={downloadAttendanceRoster}
+              style={{ background: '#059669', color: '#ffffff', borderColor: '#059669', marginLeft: 'auto', fontWeight: 700 }}
+              title="Download Excel Attendance Report"
+            >
+              <i className="fa-solid fa-file-excel"></i> Export Attendance (Excel)
             </button>
           </div>
         </div>
