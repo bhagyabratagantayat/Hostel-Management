@@ -57,10 +57,11 @@ const NoticeComposerModal = ({
   const fetchHostels = async () => {
     try {
       const res = await api.get('/hostels');
-      if (res.success && Array.isArray(res.hostels)) {
-        setHostels(res.hostels);
-        if (!isSuperAdmin && res.hostels.length > 0 && !formData.hostel_id) {
-          setFormData(prev => ({ ...prev, hostel_id: res.hostels[0].id }));
+      const list = res.data || res.hostels || (Array.isArray(res) ? res : []);
+      if (Array.isArray(list)) {
+        setHostels(list);
+        if (!isSuperAdmin && list.length > 0 && !formData.hostel_id) {
+          setFormData(prev => ({ ...prev, hostel_id: list[0].id }));
         }
       }
     } catch (err) {

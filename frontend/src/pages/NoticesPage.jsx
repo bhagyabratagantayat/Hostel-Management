@@ -42,8 +42,9 @@ const NoticesPage = () => {
   useEffect(() => {
     api.get('/hostels')
       .then(res => {
-        if (res.success && Array.isArray(res.hostels)) {
-          setHostels(res.hostels);
+        const list = res.data || res.hostels || (Array.isArray(res) ? res : []);
+        if (Array.isArray(list)) {
+          setHostels(list);
         }
       })
       .catch(err => console.error('Failed to load hostels:', err));

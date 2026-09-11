@@ -61,7 +61,7 @@ const FeeManagementPage = () => {
   const fetchSummary = useCallback(async () => {
     try {
       const res = await api.getFeeSummary(selectedHostel ? { hostel_id: selectedHostel } : {});
-      if (res.data?.success) setSummary(res.data.data);
+      if (res.success || res.data) setSummary(res.data || res);
     } catch (err) {
       console.error('Failed to fetch fee summary:', err);
     }
@@ -74,9 +74,9 @@ const FeeManagementPage = () => {
       setError('');
       if (isStudent) {
         const res = await api.getMyFees();
-        if (res.data?.success) {
-          setStudentFees(res.data.data?.fees || []);
-          setSummary(res.data.summary);
+        if (res.success || res.data) {
+          setStudentFees(res.fees || res.data?.fees || res.data || []);
+          if (res.summary) setSummary(res.summary);
         }
       } else {
         const params = {
@@ -87,12 +87,12 @@ const FeeManagementPage = () => {
           academic_year: selectedAcademicYear || undefined
         };
         const res = await api.getStudentFees(params);
-        if (res.data?.success) {
-          setStudentFees(res.data.data?.fees || res.data.data || []);
+        if (res.success || res.data) {
+          setStudentFees(res.fees || res.data?.fees || res.data || []);
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load fee records.');
+      setError(err.response?.data?.message || err.message || 'Failed to load fee records.');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ const FeeManagementPage = () => {
   const fetchFeeStructures = useCallback(async () => {
     try {
       const res = await api.getFeeStructures({ hostel_id: selectedHostel || undefined });
-      if (res.data?.success) setFeeStructures(res.data.data);
+      if (res.success || res.data) setFeeStructures(res.data || []);
     } catch (err) {
       console.error('Failed to fetch structures:', err);
     }
@@ -112,7 +112,7 @@ const FeeManagementPage = () => {
   const fetchPayments = useCallback(async () => {
     try {
       const res = await api.getPayments({ hostel_id: selectedHostel || undefined, search });
-      if (res.data?.success) setPayments(res.data.data?.payments || res.data.data || []);
+      if (res.success || res.data) setPayments(res.payments || res.data?.payments || res.data || []);
     } catch (err) {
       console.error('Failed to fetch payments ledger:', err);
     }
@@ -124,11 +124,13 @@ const FeeManagementPage = () => {
       try {
         if (isStaff) {
           const [hRes, sRes] = await Promise.all([
-            api.get('/hostels').catch(() => ({ data: { data: [] } })),
-            api.get('/students').catch(() => ({ data: { data: [] } }))
+            api.get('/hostels').catch(() => []),
+            api.get('/students').catch(() => [])
           ]);
-          if (hRes.data?.data) setHostels(hRes.data.data);
-          if (sRes.data?.data) setStudents(sRes.data.data);
+          const hList = hRes.data || (Array.isArray(hRes) ? hRes : []);
+          const sList = sRes.data?.students || sRes.students || (Array.isArray(sRes.data) ? sRes.data : (Array.isArray(sRes) ? sRes : []));
+          setHostels(hList);
+          setStudents(sList);
         }
       } catch (err) {
         console.error('Failed initial metadata load:', err);

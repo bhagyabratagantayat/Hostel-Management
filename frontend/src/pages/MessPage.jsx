@@ -37,9 +37,8 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
     if (userRole !== 'STUDENT') {
       api.get('/hostels')
         .then(res => {
-          if (res.data?.success) {
-            setHostels(res.data.data || []);
-          }
+          const list = res.data || (Array.isArray(res) ? res : []);
+          setHostels(list);
         })
         .catch(err => console.error('Failed to load hostels list:', err));
     }
