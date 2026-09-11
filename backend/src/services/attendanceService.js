@@ -225,7 +225,7 @@ async function getAttendanceRange(hostelId, dateFrom, dateTo, user) {
     SELECT 
       s.id AS studentId,
       s.full_name,
-      s.student_code,
+      s.student_id AS student_code,
       s.course,
       s.branch,
       s.year,
