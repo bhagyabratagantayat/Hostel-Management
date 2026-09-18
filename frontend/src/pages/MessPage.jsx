@@ -468,6 +468,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
         editItem={editingMenuItem}
         initialDate={modalInitialDate}
         initialMealType={modalInitialMealType}
+        initialHostelId={selectedHostelId || (hostels[0] ? hostels[0].id : null)}
         hostels={hostels}
         userRole={userRole}
       />

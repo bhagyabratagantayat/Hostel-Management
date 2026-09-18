@@ -46,6 +46,7 @@ const MenuFormModal = ({
   editItem = null,
   initialDate = null,
   initialMealType = null,
+  initialHostelId = null,
   hostels = [],
   userRole = 'SUPER_ADMIN'
 }) => {
@@ -62,9 +63,10 @@ const MenuFormModal = ({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const defaultHostelId = initialHostelId || (hostels.length > 0 ? hostels[0].id : '');
     if (editItem) {
       setFormData({
-        hostel_id: editItem.hostel_id || '',
+        hostel_id: editItem.hostel_id || defaultHostelId,
         menu_date: editItem.menu_date ? String(editItem.menu_date).substring(0, 10) : new Date().toISOString().split('T')[0],
         meal_type: editItem.meal_type || 'BREAKFAST',
         meal_name: editItem.meal_name || '',
@@ -73,7 +75,7 @@ const MenuFormModal = ({
       });
     } else {
       setFormData({
-        hostel_id: hostels.length === 1 ? hostels[0].id : '',
+        hostel_id: defaultHostelId,
         menu_date: initialDate || new Date().toISOString().split('T')[0],
         meal_type: initialMealType || 'BREAKFAST',
         meal_name: '',
@@ -82,7 +84,7 @@ const MenuFormModal = ({
       });
     }
     setError('');
-  }, [editItem, initialDate, initialMealType, isOpen, hostels]);
+  }, [editItem, initialDate, initialMealType, initialHostelId, isOpen, hostels]);
 
   if (!isOpen) return null;
 
@@ -116,6 +118,11 @@ const MenuFormModal = ({
     e.preventDefault();
     if (!formData.meal_name.trim()) {
       setError('Please enter a meal / dish name.');
+      return;
+    }
+
+    if (userRole === 'SUPERINTENDENT' && !formData.hostel_id) {
+      setError('Please select a target hostel for this meal menu.');
       return;
     }
 
@@ -153,6 +160,25 @@ const MenuFormModal = ({
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-body">
             {error && <div className="alert alert-danger mb-3">{error}</div>}
+
+            {/* Target Hostel Selector for Staff */}
+            {hostels.length > 0 && !editItem && (
+              <div className="form-group mb-3">
+                <label className="form-label required">Target Hostel</label>
+                <select
+                  name="hostel_id"
+                  value={formData.hostel_id}
+                  onChange={handleChange}
+                  className="form-select"
+                  required={userRole === 'SUPERINTENDENT'}
+                >
+                  {userRole === 'SUPER_ADMIN' && <option value="">All Hostels (Common Timetable)</option>}
+                  {hostels.map(h => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-row mb-3" style={{ display: 'flex', gap: '12px' }}>
               <div className="form-group" style={{ flex: 1 }}>
