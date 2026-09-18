@@ -486,50 +486,6 @@ class MessController {
       next(err);
     }
   }
-
-  /**
-   * POST /api/mess/menu/apply-default
-   */
-  static async applyDefaultPlan(req, res, next) {
-    try {
-      const { hostel_id, start_date } = req.body;
-      const targetHostelId = hostel_id ? parseInt(hostel_id, 10) : null;
-
-      if (req.user.role === 'STUDENT') {
-        return res.status(403).json({
-          success: false,
-          message: 'Forbidden: Students cannot modify mess menus.'
-        });
-      }
-
-      if (req.user.role === 'SUPERINTENDENT' && targetHostelId) {
-        const [sh] = await pool.query(
-          'SELECT 1 FROM superintendent_hostels WHERE user_id = ? AND hostel_id = ?',
-          [req.user.id, targetHostelId]
-        );
-        if (sh.length === 0) {
-          return res.status(403).json({
-            success: false,
-            message: 'You can only apply default plans for your assigned hostels.'
-          });
-        }
-      }
-
-      const result = await MessService.applyDefaultWeeklyPlan({
-        hostelId: targetHostelId,
-        startDate: start_date,
-        createdBy: req.user.id
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Default 7-day food menu plan applied successfully.',
-        data: result
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
 }
 
 module.exports = MessController;
