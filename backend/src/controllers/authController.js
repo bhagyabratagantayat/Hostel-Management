@@ -82,12 +82,20 @@ const login = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
   try {
     const { current_password, new_password } = req.body;
-    if (!current_password || !new_password) {
+    if (!new_password) {
       return res.status(400).json({
         success: false,
-        message: 'Current password and new password are required.'
+        message: 'New password is required.'
       });
     }
+
+    if (!req.user.must_change_password && !current_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is required.'
+      });
+    }
+
 
     const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const user_agent = req.headers['user-agent'];
@@ -214,11 +222,83 @@ const exitImpersonation = async (req, res, next) => {
   }
 };
 
+/**
+ * Handle student first-time activation login requests (Registration Number + Date of Birth).
+ */
+const studentFirstLogin = async (req, res, next) => {
+  try {
+    const { registrationNo, dateOfBirth } = req.body;
+
+    if (!registrationNo || !dateOfBirth) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration Number and Date of Birth are required.'
+      });
+    }
+
+    if (registrationNo.length > 50 || dateOfBirth.length > 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'Input parameters exceed length limits.'
+      });
+    }
+
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const user_agent = req.headers['user-agent'];
+
+    const result = await authService.studentFirstLogin(registrationNo, dateOfBirth, { ip_address, user_agent });
+
+    if (!result) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid registration number or date of birth.'
+      });
+    }
+
+    if (result.error === 'ACCOUNT_INACTIVE') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is inactive. Please contact the hostel administration.'
+      });
+    }
+
+    const token = authService.generateToken(result);
+
+    const isProd = env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    };
+
+    res.cookie('token', token, cookieOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Identity verified successfully. Please create your account password.',
+      token,
+      user: {
+        id: result.id,
+        username: result.username,
+        email: result.email,
+        role: result.role,
+        must_change_password: true
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   login,
   changePassword,
   logout,
   getMe,
   impersonateStudent,
-  exitImpersonation
+  exitImpersonation,
+  studentFirstLogin
 };
+

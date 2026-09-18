@@ -139,7 +139,7 @@ const changePassword = async (userId, currentPassword, newPassword, reqContext =
     throw err;
   }
 
-  const [users] = await db.pool.query('SELECT id, username, password_hash FROM users WHERE id = ?', [userId]);
+  const [users] = await db.pool.query('SELECT id, username, password_hash, must_change_password FROM users WHERE id = ?', [userId]);
   if (users.length === 0) {
     const err = new Error('User not found.');
     err.status = 404;
@@ -148,12 +148,14 @@ const changePassword = async (userId, currentPassword, newPassword, reqContext =
 
   const user = users[0];
 
-  // Verify current password
-  const isMatch = await passwordUtil.comparePassword(currentPassword, user.password_hash);
-  if (!isMatch) {
-    const err = new Error('Current password is incorrect.');
-    err.status = 400;
-    throw err;
+  // Verify current password if user is not in forced password change mode (must_change_password === 0)
+  if (!user.must_change_password && currentPassword) {
+    const isMatch = await passwordUtil.comparePassword(currentPassword, user.password_hash);
+    if (!isMatch) {
+      const err = new Error('Current password is incorrect.');
+      err.status = 400;
+      throw err;
+    }
   }
 
   // Hash new password and update
@@ -183,6 +185,7 @@ const changePassword = async (userId, currentPassword, newPassword, reqContext =
 
   return { success: true, message: 'Password updated successfully.' };
 };
+
 
 /**
  * Gets detailed user profile.
@@ -402,11 +405,154 @@ const exitImpersonation = async (impersonatingUser, reqContext = {}) => {
   };
 };
 
+/**
+ * Student First-Time Account Activation & Identity Verification via Registration Number + Date of Birth.
+ * @param {string} registrationNo - Registration Number / Student ID / Roll Number
+ * @param {string} dateOfBirth - Student Date of Birth (YYYY-MM-DD or DD/MM/YYYY)
+ * @param {object} [reqContext] - Request context for audit logging
+ */
+const studentFirstLogin = async (registrationNo, dateOfBirth, reqContext = {}) => {
+  const { ip_address = null, user_agent = null } = reqContext;
+  const cleanRegNo = (registrationNo || '').trim();
+  const cleanDob = (dateOfBirth || '').trim();
+
+  if (!cleanRegNo || !cleanDob) {
+    const err = new Error('Registration number and date of birth are required.');
+    err.status = 400;
+    throw err;
+  }
+
+  // Parse and normalize DOB input to YYYY-MM-DD
+  let parsedDobStr = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDob)) {
+    parsedDobStr = cleanDob;
+  } else if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(cleanDob)) {
+    const parts = cleanDob.split(/[\/\-]/);
+    parsedDobStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  } else {
+    const d = new Date(cleanDob);
+    if (!isNaN(d.getTime())) {
+      parsedDobStr = d.toISOString().split('T')[0];
+    }
+  }
+
+  if (!parsedDobStr) {
+    await securityService.logSecurityEvent({
+      action: 'STUDENT_FIRST_LOGIN_FAILED',
+      ip_address,
+      user_agent,
+      metadata: { registrationNo: cleanRegNo, reason: 'INVALID_DOB_FORMAT' }
+    });
+    return null;
+  }
+
+  // Find student record matching registration number (student_id, roll_number, or username)
+  const [students] = await db.pool.query(
+    `SELECT s.id as student_table_id, s.student_id, s.roll_number, s.full_name,
+            DATE_FORMAT(s.date_of_birth, '%Y-%m-%d') as dob_str,
+            s.status as student_status,
+            u.id as user_id, u.username, u.email, u.status as user_status, u.must_change_password, r.name as role
+     FROM students s
+     JOIN users u ON s.user_id = u.id
+     JOIN roles r ON u.role_id = r.id
+     WHERE s.student_id = ? OR s.roll_number = ? OR u.username = ?
+     LIMIT 1`,
+    [cleanRegNo, cleanRegNo, cleanRegNo]
+  );
+
+  if (students.length === 0) {
+    await securityService.logSecurityEvent({
+      action: 'STUDENT_FIRST_LOGIN_FAILED',
+      ip_address,
+      user_agent,
+      metadata: { registrationNo: cleanRegNo, reason: 'STUDENT_NOT_FOUND' }
+    });
+    await activityService.logActivity({
+      action: 'LOGIN_FAILED',
+      module: 'AUTHENTICATION',
+      entityType: 'STUDENT',
+      description: `First-time activation attempt failed for unrecognized Registration Number '${cleanRegNo}'`,
+      metadata: { registrationNo: cleanRegNo, reason: 'STUDENT_NOT_FOUND' }
+    });
+    return null; // Return null to trigger generic error "Invalid registration number or date of birth."
+  }
+
+  const student = students[0];
+
+  // Verify student & user account status
+  if (student.student_status !== 'ACTIVE' || student.user_status !== 'ACTIVE') {
+    await securityService.logSecurityEvent({
+      action: 'STUDENT_FIRST_LOGIN_FAILED',
+      user_id: student.user_id,
+      ip_address,
+      user_agent,
+      metadata: { registrationNo: cleanRegNo, reason: 'ACCOUNT_INACTIVE' }
+    });
+    return { error: 'ACCOUNT_INACTIVE' };
+  }
+
+  // Verify Student DOB against database DOB string
+  if (!student.dob_str || student.dob_str !== parsedDobStr) {
+    await securityService.logSecurityEvent({
+      action: 'STUDENT_FIRST_LOGIN_FAILED',
+      user_id: student.user_id,
+      ip_address,
+      user_agent,
+      metadata: { registrationNo: cleanRegNo, reason: 'DOB_MISMATCH' }
+    });
+    await activityService.logActivity({
+      actorId: student.user_id,
+      action: 'LOGIN_FAILED',
+      module: 'AUTHENTICATION',
+      entityType: 'STUDENT',
+      entityId: student.student_table_id,
+      description: `First-time activation attempt failed for '${student.full_name}' (DOB mismatch)`,
+      metadata: { registrationNo: cleanRegNo, reason: 'DOB_MISMATCH' }
+    });
+    return null; // Generic error response
+  }
+
+
+  // Set must_change_password = 1 for user account (forces password creation)
+  await db.pool.query(
+    'UPDATE users SET must_change_password = 1, last_login_at = NOW() WHERE id = ?',
+    [student.user_id]
+  );
+
+  // Log successful first-time activation
+  await securityService.logSecurityEvent({
+    action: 'STUDENT_FIRST_LOGIN_SUCCESS',
+    user_id: student.user_id,
+    ip_address,
+    user_agent
+  });
+
+  await activityService.logActivity({
+    actorId: student.user_id,
+    action: 'STUDENT_FIRST_LOGIN_SUCCESS',
+    module: 'AUTHENTICATION',
+    entityType: 'STUDENT',
+    entityId: student.student_table_id,
+    description: `Student '${student.full_name}' (${student.student_id}) successfully verified identity for first-time account activation`,
+    metadata: { role: 'STUDENT' }
+  });
+
+  return {
+    id: student.user_id,
+    username: student.username,
+    email: student.email,
+    role: student.role,
+    must_change_password: 1
+  };
+};
+
 module.exports = {
   validateUser,
   changePassword,
   getUserProfile,
   generateToken,
   impersonateStudent,
-  exitImpersonation
+  exitImpersonation,
+  studentFirstLogin
 };
+

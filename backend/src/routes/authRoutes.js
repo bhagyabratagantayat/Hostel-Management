@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/authMiddleware');
 const { loginRateLimiter } = require('../middleware/rateLimiter');
 
 router.post('/login', loginRateLimiter, authController.login);
+router.post('/student-first-login', loginRateLimiter, authController.studentFirstLogin);
 router.post('/logout', authController.logout);
 router.get('/me', requireAuth, authController.getMe);
 router.post('/change-password', requireAuth, authController.changePassword);

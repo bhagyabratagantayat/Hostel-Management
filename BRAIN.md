@@ -579,6 +579,31 @@ Precision: 2 decimal places
   * **Change**: Implemented secure authentication and Role-Based Access Control.
   * **Status**: Complete. 12/12 integration tests passed.
 
+* **2026-09-18 (Phase 21) — Authentication Audit, Student First-Login & Security Hardening**
+  * **Objective**: Hardened student authentication with a secure first-time account activation workflow (Registration Number + Date of Birth), forced initial password creation, rate limiting, and 16-scenario security verification against the live Hostinger MySQL database.
+  * **Database & Role Mapping Verification**:
+    * Verified live Hostinger MySQL role assignments: `user_id = 2` (`bechostelmanagement@gmail.com`) as `SUPER_ADMIN`, `user_id = 1` (`superadmin`) as `SUPERINTENDENT` assigned to *Baramunda Boys Hostel* (`hostel_id = 1`) and *Baramunda Girls Hostel* (`hostel_id = 2`), and 151 active student accounts.
+    * Ensured zero modifications to existing production user credentials, roles, or student data.
+  * **Backend Architecture (`authService.js`, `authController.js`, `authRoutes.js`)**:
+    * Created `POST /api/auth/student-first-login` accepting `registrationNo` and `dateOfBirth`.
+    * Implemented SQL `DATE_FORMAT(s.date_of_birth, '%Y-%m-%d')` for timezone-safe DOB verification against student records.
+    * On successful first-login identity verification, sets `users.must_change_password = 1` and returns a temporary authenticated JWT session.
+    * Added generic error response `"Invalid registration number or date of birth."` to prevent account enumeration.
+    * Connected `loginRateLimiter` (5 attempts / 15 mins) and logged all events in `security_audit_log` and `activity_log`.
+    * Updated `changePassword` to allow first-time students with `must_change_password = 1` to create their new strong password (8+ chars, uppercase, lowercase, number) and reset `must_change_password = 0`.
+    * Maintained standard username/email + password login flow for Admin (`bechostelmanagement@gmail.com`) and Superintendent (`superadmin`).
+  * **Frontend UI & Responsive Design (`Login.jsx`, `AuthContext.jsx`, `api.js`)**:
+    * Added `studentFirstLogin` method to `api.js` and `AuthContext.jsx`.
+    * Updated `Login.jsx` with mobile-first mode tabs: *Standard Login* and *First Time Login?*.
+    * First Time Login form prompts for Registration Number and Date of Birth picker. On verification, `ForcePasswordChangeModal` launches automatically to enforce password creation.
+    * Verified mobile responsiveness at 320px, 375px, 390px, 430px, and desktop at 768px, 1024px, 1280px, 1440px.
+  * **Security Testing & Verification**:
+    * Authored `backend/src/scripts/test_auth_security_16.js` executing 16 comprehensive security tests (Valid student first-login, invalid reg no, invalid DOB, inactive student, inactive user, rate limiting, password creation, normal student login, wrong password, IDOR protection, admin login, superintendent login, superintendent scoping, logout, expired token, `must_change_password` bypass prevention).
+    * Results: **16/16 PASSED (100% Pass Rate)**.
+    * Frontend compilation: `npm run build` completed cleanly in 6.01s with 0 errors.
+  * **Status**: Complete & Verified on Live Hostinger MySQL.
+
 * **2026-08-22 (Phase 1) — Foundation**
   * **Change**: Initialized repository, backend and database structure, mobile-first frontend shell.
   * **Status**: Complete.
+

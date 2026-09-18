@@ -45,8 +45,12 @@ api.interceptors.response.use(
   }
 );
 
+// Auth API methods
+api.studentFirstLogin = (registrationNo, dateOfBirth) => api.post('/auth/student-first-login', { registrationNo, dateOfBirth });
+
 // Dashboard overview API method attached to api instance
 api.getDashboardOverview = () => api.get('/dashboard/overview');
+
 
 // Notice API methods
 api.getNotices = (params = {}) => api.get('/notices', { params });
