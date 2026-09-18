@@ -250,14 +250,41 @@ const WeeklyMenu = ({ weeklyData, onEditItem, onDeleteItem, onAddForDay, canMana
                     {MEAL_TYPES.map(mealType => {
                       const item = items[mealType];
                       return (
-                        <td key={mealType} className="td-meal-cell">
+                        <td
+                          key={mealType}
+                          className={`td-meal-cell ${canManage ? 'clickable-cell' : ''}`}
+                          onClick={() => {
+                            if (!canManage) return;
+                            if (item) {
+                              onEditItem && onEditItem(item);
+                            } else {
+                              onAddForDay && onAddForDay(dayName, dateStr, mealType);
+                            }
+                          }}
+                          title={canManage ? (item ? `Edit ${dayName} ${mealType}` : `Add ${dayName} ${mealType}`) : ''}
+                          style={canManage ? { cursor: 'pointer' } : {}}
+                        >
                           {item ? (
-                            <div className="matrix-meal-content">
-                              <span className="matrix-meal-name">{item.meal_name}</span>
-                              {item.description && <small className="matrix-meal-desc">{item.description}</small>}
+                            <div className="matrix-meal-content flex-between align-center" style={{ gap: '8px' }}>
+                              <div>
+                                <span className="matrix-meal-name" style={{ fontWeight: 600 }}>{item.meal_name}</span>
+                                {item.description && <small className="matrix-meal-desc" style={{ display: 'block', color: '#64748b', fontSize: '0.8rem', marginTop: '2px' }}>{item.description}</small>}
+                              </div>
+                              {canManage && (
+                                <span className="cell-hover-edit-icon" style={{ opacity: 0.6, fontSize: '0.75rem' }}>
+                                  <i className="fa-solid fa-pen"></i>
+                                </span>
+                              )}
                             </div>
                           ) : (
-                            <span className="matrix-meal-empty">&mdash;</span>
+                            <div className="matrix-meal-empty-wrapper flex-between align-center">
+                              <span className="matrix-meal-empty" style={{ color: '#94a3b8' }}>&mdash;</span>
+                              {canManage && (
+                                <button type="button" className="btn-cell-add-mini" style={{ padding: '2px 8px', fontSize: '0.75rem', borderRadius: '4px', border: '1px dashed #cbd5e1', background: '#f8fafc', color: '#475569' }}>
+                                  + Add
+                                </button>
+                              )}
+                            </div>
                           )}
                         </td>
                       );

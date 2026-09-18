@@ -49,7 +49,7 @@ class MessService {
    */
   static async getMenus({ hostelId, date, startDate, endDate, mealType }) {
     let sql = `
-      SELECT m.*, h.name as hostel_name, u.username as creator_name
+      SELECT m.id, m.hostel_id, DATE_FORMAT(m.menu_date, '%Y-%m-%d') as menu_date, m.meal_type, m.meal_name, m.description, m.is_available, m.created_by, m.created_at, m.updated_at, h.name as hostel_name, u.username as creator_name
       FROM mess_menus m
       LEFT JOIN hostels h ON m.hostel_id = h.id
       LEFT JOIN users u ON m.created_by = u.id
@@ -121,7 +121,7 @@ class MessService {
    */
   static async getMenuItemById(id) {
     const sql = `
-      SELECT m.*, h.name as hostel_name
+      SELECT m.id, m.hostel_id, DATE_FORMAT(m.menu_date, '%Y-%m-%d') as menu_date, m.meal_type, m.meal_name, m.description, m.is_available, m.created_by, m.created_at, m.updated_at, h.name as hostel_name
       FROM mess_menus m
       LEFT JOIN hostels h ON m.hostel_id = h.id
       WHERE m.id = ?

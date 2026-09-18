@@ -188,18 +188,21 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
           )}
 
           {canManage && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setEditingMenuItem(null);
-                setModalInitialDate(new Date().toISOString().split('T')[0]);
-                setModalInitialMealType('BREAKFAST');
-                setIsMenuModalOpen(true);
-              }}
-            >
-              Update Mess Menu
-            </button>
+            <div className="flex-gap align-center">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setEditingMenuItem(null);
+                  setModalInitialDate(new Date().toISOString().split('T')[0]);
+                  setModalInitialMealType('BREAKFAST');
+                  setIsMenuModalOpen(true);
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <i className="fa-solid fa-plus"></i> Add / Edit Dish
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -209,12 +212,13 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
         <div className="card toolbar-card margin-bottom">
           <div className="toolbar-row flex-between align-center">
             <div className="filter-group flex-gap align-center">
-              <label htmlFor="hostel-filter" className="filter-label">Filter Hostel Menu:</label>
+              <label htmlFor="hostel-filter" className="filter-label" style={{ fontWeight: 600 }}>Select Hostel Schedule:</label>
               <select
                 id="hostel-filter"
                 value={selectedHostelId}
                 onChange={(e) => setSelectedHostelId(e.target.value)}
                 className="form-select form-select-sm"
+                style={{ minWidth: '220px', fontWeight: 600, color: '#334155' }}
               >
                 {userRole === 'SUPER_ADMIN' && <option value="">All Hostels (Common Time-Table)</option>}
                 {hostels.map(h => (
@@ -222,8 +226,9 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
                 ))}
               </select>
             </div>
-            <span className="timetable-info-text">
-              Updates made here reflect immediately on students' dashboards
+            <span className="timetable-info-text" style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              <i className="fa-solid fa-bolt text-amber-500 mr-1"></i>
+              Live Schedule: Changes update student portal in real-time
             </span>
           </div>
         </div>
