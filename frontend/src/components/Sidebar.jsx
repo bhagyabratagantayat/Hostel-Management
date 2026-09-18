@@ -62,7 +62,6 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Visitors', icon: <UserCheck size={18} />, path: '/admin/visitors' },
           { label: 'Complaints', icon: <AlertCircle size={18} />, path: '/admin/complaints' },
           { label: 'Mess & Food', icon: <Utensils size={18} />, path: '/admin/mess' },
-          { label: 'Fee Management', icon: <CreditCard size={18} />, path: '/admin/fees' },
           { label: 'Attendance', icon: <CalendarCheck size={18} />, path: '/admin/attendance' },
           { label: 'Notices', icon: <Bell size={18} />, path: '/admin/notices', badge: unreadCount },
           { label: 'My Profile', icon: <User size={18} />, path: '/profile' },
@@ -79,7 +78,6 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'Visitors', icon: <UserCheck size={18} />, path: '/superintendent/visitors' },
           { label: 'Complaints', icon: <AlertCircle size={18} />, path: '/superintendent/complaints' },
           { label: 'Mess & Food', icon: <Utensils size={18} />, path: '/superintendent/mess' },
-          { label: 'Fee Management', icon: <CreditCard size={18} />, path: '/superintendent/fees' },
           { label: 'Attendance', icon: <CalendarCheck size={18} />, path: '/superintendent/attendance' },
           { label: 'Notices', icon: <Bell size={18} />, path: '/superintendent/notices', badge: unreadCount },
           { label: 'My Profile', icon: <User size={18} />, path: '/profile' },
@@ -93,7 +91,6 @@ const Sidebar = ({ isOpen, onClose }) => {
           { label: 'My Complaints', icon: <AlertCircle size={18} />, path: '/student/complaints' },
           { label: 'Notices', icon: <Bell size={18} />, path: '/student/notices', badge: unreadCount },
           { label: 'Mess Schedule', icon: <Utensils size={18} />, path: '/student/mess' },
-          { label: 'Fee Details', icon: <CreditCard size={18} />, path: '/student/fees' },
           { label: 'My Attendance', icon: <CalendarCheck size={18} />, path: '/student/attendance' },
           { label: 'My Profile', icon: <User size={18} />, path: '/profile' },
         ];
