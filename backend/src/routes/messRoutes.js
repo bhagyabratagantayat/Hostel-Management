@@ -12,6 +12,7 @@ router.get('/menu/today', MessController.getTodayMenu);
 router.get('/menu/weekly', MessController.getWeeklyMenu);
 
 router.post('/menu', requireRole(['SUPER_ADMIN', 'SUPERINTENDENT']), MessController.createMenuItem);
+router.post('/menu/apply-default', requireRole(['SUPER_ADMIN', 'SUPERINTENDENT']), MessController.applyDefaultPlan);
 router.put('/menu/:id', requireRole(['SUPER_ADMIN', 'SUPERINTENDENT']), MessController.updateMenuItem);
 router.delete('/menu/:id', requireRole(['SUPER_ADMIN', 'SUPERINTENDENT']), MessController.deleteMenuItem);
 

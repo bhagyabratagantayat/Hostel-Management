@@ -160,6 +160,25 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
     setIsMenuModalOpen(true);
   };
 
+  const handleApplyDefaultPlan = async () => {
+    const hostelName = hostels.find(h => String(h.id) === String(selectedHostelId))?.name || 'All Hostels';
+    if (!window.confirm(`Apply default 7-day food menu plan for ${hostelName}?\nThis will populate standard Breakfast, Lunch & Dinner for Monday through Sunday.`)) {
+      return;
+    }
+    try {
+      setLoading(true);
+      await api.applyDefaultMessPlan({
+        hostel_id: selectedHostelId ? parseInt(selectedHostelId, 10) : null
+      });
+      alert(`Default 7-day food menu plan applied successfully for ${hostelName}!`);
+      await loadData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to apply default food plan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER'];
   const canManage = userRole === 'SUPER_ADMIN' || userRole === 'SUPERINTENDENT';
 
@@ -188,7 +207,17 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
           )}
 
           {canManage && (
-            <div className="flex-gap align-center">
+            <div className="flex-gap align-center" style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={handleApplyDefaultPlan}
+                title="Populate 7-day default institutional meals in 1 tap"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <i className="fa-solid fa-wand-magic-sparkles"></i> Apply Default 7-Day Food Plan
+              </button>
+
               <button
                 type="button"
                 className="btn btn-primary"

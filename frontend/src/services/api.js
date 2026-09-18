@@ -87,6 +87,7 @@ api.getMessMenus = (params = {}) => api.get('/mess/menu', { params });
 api.getTodayMessMenu = (params = {}) => api.get('/mess/menu/today', { params });
 api.getWeeklyMessMenu = (params = {}) => api.get('/mess/menu/weekly', { params });
 api.createMessMenuItem = (data) => api.post('/mess/menu', data);
+api.applyDefaultMessPlan = (data = {}) => api.post('/mess/menu/apply-default', data);
 api.updateMessMenuItem = (id, data) => api.put(`/mess/menu/${id}`, data);
 api.deleteMessMenuItem = (id) => api.delete(`/mess/menu/${id}`);
 
