@@ -31,6 +31,7 @@ import MasterRoomsPage from './pages/MasterRoomsPage';
 import MasterBedsPage from './pages/MasterBedsPage';
 import DataIntegrityPage from './pages/DataIntegrityPage';
 import MessPage from './pages/MessPage';
+import FeeManagementPage from './pages/FeeManagementPage';
 import AttendancePage from './pages/AttendancePage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
 import Loading from './components/Loading';
@@ -50,14 +51,6 @@ const RoleRedirect = () => {
     default:                return <Navigate to="/student/dashboard" replace />;
   }
 };
-
-// Inline placeholder for not-yet-implemented routes
-const RoutePlaceholder = ({ title }) => (
-  <div className="placeholder-page">
-    <h1 className="page-heading">{title}</h1>
-    <p className="page-subheading">This feature will be available in a future phase.</p>
-  </div>
-);
 
 function App() {
   return (
@@ -109,6 +102,8 @@ function App() {
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
+                    <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
+                    <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPER_ADMIN" />} />
                     <Route path="maintenance"         element={<MaintenancePage role="SUPER_ADMIN" />} />
@@ -144,6 +139,8 @@ function App() {
                     <Route path="notices/:noticeId"   element={<NoticesPage />} />
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
+                    <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
+                    <Route path="fees"                element={<FeeManagementPage />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPERINTENDENT" />} />
                     <Route path="maintenance"         element={<MaintenancePage role="SUPERINTENDENT" />} />
@@ -170,8 +167,9 @@ function App() {
                     <Route path="visitors"      element={<VisitorsPage />} />
                     <Route path="maintenance"   element={<MaintenancePage role="STUDENT" />} />
                     <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
+                    <Route path="fees"          element={<FeeManagementPage />} />
+                    <Route path="attendance"    element={<StudentAttendancePage />} />
                     <Route path="profile"       element={<Navigate to="/profile" replace />} />
-                    <Route path="attendance"          element={<StudentAttendancePage />} />
                     <Route path="*"             element={<Navigate to="/student/dashboard" replace />} />
                   </Routes>
                 </DashboardLayout>
