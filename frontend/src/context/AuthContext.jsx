@@ -118,36 +118,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const studentFirstLogin = async (registrationNo, dateOfBirth) => {
-    setIsLoading(true);
-    try {
-      const response = await api.studentFirstLogin(registrationNo, dateOfBirth);
-      if (response.success && response.user) {
-        if (response.token) {
-          localStorage.setItem('authToken', response.token);
-        }
-        setUser(response.user);
-        setIsAuthenticated(true);
-        return { success: true };
-      }
-      return { success: false, message: response.message || 'First login verification failed.' };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.message || 'Network error or invalid registration number/date of birth.'
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <AuthContext.Provider value={{ 
       user, 
       isAuthenticated, 
       isLoading, 
       login, 
-      studentFirstLogin,
       logout, 
       impersonateStudent, 
       exitImpersonation,
@@ -159,11 +135,13 @@ export const AuthProvider = ({ children }) => {
         <ForcePasswordChangeModal
           user={user}
           onPasswordChanged={checkAuthStatus}
+          onClose={logout}
         />
       )}
     </AuthContext.Provider>
   );
 };
+
 
 
 export const useAuth = () => {
