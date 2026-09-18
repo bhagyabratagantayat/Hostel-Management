@@ -37,12 +37,16 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
     if (userRole !== 'STUDENT') {
       api.get('/hostels')
         .then(res => {
-          const list = res.data || (Array.isArray(res) ? res : []);
+          const raw = res.data;
+          const list = Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
           setHostels(list);
+          if (list.length > 0 && !selectedHostelId) {
+            setSelectedHostelId(String(list[0].id));
+          }
         })
         .catch(err => console.error('Failed to load hostels list:', err));
     }
-  }, [userRole]);
+  }, [userRole, selectedHostelId]);
 
   // Main data loader
   const loadData = useCallback(async () => {

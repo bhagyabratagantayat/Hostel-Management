@@ -96,6 +96,10 @@ class MessController {
         if (st.length > 0) {
           hostelId = st[0].hostel_id;
         }
+      } else if (req.user.role === 'SUPERINTENDENT' && !hostelId) {
+        if (req.user.assignedHostels && req.user.assignedHostels.length > 0) {
+          hostelId = req.user.assignedHostels[0];
+        }
       }
 
       const result = await MessService.getWeeklyMenu(hostelId, req.query.start_date);
