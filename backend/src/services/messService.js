@@ -132,7 +132,7 @@ class MessService {
 
   /**
    * Create a new menu item.
-   * Validates duplicate (hostel_id, menu_date, meal_type).
+   * If an item already exists for (hostel_id, menu_date, meal_type), upsert/update it.
    */
   static async createMenuItem({ hostelId, menuDate, mealType, mealName, description, isAvailable, createdBy }) {
     const validMealTypes = ['BREAKFAST', 'LUNCH', 'DINNER'];
@@ -150,34 +150,48 @@ class MessService {
       WHERE menu_date = ? AND meal_type = ? AND (hostel_id = ? OR (hostel_id IS NULL AND ? IS NULL))
     `;
     const [existing] = await pool.query(dupCheckSql, [menuDate, mealType, hostelId || null, hostelId || null]);
+    
+    let targetId;
     if (existing.length > 0) {
-      throw new Error(`A ${mealType} menu already exists for this date and hostel.`);
+      targetId = existing[0].id;
+      const updateSql = `
+        UPDATE mess_menus
+        SET meal_name = ?, description = ?, is_available = ?
+        WHERE id = ?
+      `;
+      await pool.query(updateSql, [
+        mealName.trim(),
+        description ? description.trim() : null,
+        isAvailable !== undefined ? (isAvailable ? 1 : 0) : 1,
+        targetId
+      ]);
+    } else {
+      const insertSql = `
+        INSERT INTO mess_menus (hostel_id, menu_date, meal_type, meal_name, description, is_available, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+      const [result] = await pool.query(insertSql, [
+        hostelId || null,
+        menuDate,
+        mealType,
+        mealName.trim(),
+        description ? description.trim() : null,
+        isAvailable !== undefined ? (isAvailable ? 1 : 0) : 1,
+        createdBy
+      ]);
+      targetId = result.insertId;
     }
 
-    const insertSql = `
-      INSERT INTO mess_menus (hostel_id, menu_date, meal_type, meal_name, description, is_available, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    const [result] = await pool.query(insertSql, [
-      hostelId || null,
-      menuDate,
-      mealType,
-      mealName.trim(),
-      description ? description.trim() : null,
-      isAvailable !== undefined ? (isAvailable ? 1 : 0) : 1,
-      createdBy
-    ]);
-
-    const created = await this.getMenuItemById(result.insertId);
+    const created = await this.getMenuItemById(targetId);
 
     await activityService.logActivity({
       actorId: createdBy,
       action: 'MENU_CREATED',
       module: 'MESS',
       entityType: 'MENU',
-      entityId: result.insertId,
+      entityId: targetId,
       hostelId: hostelId || null,
-      description: `Created ${mealType} mess menu '${mealName.trim()}' for ${menuDate}`,
+      description: `Saved ${mealType} mess menu '${mealName.trim()}' for ${menuDate}`,
       metadata: { menu_date: menuDate, meal_type: mealType }
     });
 
@@ -232,6 +246,72 @@ class MessService {
     });
 
     return this.getMenuItemById(id);
+  }
+
+  /**
+   * Copy all meals from sourceDate to multiple targetDates for a hostel.
+   */
+  static async copyDayMenu({ hostelId, sourceDate, targetDates, user }) {
+    if (!Array.isArray(targetDates) || targetDates.length === 0) {
+      throw new Error('At least one target date is required.');
+    }
+
+    // Authorization check for SUPERINTENDENT
+    if (user.role === 'SUPERINTENDENT' && hostelId) {
+      const [sh] = await pool.query(
+        'SELECT 1 FROM superintendent_hostels WHERE user_id = ? AND hostel_id = ?',
+        [user.id, hostelId]
+      );
+      if (sh.length === 0) {
+        throw new Error('Unauthorized: You can only copy menus for your assigned hostels.');
+      }
+    }
+
+    // Get source date menu items
+    const sourceItems = await this.getMenus({ hostelId: hostelId || null, date: sourceDate });
+    if (sourceItems.length === 0) {
+      throw new Error(`No menu items found on source date ${sourceDate} to copy.`);
+    }
+
+    let copiedCount = 0;
+    for (const targetDate of targetDates) {
+      if (targetDate === sourceDate) continue;
+
+      for (const item of sourceItems) {
+        let checkSql = `
+          SELECT id FROM mess_menus 
+          WHERE menu_date = ? AND meal_type = ? AND (hostel_id = ? OR (hostel_id IS NULL AND ? IS NULL))
+        `;
+        const [existing] = await pool.query(checkSql, [targetDate, item.meal_type, hostelId || null, hostelId || null]);
+
+        if (existing.length > 0) {
+          await pool.query(
+            `UPDATE mess_menus SET meal_name = ?, description = ?, is_available = ? WHERE id = ?`,
+            [item.meal_name, item.description, item.is_available, existing[0].id]
+          );
+        } else {
+          await pool.query(
+            `INSERT INTO mess_menus (hostel_id, menu_date, meal_type, meal_name, description, is_available, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [hostelId || null, targetDate, item.meal_type, item.meal_name, item.description, item.is_available, user.id]
+          );
+        }
+        copiedCount++;
+      }
+    }
+
+    await activityService.logActivity({
+      actorId: user.id,
+      action: 'MENU_COPIED',
+      module: 'MESS',
+      entityType: 'MENU',
+      entityId: null,
+      hostelId: hostelId || null,
+      description: `Copied ${sourceDate} menu to ${targetDates.length} target dates`,
+      metadata: { source_date: sourceDate, target_count: targetDates.length }
+    });
+
+    return { success: true, copiedCount, targetDates };
   }
 
   /**
@@ -513,6 +593,76 @@ class MessService {
       endDate: end,
       hostelId: hostelId || 'ALL',
       analytics
+    };
+  }
+
+  /**
+   * Copy all meals from a source date to multiple target dates for a hostel.
+   */
+  static async copyDayMenu({ hostelId, sourceDate, targetDates, user }) {
+    if (!sourceDate || !targetDates || !Array.isArray(targetDates) || targetDates.length === 0) {
+      throw new Error('Invalid sourceDate or targetDates provided.');
+    }
+
+    // Fetch source day items
+    const sourceItems = await this.getMenus({ hostelId, date: sourceDate });
+    if (!sourceItems || sourceItems.length === 0) {
+      throw new Error(`No menu items found for source date ${sourceDate}.`);
+    }
+
+    let itemsCopiedCount = 0;
+
+    for (const targetDate of targetDates) {
+      for (const item of sourceItems) {
+        // Upsert item for (targetDate, meal_type, hostelId)
+        let dupCheckSql = `
+          SELECT id FROM mess_menus
+          WHERE menu_date = ? AND meal_type = ? AND (hostel_id = ? OR (hostel_id IS NULL AND ? IS NULL))
+        `;
+        const [existing] = await pool.query(dupCheckSql, [targetDate, item.meal_type, hostelId || null, hostelId || null]);
+
+        if (existing.length > 0) {
+          const updateSql = `
+            UPDATE mess_menus
+            SET meal_name = ?, description = ?, is_available = ?
+            WHERE id = ?
+          `;
+          await pool.query(updateSql, [item.meal_name, item.description, item.is_available, existing[0].id]);
+        } else {
+          const insertSql = `
+            INSERT INTO mess_menus (hostel_id, menu_date, meal_type, meal_name, description, is_available, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `;
+          await pool.query(insertSql, [
+            hostelId || null,
+            targetDate,
+            item.meal_type,
+            item.meal_name,
+            item.description,
+            item.is_available,
+            user ? user.id : null
+          ]);
+        }
+        itemsCopiedCount++;
+      }
+    }
+
+    if (user && user.id) {
+      await activityService.logActivity({
+        actorId: user.id,
+        action: 'MENU_COPIED',
+        module: 'MESS',
+        entityType: 'MENU',
+        hostelId: hostelId || null,
+        description: `Copied menu from ${sourceDate} to ${targetDates.length} days (${targetDates.join(', ')})`,
+        metadata: { sourceDate, targetDates, itemsCopiedCount }
+      });
+    }
+
+    return {
+      success: true,
+      message: `Successfully copied menu from ${sourceDate} to ${targetDates.length} day(s).`,
+      copiedItemsCount: itemsCopiedCount
     };
   }
 }

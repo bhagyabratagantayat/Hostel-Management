@@ -3,6 +3,7 @@ import api from '../services/api';
 import MealCard from '../components/mess/MealCard';
 import WeeklyMenu from '../components/mess/WeeklyMenu';
 import MenuFormModal from '../components/mess/MenuFormModal';
+import CopyMenuModal from '../components/mess/CopyMenuModal';
 import MessAnalyticsCard from '../components/mess/MessAnalyticsCard';
 import ComplaintFormModal from '../components/complaints/ComplaintFormModal';
 import './MessPage.css';
@@ -26,6 +27,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
 
   // Modals & form state
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState(null);
   const [modalInitialDate, setModalInitialDate] = useState(null);
   const [modalInitialMealType, setModalInitialMealType] = useState(null);
@@ -157,6 +159,21 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
     }
   };
 
+  const handleCopyDayMenu = async ({ sourceDate, targetDates }) => {
+    try {
+      await api.post('/mess/menu/copy', {
+        hostel_id: selectedHostelId || undefined,
+        sourceDate,
+        targetDates
+      });
+      setIsCopyModalOpen(false);
+      await loadData();
+      alert(`Menu copied successfully from ${sourceDate} to ${targetDates.length} day(s)!`);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to copy menu.');
+    }
+  };
+
   const handleOpenAddForDay = (dayName, dateStr, mealType = 'BREAKFAST') => {
     setEditingMenuItem(null);
     setModalInitialDate(dateStr);
@@ -193,6 +210,15 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
 
           {canManage && (
             <div className="flex-gap align-center">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsCopyModalOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <i className="fa-solid fa-copy"></i> 📋 Copy Day Menu
+              </button>
+
               <button
                 type="button"
                 className="btn btn-primary"
@@ -456,6 +482,14 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
           setIsComplaintModalOpen(false);
           alert('Mess complaint submitted successfully.');
         }}
+      />
+
+      {/* Copy Day Menu Modal */}
+      <CopyMenuModal
+        isOpen={isCopyModalOpen}
+        onClose={() => setIsCopyModalOpen(false)}
+        onSubmit={handleCopyDayMenu}
+        weeklyData={weeklyData}
       />
     </div>
   );

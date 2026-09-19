@@ -490,6 +490,68 @@ class MessController {
       next(err);
     }
   }
+
+  /**
+   * POST /api/mess/menu/copy
+   */
+  static async copyDayMenu(req, res, next) {
+    try {
+      const { hostel_id, sourceDate, targetDates } = req.body;
+      let targetHostelId = hostel_id ? parseInt(hostel_id, 10) : undefined;
+
+      if (req.user.role === 'STUDENT') {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden: Students cannot copy menu items.'
+        });
+      }
+
+      if (req.user.role === 'SUPERINTENDENT') {
+        if (!targetHostelId) {
+          if (req.user.assignedHostels && req.user.assignedHostels.length > 0) {
+            targetHostelId = req.user.assignedHostels[0].id;
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: 'Superintendents must specify an assigned hostel_id.'
+            });
+          }
+        }
+        const [sh] = await pool.query(
+          'SELECT 1 FROM superintendent_hostels WHERE user_id = ? AND hostel_id = ?',
+          [req.user.id, targetHostelId]
+        );
+        if (sh.length === 0) {
+          return res.status(403).json({
+            success: false,
+            message: 'You can only copy menus for your assigned hostels.'
+          });
+        }
+      }
+
+      if (!sourceDate || !targetDates || !Array.isArray(targetDates) || targetDates.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required parameters: sourceDate and non-empty targetDates array.'
+        });
+      }
+
+      const result = await MessService.copyDayMenu({
+        hostelId: targetHostelId,
+        sourceDate,
+        targetDates,
+        user: req.user
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = MessController;
