@@ -354,13 +354,24 @@ const UserManagementPage = () => {
                   </td>
                   <td>
                     {u.role === 'SUPERINTENDENT' ? (
-                      <span className="hostel-scoping">
-                        {u.assigned_hostels || <em className="text-muted">Unassigned</em>}
-                      </span>
+                      <div className="hostel-scoping">
+                        {u.assigned_hostels ? (
+                          u.assigned_hostels.split(',').map((hName, idx) => (
+                            <span key={idx} className="hostel-pill">
+                              <Building2 size={11} />
+                              {hName.trim()}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="hostel-pill hostel-pill-warning">
+                            ⚠️ Unassigned (No Hostels)
+                          </span>
+                        )}
+                      </div>
                     ) : u.role === 'STUDENT' ? (
-                      <span className="text-muted">Student Account</span>
+                      <span className="text-muted" style={{ fontSize: '0.8rem' }}>Student Account</span>
                     ) : (
-                      <span className="badge badge-info">All Hostels (Global)</span>
+                      <span className="badge badge-info" style={{ fontSize: '0.78rem' }}>All Hostels (Global)</span>
                     )}
                   </td>
                   <td className="text-muted">
@@ -548,24 +559,64 @@ const UserManagementPage = () => {
                 </div>
 
                 {formData.role === 'SUPERINTENDENT' && (
-                  <div className="form-group">
-                    <label>Assign Hostels</label>
-                    <div className="hostel-checkboxes">
-                      {hostelsList.map(h => (
-                        <label key={h.id} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={formData.hostel_ids.includes(h.id)}
-                            onChange={(e) => {
-                              const ids = e.target.checked
-                                ? [...formData.hostel_ids, h.id]
-                                : formData.hostel_ids.filter(id => id !== h.id);
-                              setFormData({ ...formData, hostel_ids: ids });
-                            }}
-                          />
-                          {h.name}
-                        </label>
-                      ))}
+                  <div className="hostel-assignment-card">
+                    <div className="card-header-row">
+                      <div>
+                        <h4 className="card-title-label">
+                          <Building2 size={16} style={{ color: '#4f46e5' }} />
+                          Assign Hostels to Warden (Multi-Select)
+                        </h4>
+                        <p className="card-subtitle-text">Wardens can manage multiple hostels simultaneously</p>
+                      </div>
+                      <div className="select-action-buttons">
+                        <button
+                          type="button"
+                          className="btn-link-action"
+                          onClick={() => setFormData({ ...formData, hostel_ids: hostelsList.map(h => h.id) })}
+                        >
+                          Select All
+                        </button>
+                        <span style={{ color: '#cbd5e1' }}>•</span>
+                        <button
+                          type="button"
+                          className="btn-link-action text-danger"
+                          onClick={() => setFormData({ ...formData, hostel_ids: [] })}
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="hostel-selection-grid">
+                      {hostelsList.map(h => {
+                        const isChecked = formData.hostel_ids.includes(h.id);
+                        return (
+                          <label key={h.id} className={`hostel-select-box ${isChecked ? 'selected' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const ids = e.target.checked
+                                  ? [...formData.hostel_ids, h.id]
+                                  : formData.hostel_ids.filter(id => id !== h.id);
+                                setFormData({ ...formData, hostel_ids: ids });
+                              }}
+                            />
+                            <Building2 size={15} className="hostel-box-icon" />
+                            <div className="hostel-box-info">
+                              <span className="hostel-box-name">{h.name}</span>
+                              {h.code && <span className="hostel-box-code">({h.code})</span>}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <div className="selection-counter-bar">
+                      <span>{formData.hostel_ids.length} of {hostelsList.length} Hostels Selected</span>
+                      {formData.hostel_ids.length === 0 && (
+                        <span style={{ color: '#d97706', fontSize: '0.75rem' }}>⚠️ Warning: No hostels selected</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -584,37 +635,82 @@ const UserManagementPage = () => {
       {/* SUPERINTENDENT HOSTEL ASSIGNMENT MODAL */}
       {activeModal === 'HOSTELS' && selectedUser && (
         <div className="modal-overlay">
-          <div className="modal-box">
+          <div className="modal-box" style={{ maxWidth: '620px' }}>
             <div className="modal-header">
-              <h2>Assign Hostels - {selectedUser.username}</h2>
+              <div>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Building2 size={20} style={{ color: '#4f46e5' }} />
+                  Assign Hostels — {selectedUser.username}
+                </h2>
+                <span className="subtitle" style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                  Managing scoping permissions for {selectedUser.full_name || selectedUser.email || selectedUser.username}
+                </span>
+              </div>
               <button className="close-btn" onClick={() => setActiveModal(null)}>×</button>
             </div>
             <form onSubmit={handleHostelSubmit}>
               <div className="modal-body">
                 {modalError && <div className="alert alert-danger" style={{ marginBottom: '1rem', padding: '0.75rem 1rem', borderRadius: '6px' }}>{modalError}</div>}
-                <p className="text-muted mb-3">Select the hostels this superintendent is authorized to manage:</p>
-                <div className="hostel-checkboxes">
-                  {hostelsList.map(h => (
-                    <label key={h.id} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={selectedHostels.includes(h.id)}
-                        onChange={(e) => {
-                          const ids = e.target.checked
-                            ? [...selectedHostels, h.id]
-                            : selectedHostels.filter(id => id !== h.id);
-                          setSelectedHostels(ids);
-                        }}
-                      />
-                      {h.name} ({h.code})
-                    </label>
-                  ))}
+                
+                <div className="card-header-row" style={{ marginBottom: '0.75rem' }}>
+                  <p className="card-subtitle-text" style={{ fontSize: '0.85rem' }}>
+                    Select all hostels this Warden is authorized to view & manage:
+                  </p>
+                  <div className="select-action-buttons">
+                    <button
+                      type="button"
+                      className="btn-link-action"
+                      onClick={() => setSelectedHostels(hostelsList.map(h => h.id))}
+                    >
+                      Select All
+                    </button>
+                    <span style={{ color: '#cbd5e1' }}>•</span>
+                    <button
+                      type="button"
+                      className="btn-link-action text-danger"
+                      onClick={() => setSelectedHostels([])}
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="hostel-selection-grid" style={{ maxHeight: '280px' }}>
+                  {hostelsList.map(h => {
+                    const isChecked = selectedHostels.includes(h.id);
+                    return (
+                      <label key={h.id} className={`hostel-select-box ${isChecked ? 'selected' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const ids = e.target.checked
+                              ? [...selectedHostels, h.id]
+                              : selectedHostels.filter(id => id !== h.id);
+                            setSelectedHostels(ids);
+                          }}
+                        />
+                        <Building2 size={16} className="hostel-box-icon" />
+                        <div className="hostel-box-info">
+                          <span className="hostel-box-name">{h.name}</span>
+                          {h.code && <span className="hostel-box-code">({h.code})</span>}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className="selection-counter-bar">
+                  <span>{selectedHostels.length} of {hostelsList.length} Hostels Assigned</span>
+                  {selectedHostels.length === 0 && (
+                    <span style={{ color: '#d97706', fontSize: '0.75rem' }}>⚠️ Warning: Warden will have 0 assigned hostels</span>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setActiveModal(null)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={modalLoading}>
-                  {modalLoading ? 'Saving...' : 'Save Hostels'}
+                  {modalLoading ? 'Saving...' : 'Save Hostel Assignments'}
                 </button>
               </div>
             </form>
