@@ -43,6 +43,43 @@ const isCutoffPassed = (mealDate, mealType) => {
   return false;
 };
 
+const DEFAULT_WEEKLY_TEMPLATE = [
+  // Day 0: Monday
+  { dayIndex: 0, meal_type: 'BREAKFAST', meal_name: 'Puri Sabzi & Boiled Egg / Banana', description: 'Hot puris with spiced aloo chana sabzi, boiled egg or banana, and hot tea' },
+  { dayIndex: 0, meal_type: 'LUNCH', meal_name: 'Steamed Rice, Dal Tadka & Mix Veg', description: 'Basmati rice, yellow dal tadka, seasonal mixed vegetables, crispy papad, salad and curd' },
+  { dayIndex: 0, meal_type: 'DINNER', meal_name: 'Tawa Roti, Egg Curry / Paneer Butter Masala', description: 'Fresh wheat rotis, rich egg curry or paneer butter masala, steamed rice and dal fry' },
+
+  // Day 1: Tuesday
+  { dayIndex: 1, meal_type: 'BREAKFAST', meal_name: 'Idli Sambar & Coconut Chutney', description: 'Soft steamed idlis with piping hot vegetable sambar and fresh coconut chutney' },
+  { dayIndex: 1, meal_type: 'LUNCH', meal_name: 'Rice, Dal Fry, Aloo Gobhi Matar & Salad', description: 'Steamed rice, arhar dal fry, homestyle aloo gobhi matar sabzi and green salad' },
+  { dayIndex: 1, meal_type: 'DINNER', meal_name: 'Roti, Veg Pulao, Dal Makhani & Sweet Kheer', description: 'Soft rotis, aromatic veg pulao, creamy dal makhani, mix veg curry and sweet rice kheer' },
+
+  // Day 2: Wednesday
+  { dayIndex: 2, meal_type: 'BREAKFAST', meal_name: 'Aloo Paratha with Curd & Pickle', description: 'Stuffed aloo parathas served with fresh curd, mango pickle and hot masala chai' },
+  { dayIndex: 2, meal_type: 'LUNCH', meal_name: 'Rice, Odia Dalma & Bhindi Kurkuri', description: 'Steamed rice, authentic vegetable dalma, crispy bhindi fry and papad' },
+  { dayIndex: 2, meal_type: 'DINNER', meal_name: 'Roti, Chicken Curry / Shahi Paneer & Rice', description: 'Hot rotis, special chicken curry or shahi paneer, jeera rice and dal tadka' },
+
+  // Day 3: Thursday
+  { dayIndex: 3, meal_type: 'BREAKFAST', meal_name: 'Uttapam / Masala Dosa with Sambar', description: 'Crispy dosa / onion uttapam served with lentil sambar and tomato chutney' },
+  { dayIndex: 3, meal_type: 'LUNCH', meal_name: 'Rice, Chana Dal & Aloo Baingan Bhaja', description: 'Steamed rice, chana dal fry, spiced aloo baingan bhaja and cucumber salad' },
+  { dayIndex: 3, meal_type: 'DINNER', meal_name: 'Phulka Roti, Jeera Rice, Kadai Sabzi & Gulab Jamun', description: 'Phulka rotis, jeera rice, seasonal kadai veg curry, dal fry and warm gulab jamun' },
+
+  // Day 4: Friday
+  { dayIndex: 4, meal_type: 'BREAKFAST', meal_name: 'Poha with Peanuts & Sev', description: 'Indori poha garnished with roasted peanuts, coriander and sev, boiled egg or fruit' },
+  { dayIndex: 4, meal_type: 'LUNCH', meal_name: 'Rice, Yellow Moong Dal, Soyabean Aloo Curry', description: 'Steamed rice, yellow moong dal, soya chunks aloo curry and roasted papad' },
+  { dayIndex: 4, meal_type: 'DINNER', meal_name: 'Roti, Egg Masala / Kadai Paneer, Rice & Dal', description: 'Fresh wheat rotis, egg curry or kadai paneer, steamed rice and dal fry' },
+
+  // Day 5: Saturday
+  { dayIndex: 5, meal_type: 'BREAKFAST', meal_name: 'Bread Butter Jam & Veg Cutlet / Omelette', description: 'Toasted bread with butter & fruit jam, crispy vegetable cutlet or masala omelette' },
+  { dayIndex: 5, meal_type: 'LUNCH', meal_name: 'Rice, Dal Makhani & Kashmiri Aloo Dum', description: 'Steamed rice, rich dal makhani, Kashmiri aloo dum and cucumber tomato salad' },
+  { dayIndex: 5, meal_type: 'DINNER', meal_name: 'Roti, Veg Fried Rice & Manchurian / Chilli Paneer', description: 'Soft rotis, Indo-Chinese veg fried rice, veg manchurian gravy / chilli paneer' },
+
+  // Day 6: Sunday
+  { dayIndex: 6, meal_type: 'BREAKFAST', meal_name: 'Chole Bhature & Masala Chai', description: 'Fluffy bhaturas with Punjabi chole, sliced onions & green chillies and special masala tea' },
+  { dayIndex: 6, meal_type: 'LUNCH', meal_name: 'Sunday Special: Biryani / Chicken Curry / Shahi Paneer', description: 'Weekend special biryani / ghee rice, chicken masala / shahi paneer, boondi raita, papad & sweet' },
+  { dayIndex: 6, meal_type: 'DINNER', meal_name: 'Roti, Special Bhog Khichdi, Aloo Bhaja & Ice Cream', description: 'Roti, special bhog khichdi / steamed rice, aloo bhaja, dal and ice cream' }
+];
+
 class MessService {
   /**
    * Fetch menu items by hostel and/or date range.
@@ -90,6 +127,32 @@ class MessService {
   }
 
   /**
+   * Ensure standard default mess menu exists for a week range.
+   */
+  static async ensureDefaultWeeklyMenu(hostelId, startStr) {
+    const monday = new Date(startStr);
+    for (const t of DEFAULT_WEEKLY_TEMPLATE) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + t.dayIndex);
+      const menuDate = d.toISOString().split('T')[0];
+
+      let dupCheckSql = `
+        SELECT id FROM mess_menus
+        WHERE menu_date = ? AND meal_type = ? AND (hostel_id = ? OR (hostel_id IS NULL AND ? IS NULL))
+      `;
+      const [existing] = await pool.query(dupCheckSql, [menuDate, t.meal_type, hostelId || null, hostelId || null]);
+
+      if (existing.length === 0) {
+        const insertSql = `
+          INSERT INTO mess_menus (hostel_id, menu_date, meal_type, meal_name, description, is_available, created_by)
+          VALUES (?, ?, ?, ?, ?, 1, 1)
+        `;
+        await pool.query(insertSql, [hostelId || null, menuDate, t.meal_type, t.meal_name, t.description]);
+      }
+    }
+  }
+
+  /**
    * Get weekly menu starting from startDate or current week's Monday.
    */
   static async getWeeklyMenu(hostelId, startDate) {
@@ -108,7 +171,14 @@ class MessService {
     sunday.setDate(monday.getDate() + 6);
     const endStr = sunday.toISOString().split('T')[0];
 
-    const rows = await this.getMenus({ hostelId, startDate: startStr, endDate: endStr });
+    let rows = await this.getMenus({ hostelId, startDate: startStr, endDate: endStr });
+
+    // If weekly rows are empty or fewer than 21, auto-seed default menu items for this week
+    if (!rows || rows.length < 21) {
+      await this.ensureDefaultWeeklyMenu(hostelId, startStr);
+      rows = await this.getMenus({ hostelId, startDate: startStr, endDate: endStr });
+    }
+
     return {
       startDate: startStr,
       endDate: endStr,
