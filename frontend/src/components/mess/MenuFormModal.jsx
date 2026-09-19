@@ -158,12 +158,11 @@ const MenuFormModal = ({
 
             {hostels.length > 0 && (
               <div className="form-group mb-3">
-                <label className="form-label required">Hostel</label>
+                <label className="form-label">Hostel</label>
                 <select
                   name="hostel_id"
                   value={formData.hostel_id}
                   onChange={handleChange}
-                  required
                   disabled={!!editItem}
                   className="form-select"
                 >
