@@ -4,6 +4,11 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './AttendancePage.css';
 
+const cleanBedNumber = (bed) => {
+  if (!bed) return 'N/A';
+  return String(bed).replace(/^bed\s+/i, '').trim();
+};
+
 const AttendancePage = () => {
   const { user } = useAuth();
   const [hostels, setHostels] = useState([]);
@@ -283,7 +288,7 @@ const AttendancePage = () => {
       'Branch': st.branch || 'B.Tech',
       'Year': st.year || 1,
       'Floor': `Floor ${st.floor_number ?? 0}`,
-      'Room & Bed': `Room ${st.room_number || 'N/A'} - Bed ${st.bed_number || 'N/A'}`,
+      'Room & Bed': `Room ${st.room_number || 'N/A'} - Bed ${cleanBedNumber(st.bed_number)}`,
       'Status': markedMap[st.studentId] || 'UNMARKED',
       'Marked Time': liveTimeMap[st.studentId] || 'Pending'
     }));
@@ -363,7 +368,7 @@ const AttendancePage = () => {
         'Registration / Roll No': st.student_code,
         'Course & Branch': `${st.course} - ${st.branch}`,
         'Floor': `Floor ${st.floor_number}`,
-        'Room & Bed': `Room ${st.room_number} - Bed ${st.bed_number}`,
+        'Room & Bed': `Room ${st.room_number} - Bed ${cleanBedNumber(st.bed_number)}`,
         'Total Marked Days': st.totalDays,
         'Days Present': st.presentDays,
         'Days Absent': st.absentDays,
@@ -863,7 +868,7 @@ const AttendancePage = () => {
                           </td>
                           <td><code>{st.student_code || `#${st.studentId}`}</code></td>
                           <td>Floor {st.floor_number ?? 0}</td>
-                          <td>Room {st.room_number || 'N/A'} - Bed {st.bed_number || 'N/A'}</td>
+                          <td>Room {st.room_number || 'N/A'} - Bed {cleanBedNumber(st.bed_number)}</td>
                           <td>
                             <span className={`profile-tag ${currentStatus === 'PRESENT' ? 'tag-active' : (currentStatus === 'ABSENT' ? 'tag-inactive' : '')}`}>
                               ● {currentStatus || 'UNMARKED'}

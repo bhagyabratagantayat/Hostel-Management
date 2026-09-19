@@ -198,7 +198,7 @@ const StudentDashboard = () => {
           </div>
           <div className="tile-content">
             <h3>Accommodation</h3>
-            <p>{allocation ? `Room ${allocation.room_number}, Bed ${allocation.bed_number}` : 'View room & bed details'}</p>
+            <p>{allocation ? `Room ${allocation.room_number}, Bed ${String(allocation.bed_number || '').replace(/^bed\s+/i, '').trim()}` : 'View room & bed details'}</p>
           </div>
         </div>
 
