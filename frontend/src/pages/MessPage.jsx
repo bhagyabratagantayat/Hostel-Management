@@ -470,6 +470,7 @@ const MessPage = ({ userRole = 'STUDENT' }) => {
         initialDate={modalInitialDate}
         initialMealType={modalInitialMealType}
         hostels={hostels}
+        selectedHostelId={selectedHostelId}
         userRole={userRole}
       />
 
