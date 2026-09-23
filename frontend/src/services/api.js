@@ -234,5 +234,14 @@ api.approveAndAllocateRoom = (id, data) => api.put(`/room-applications/${id}/all
 api.rejectRoomApplication = (id, rejection_reason = '') => api.put(`/room-applications/${id}/reject`, { rejection_reason });
 api.cancelRoomApplication = (id) => api.put(`/room-applications/${id}/cancel`);
 
+// Phase D — Document & Certificate Request System API methods
+api.getDocumentRequests = (params = {}) => api.get('/documents', { params });
+api.getDocumentStats = () => api.get('/documents/stats');
+api.getDocumentRequestById = (id) => api.get(`/documents/${id}`);
+api.requestDocument = (data) => api.post('/documents', data);
+api.approveAndIssueDocument = (id, remarks = '') => api.put(`/documents/${id}/issue`, { remarks });
+api.rejectDocumentRequest = (id, rejection_reason = '') => api.put(`/documents/${id}/reject`, { rejection_reason });
+api.cancelDocumentRequest = (id) => api.put(`/documents/${id}/cancel`);
+
 export default api;
 
