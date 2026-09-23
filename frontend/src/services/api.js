@@ -225,5 +225,14 @@ api.applyForLeave = (data) => api.post('/leaves', data);
 api.approveRejectLeave = (id, action, rejection_reason = '', remarks = '') => api.put(`/leaves/${id}/approve`, { action, rejection_reason, remarks });
 api.cancelLeaveApplication = (id) => api.put(`/leaves/${id}/cancel`);
 
+// Phase C — Hostel & Room Application with Roommate Preferences API methods
+api.getRoomApplications = (params = {}) => api.get('/room-applications', { params });
+api.getRoomApplicationStats = () => api.get('/room-applications/stats');
+api.getRoomApplicationById = (id) => api.get(`/room-applications/${id}`);
+api.applyForRoom = (data) => api.post('/room-applications', data);
+api.approveAndAllocateRoom = (id, data) => api.put(`/room-applications/${id}/allocate`, data);
+api.rejectRoomApplication = (id, rejection_reason = '') => api.put(`/room-applications/${id}/reject`, { rejection_reason });
+api.cancelRoomApplication = (id) => api.put(`/room-applications/${id}/cancel`);
+
 export default api;
 

@@ -33,6 +33,7 @@ import DataIntegrityPage from './pages/DataIntegrityPage';
 import MessPage from './pages/MessPage';
 import GatePassPage from './pages/GatePassPage';
 import LeavePage from './pages/LeavePage';
+import RoomApplicationPage from './pages/RoomApplicationPage';
 import AttendancePage from './pages/AttendancePage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
 import Loading from './components/Loading';
@@ -105,6 +106,7 @@ function App() {
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="gate-passes"         element={<GatePassPage />} />
                     <Route path="leaves"              element={<LeavePage />} />
+                    <Route path="room-applications"   element={<RoomApplicationPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPER_ADMIN" />} />
@@ -143,6 +145,7 @@ function App() {
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="gate-passes"         element={<GatePassPage />} />
                     <Route path="leaves"              element={<LeavePage />} />
+                    <Route path="room-applications"   element={<RoomApplicationPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPERINTENDENT" />} />
@@ -162,8 +165,9 @@ function App() {
               <ProtectedRoute allowedRoles={['STUDENT']}>
                 <DashboardLayout>
                   <Routes>
-                    <Route path="dashboard"     element={<StudentDashboard />} />
-                    <Route path="accommodation" element={<StudentAccommodationPage />} />
+                    <Route path="dashboard"         element={<StudentDashboard />} />
+                    <Route path="accommodation"     element={<StudentAccommodationPage />} />
+                    <Route path="room-applications" element={<RoomApplicationPage />} />
                     <Route path="notices"       element={<NoticesPage />} />
                     <Route path="notices/:noticeId" element={<NoticesPage />} />
                     <Route path="complaints"    element={<ComplaintsPage />} />
