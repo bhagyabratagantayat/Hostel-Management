@@ -171,6 +171,112 @@ export default function DocumentRequestsPage() {
     setShowDetailModal(true);
   };
 
+  // Helper to render customized body text for all certificate types
+  const renderCertificateBody = (doc) => {
+    const issueDateFormatted = new Date(doc.issued_at || doc.updated_at).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    switch (doc.document_type) {
+      case 'FEE_STRUCTURE':
+        return (
+          <>
+            <div className="cert-body-content">
+              This is to certify that Mr./Ms. <strong>{doc.student_name}</strong> (Roll No: <strong>{doc.roll_number}</strong>), Son/Daughter of <strong>{doc.father_name || 'N/A'}</strong>, is a regular resident student of <strong>{doc.hostel_name || 'BEC Hostel'}</strong> (Room No: <strong>{doc.room_number || '101'}</strong>, Bed: <strong>{doc.bed_number || 'A-1'}</strong>), pursuing <strong>{doc.course || 'B.Tech'} ({doc.branch || 'Engineering'})</strong> for the Academic Session <strong>{doc.academic_session || '2026-2027'}</strong>.
+              <br /><br />
+              The official hostel accommodation & catering fee structure applicable for the current academic session is detailed below:
+            </div>
+
+            <table className="fee-table-preview">
+              <thead>
+                <tr>
+                  <th>Sl. No.</th>
+                  <th>Fee Head / Particulars</th>
+                  <th>Frequency</th>
+                  <th>Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Hostel Accommodation & Utility Charges</td>
+                  <td>Annual</td>
+                  <td>₹30,000.00</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>Hostel Mess & Dining Charges (4 Meals/Day)</td>
+                  <td>Annual</td>
+                  <td>₹30,000.00</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>Caution Deposit (Refundable)</td>
+                  <td>One-Time</td>
+                  <td>₹5,000.00</td>
+                </tr>
+                <tr style={{ fontWeight: 'bold', background: '#f8fafc' }}>
+                  <td colSpan="3" style={{ textAlign: 'right' }}>Total Estimated Annual Expenditure:</td>
+                  <td>₹65,000.00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className="cert-body-content" style={{ marginTop: '1rem' }}>
+              This certificate is issued upon student's request for the official purpose of: <em>"{doc.purpose}"</em> (Bank Education Loan / Scholarship Application).
+            </div>
+          </>
+        );
+
+      case 'NO_DUES':
+        return (
+          <div className="cert-body-content">
+            This is to certify that Mr./Ms. <strong>{doc.student_name}</strong> (Roll No: <strong>{doc.roll_number}</strong>), residing in <strong>{doc.hostel_name || 'BEC Hostel'}</strong>, Room No: <strong>{doc.room_number || '101'}</strong> (Bed No: <strong>{doc.bed_number || 'A-1'}</strong>), pursuing <strong>{doc.course || 'B.Tech'} ({doc.branch || 'Engineering'})</strong>, has cleared all hostel accommodation rent, electricity consumption, water charges, mess catering bills, and maintenance penalties for the Academic Session <strong>{doc.academic_session || '2026-2027'}</strong>.
+            <br /><br />
+            There are <strong>NIL OUTSTANDING DUES</strong> pending against the student in the hostel records as of <strong>{issueDateFormatted}</strong>.
+            <br /><br />
+            This No Dues Clearance Certificate is issued upon student's request for the official purpose of: <em>"{doc.purpose}"</em>.
+          </div>
+        );
+
+      case 'HOSTEL_RESIDENCE':
+        return (
+          <div className="cert-body-content">
+            This is to certify that Mr./Ms. <strong>{doc.student_name}</strong> (Roll No: <strong>{doc.roll_number}</strong>), Son/Daughter of <strong>{doc.father_name || 'N/A'}</strong>, is currently residing as a full-time inmate in <strong>{doc.hostel_name || 'BEC Hostel'}</strong>, Room No: <strong>{doc.room_number || '101'}</strong> (Bed: <strong>{doc.bed_number || 'A-1'}</strong>), located at Bhubaneswar Engineering College (BEC) Campus, Pitapalli, Bhubaneswar, Odisha.
+            <br /><br />
+            He/She has been a resident inmate of this hostel since <strong>August 2026</strong> for the Academic Session <strong>{doc.academic_session || '2026-2027'}</strong>.
+            <br /><br />
+            This document serves as official Proof of Residence for: <em>"{doc.purpose}"</em> (Passport Verification / Bank Account Opening / Government Documentation).
+          </div>
+        );
+
+      case 'CHARACTER_CERTIFICATE':
+        return (
+          <div className="cert-body-content">
+            This is to certify that Mr./Ms. <strong>{doc.student_name}</strong> (Roll No: <strong>{doc.roll_number}</strong>), a resident inmate of <strong>{doc.hostel_name || 'BEC Hostel'}</strong> (Room No: <strong>{doc.room_number || '101'}</strong>) during the Academic Session <strong>{doc.academic_session || '2026-2027'}</strong>, has maintained high standards of discipline, punctual night attendance, and exemplary moral conduct.
+            <br /><br />
+            No disciplinary warning, fine, or report of misconduct is registered against him/her in the hostel administration office.
+            <br /><br />
+            This Conduct & Character Certificate is issued upon student's request for the purpose of: <em>"{doc.purpose}"</em>. We wish him/her all success in future endeavors.
+          </div>
+        );
+
+      case 'HOSTEL_BONAFIDE':
+      default:
+        return (
+          <div className="cert-body-content">
+            This is to certify that Mr./Ms. <strong>{doc.student_name}</strong> (Roll No: <strong>{doc.roll_number}</strong>), Son/Daughter of <strong>{doc.father_name || 'N/A'}</strong>, is a regular bonafide resident student of <strong>{doc.hostel_name || 'BEC Hostel'}</strong>, residing in Room No: <strong>{doc.room_number || '101'}</strong> (Bed No: <strong>{doc.bed_number || 'A-1'}</strong>) pursuing <strong>{doc.course || 'B.Tech'} ({doc.branch || 'Engineering'})</strong> for the Academic Session <strong>{doc.academic_session || '2026-2027'}</strong>.
+            <br /><br />
+            This certificate is issued upon student's request for the official purpose of: <em>"{doc.purpose}"</em>.
+            <br /><br />
+            During his/her stay in the hostel, his/her conduct and moral character have been found to be <strong>GOOD</strong>. He/She has cleared all mandatory hostel mess and accommodation dues up to the current academic term.
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="doc-requests-container">
       {/* Banner Header */}
@@ -464,9 +570,9 @@ export default function DocumentRequestsPage() {
       {/* Detail / Official Printable Certificate Slip Modal */}
       {showDetailModal && selectedDoc && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '800px' }}>
+          <div className="modal-content" style={{ maxWidth: '850px' }}>
             <div className="modal-header">
-              <h2>📜 {selectedDoc.status === 'ISSUED' ? 'Official Certificate Slip' : 'Request Details'}</h2>
+              <h2>📜 {selectedDoc.status === 'ISSUED' ? 'Official A4 Certificate' : 'Request Details'}</h2>
               <button className="btn-close" onClick={() => setShowDetailModal(false)}>✕</button>
             </div>
             <div className="modal-body">
@@ -481,7 +587,7 @@ export default function DocumentRequestsPage() {
                       <div className="cert-sub-text">Approved by AICTE, New Delhi & Affiliated to BPUT, Odisha</div>
                       <div className="cert-dept">OFFICE OF THE HOSTEL SUPERINTENDENT</div>
                     </div>
-                    <div style={{ width: '75px' }}></div>
+                    <div style={{ width: '85px' }}></div>
                   </div>
 
                   <div className="cert-meta-bar">
@@ -494,13 +600,8 @@ export default function DocumentRequestsPage() {
                     <h3>{DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label || selectedDoc.document_type}</h3>
                   </div>
 
-                  <div className="cert-body-content">
-                    This is to certify that <strong>{selectedDoc.student_name}</strong> (Roll No: <strong>{selectedDoc.roll_number}</strong>) is a regular bonafide resident student of <strong>{selectedDoc.hostel_name || 'BEC Hostel'}</strong>, residing in Room No: <strong>{selectedDoc.room_number || '101'}</strong> (Bed No: <strong>{selectedDoc.bed_number || 'A-1'}</strong>) pursuing <strong>{selectedDoc.course || 'B.Tech'} ({selectedDoc.branch || 'Engineering'})</strong> for the academic session <strong>{selectedDoc.academic_session || '2026-2027'}</strong>.
-                    <br /><br />
-                    This certificate is issued upon student's request for the official purpose of: <em>"{selectedDoc.purpose}"</em>.
-                    <br /><br />
-                    During his/her stay in the hostel, his/her conduct and moral character have been found to be <strong>GOOD</strong>. He/She has cleared all mandatory hostel mess and accommodation dues up to the current academic term.
-                  </div>
+                  {/* Render tailored body content for all 5 certificate types */}
+                  {renderCertificateBody(selectedDoc)}
 
                   <div className="cert-signatures-section">
                     <div className="cert-stamp-badge">
@@ -531,7 +632,7 @@ export default function DocumentRequestsPage() {
             <div className="modal-footer">
               {selectedDoc.status === 'ISSUED' && (
                 <button type="button" className="btn-print" onClick={() => window.print()}>
-                  🖨️ Print / Download Certificate
+                  🖨️ Print / Download A4 Certificate
                 </button>
               )}
               <button type="button" className="btn-secondary" onClick={() => setShowDetailModal(false)}>Close</button>

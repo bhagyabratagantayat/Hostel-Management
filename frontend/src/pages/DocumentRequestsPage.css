@@ -456,20 +456,23 @@
 }
 
 /* ==========================================================================
-   ELEGANT OFFICIAL CERTIFICATE PRINT SLIP STYLING
+   OFFICIAL A4 SIZE CERTIFICATE STYLING (SCREEN & PRINT)
    ========================================================================== */
 
 .cert-document-wrapper {
-  background: #fff;
-  border: 3px double #1e3a8a;
-  border-radius: 8px;
+  background: #ffffff;
+  border: 4px double #0f172a;
+  border-radius: 4px;
   padding: 2.5rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   font-family: 'Times New Roman', Georgia, serif;
   color: #0f172a;
   position: relative;
   overflow: hidden;
   margin: 0 auto;
+  box-sizing: border-box;
+  max-width: 800px;
+  min-height: 900px;
 }
 
 /* Watermark background */
@@ -479,25 +482,25 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-30deg);
-  font-size: 5.5rem;
+  font-size: 6rem;
   font-weight: 900;
-  color: rgba(30, 58, 138, 0.04);
+  color: rgba(15, 23, 42, 0.04);
   pointer-events: none;
   white-space: nowrap;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
 }
 
 .cert-college-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 2px dashed #1e3a8a;
+  border-bottom: 2.5px solid #0f172a;
   padding-bottom: 1.25rem;
   margin-bottom: 1.5rem;
 }
 
 .cert-logo-box img {
-  width: 75px;
+  width: 85px;
   height: auto;
 }
 
@@ -507,40 +510,41 @@
 }
 
 .cert-college-title h2 {
-  font-size: 1.45rem;
+  font-size: 1.55rem;
   font-weight: 900;
-  color: #1e3a8a;
+  color: #0f172a;
   margin: 0;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .cert-college-title .cert-sub-text {
-  font-size: 0.85rem;
-  color: #475569;
-  margin-top: 0.2rem;
+  font-size: 0.88rem;
+  color: #334155;
+  margin-top: 0.25rem;
   font-style: italic;
 }
 
 .cert-college-title .cert-dept {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: #0f172a;
-  margin-top: 0.3rem;
+  margin-top: 0.35rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .cert-meta-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #334155;
+  color: #1e293b;
   background: #f8fafc;
-  padding: 0.6rem 1rem;
+  padding: 0.75rem 1.25rem;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   margin-bottom: 2rem;
 }
 
@@ -551,34 +555,52 @@
 
 .cert-main-heading h3 {
   display: inline-block;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #1e3a8a;
-  border-bottom: 2px solid #1e3a8a;
-  padding-bottom: 0.25rem;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #0f172a;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 0.3rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .cert-body-content {
-  font-size: 1.05rem;
-  line-height: 2;
+  font-size: 1.08rem;
+  line-height: 2.1;
   text-align: justify;
-  color: #1e293b;
+  color: #0f172a;
   margin-bottom: 2.5rem;
 }
 
 .cert-body-content strong {
   color: #0f172a;
-  font-weight: 700;
-  border-bottom: 1px dotted #64748b;
+  font-weight: 800;
+  border-bottom: 1px dotted #475569;
+}
+
+.fee-table-preview {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+
+  th, td {
+    border: 1px solid #475569;
+    padding: 0.6rem 1rem;
+    text-align: left;
+  }
+
+  th {
+    background: #f1f5f9;
+    font-weight: 800;
+  }
 }
 
 .cert-signatures-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 3rem;
+  margin-top: 3.5rem;
   padding-top: 1rem;
 }
 
@@ -586,7 +608,7 @@
   border: 2px solid #047857;
   background: #ecfdf5;
   color: #047857;
-  padding: 0.6rem 1rem;
+  padding: 0.65rem 1.1rem;
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 800;
@@ -603,47 +625,97 @@
 }
 
 .cert-sign-line {
-  border-top: 1.5px solid #0f172a;
-  margin-top: 2.5rem;
-  padding-top: 0.35rem;
-  font-weight: 700;
+  border-top: 2px solid #0f172a;
+  margin-top: 3rem;
+  padding-top: 0.4rem;
+  font-weight: 800;
   font-size: 0.95rem;
   color: #0f172a;
 }
 
 .cert-sign-box .sign-sub {
   font-size: 0.8rem;
-  color: #64748b;
+  color: #475569;
 }
 
-/* Print Overrides */
+/* ==========================================================================
+   BULLETPROOF A4 SINGLE-PAGE PRINT OVERRIDES
+   ========================================================================== */
 @media print {
-  body * {
-    visibility: hidden;
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
   }
-  .cert-document-wrapper,
-  .cert-document-wrapper * {
-    visibility: visible;
+
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
-  .cert-document-wrapper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    border: 2px solid #000 !important;
-    box-shadow: none !important;
+
+  /* Completely eliminate background elements from layout flow */
+  body > * {
+    display: none !important;
   }
-  .modal-overlay {
-    background: transparent !important;
+
+  /* Show modal container */
+  #root,
+  .modal-overlay,
+  .modal-content,
+  .modal-body {
+    display: block !important;
     position: static !important;
-  }
-  .modal-content {
-    max-width: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
     box-shadow: none !important;
     border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    animation: none !important;
+    transform: none !important;
   }
+
+  /* Hide modal chrome buttons & background UI */
   .modal-header,
-  .modal-footer {
+  .modal-footer,
+  .sidebar,
+  .doc-header-card,
+  .doc-stats-grid,
+  .doc-controls-card,
+  .doc-table-card,
+  .btn-close {
     display: none !important;
+  }
+
+  /* Render exact A4 Certificate Box */
+  .cert-document-wrapper {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    min-height: 270mm !important;
+    padding: 12mm 15mm !important;
+    margin: 0 auto !important;
+    border: 3px double #000000 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    font-size: 11pt !important;
+    line-height: 1.8 !important;
+  }
+
+  .cert-body-content {
+    font-size: 11pt !important;
+    line-height: 2 !important;
   }
 }
