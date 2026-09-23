@@ -208,5 +208,14 @@ api.createBed = (data) => api.post('/beds', data);
 api.updateBed = (id, data) => api.put(`/beds/${id}`, data);
 api.deleteBed = (id) => api.delete(`/beds/${id}`);
 
+// Phase A — Gate Pass & Outing Permission API methods
+api.getGatePasses = (params = {}) => api.get('/gate-passes', { params });
+api.getGatePassStats = () => api.get('/gate-passes/stats');
+api.getGatePassById = (id) => api.get(`/gate-passes/${id}`);
+api.requestGatePass = (data) => api.post('/gate-passes', data);
+api.approveRejectGatePass = (id, action, rejection_reason = '') => api.put(`/gate-passes/${id}/approve`, { action, rejection_reason });
+api.cancelGatePass = (id) => api.put(`/gate-passes/${id}/cancel`);
+api.securityGateAction = (data) => api.post('/gate-passes/security-action', data);
+
 export default api;
 

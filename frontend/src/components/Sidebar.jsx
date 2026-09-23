@@ -21,6 +21,7 @@ import {
   User,
   Utensils,
   CreditCard,
+  DoorOpen,
   LogOut
 } from 'lucide-react';
 
@@ -51,6 +52,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/admin/dashboard' },
           { label: 'Master Data Hub', icon: <Database size={18} />, path: '/admin/master' },
+          { label: 'Gate Pass & Outings', icon: <DoorOpen size={18} />, path: '/admin/gate-passes' },
           { label: 'Maintenance Requests', icon: <Wrench size={18} />, path: '/admin/maintenance' },
           { label: 'User Directory', icon: <Users size={18} />, path: '/admin/users' },
           { label: 'Activity Log', icon: <ClipboardList size={18} />, path: '/admin/activity' },
@@ -69,6 +71,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'SUPERINTENDENT':
         return [
           { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/superintendent/dashboard' },
+          { label: 'Gate Pass & Outings', icon: <DoorOpen size={18} />, path: '/superintendent/gate-passes' },
           { label: 'Maintenance Requests', icon: <Wrench size={18} />, path: '/superintendent/maintenance' },
           { label: 'My Hostels', icon: <Building2 size={18} />, path: '/superintendent/hostels' },
           { label: 'Students', icon: <GraduationCap size={18} />, path: '/superintendent/students' },
@@ -86,6 +89,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         return [
           { label: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/student/dashboard' },
           { label: 'My Accommodation', icon: <BedDouble size={18} />, path: '/student/accommodation' },
+          { label: 'Gate Pass & Outings', icon: <DoorOpen size={18} />, path: '/student/gate-passes' },
           { label: 'My Maintenance', icon: <Wrench size={18} />, path: '/student/maintenance' },
           { label: 'Visitors', icon: <UserCheck size={18} />, path: '/student/visitors' },
           { label: 'My Complaints', icon: <AlertCircle size={18} />, path: '/student/complaints' },
