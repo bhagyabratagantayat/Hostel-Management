@@ -32,6 +32,7 @@ import MasterBedsPage from './pages/MasterBedsPage';
 import DataIntegrityPage from './pages/DataIntegrityPage';
 import MessPage from './pages/MessPage';
 import GatePassPage from './pages/GatePassPage';
+import LeavePage from './pages/LeavePage';
 import AttendancePage from './pages/AttendancePage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
 import Loading from './components/Loading';
@@ -103,6 +104,7 @@ function App() {
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="gate-passes"         element={<GatePassPage />} />
+                    <Route path="leaves"              element={<LeavePage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPER_ADMIN" />} />
@@ -140,6 +142,7 @@ function App() {
                     <Route path="complaints"          element={<ComplaintsPage />} />
                     <Route path="visitors"            element={<VisitorsPage />} />
                     <Route path="gate-passes"         element={<GatePassPage />} />
+                    <Route path="leaves"              element={<LeavePage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPERINTENDENT" />} />
@@ -166,6 +169,7 @@ function App() {
                     <Route path="complaints"    element={<ComplaintsPage />} />
                     <Route path="visitors"      element={<VisitorsPage />} />
                     <Route path="gate-passes"   element={<GatePassPage />} />
+                    <Route path="leaves"        element={<LeavePage />} />
                     <Route path="maintenance"   element={<MaintenancePage role="STUDENT" />} />
                     <Route path="mess"          element={<MessPage userRole="STUDENT" />} />
                     <Route path="attendance"    element={<StudentAttendancePage />} />

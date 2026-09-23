@@ -71,6 +71,7 @@ const masterRoutes = require('./routes/masterRoutes');
 const messRoutes = require('./routes/messRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const gatePassRoutes = require('./routes/gatePassRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
 
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
@@ -94,6 +95,7 @@ app.use('/api/operations', operationsRoutes);
 app.use('/api/mess', messRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/gate-passes', gatePassRoutes);
+app.use('/api/leaves', leaveRoutes);
 app.use('/api/master', masterRoutes);
 app.use('/api/data-integrity', masterRoutes);
 app.use('/api', userRoutes);

@@ -217,5 +217,13 @@ api.approveRejectGatePass = (id, action, rejection_reason = '') => api.put(`/gat
 api.cancelGatePass = (id) => api.put(`/gate-passes/${id}/cancel`);
 api.securityGateAction = (data) => api.post('/gate-passes/security-action', data);
 
+// Phase B — Student Leave Application System API methods
+api.getLeaveApplications = (params = {}) => api.get('/leaves', { params });
+api.getLeaveStats = () => api.get('/leaves/stats');
+api.getLeaveById = (id) => api.get(`/leaves/${id}`);
+api.applyForLeave = (data) => api.post('/leaves', data);
+api.approveRejectLeave = (id, action, rejection_reason = '', remarks = '') => api.put(`/leaves/${id}/approve`, { action, rejection_reason, remarks });
+api.cancelLeaveApplication = (id) => api.put(`/leaves/${id}/cancel`);
+
 export default api;
 
