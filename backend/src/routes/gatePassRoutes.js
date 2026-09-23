@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const gatePassController = require('../controllers/gatePassController');
-const { authenticate } = require('../middleware/authMiddleware');
+const { requireAuth } = require('../middleware/authMiddleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(requireAuth);
 
 // Pass statistics
 router.get('/stats', gatePassController.getGatePassStats);

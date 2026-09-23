@@ -111,6 +111,7 @@ const requireRole = (...allowedRoles) => {
 
 module.exports = {
   requireAuth,
+  authenticate: requireAuth,
   requireRole,
   requireRoles: requireRole
 };
