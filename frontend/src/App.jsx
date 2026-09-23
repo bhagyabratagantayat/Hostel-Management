@@ -35,6 +35,7 @@ import GatePassPage from './pages/GatePassPage';
 import LeavePage from './pages/LeavePage';
 import RoomApplicationPage from './pages/RoomApplicationPage';
 import DocumentRequestsPage from './pages/DocumentRequestsPage';
+import CafeteriaPage from './pages/CafeteriaPage';
 import AttendancePage from './pages/AttendancePage';
 import StudentAttendancePage from './pages/StudentAttendancePage';
 import Loading from './components/Loading';
@@ -109,6 +110,7 @@ function App() {
                     <Route path="leaves"              element={<LeavePage />} />
                     <Route path="room-applications"   element={<RoomApplicationPage />} />
                     <Route path="documents"           element={<DocumentRequestsPage />} />
+                    <Route path="cafeteria"           element={<CafeteriaPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPER_ADMIN" />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPER_ADMIN" />} />
@@ -149,6 +151,7 @@ function App() {
                     <Route path="leaves"              element={<LeavePage />} />
                     <Route path="room-applications"   element={<RoomApplicationPage />} />
                     <Route path="documents"           element={<DocumentRequestsPage />} />
+                    <Route path="cafeteria"           element={<CafeteriaPage />} />
                     <Route path="mess"                element={<MessPage userRole="SUPERINTENDENT" />} />
                     <Route path="activity"            element={<ActivityPage />} />
                     <Route path="operations"          element={<OperationsDashboardPage role="SUPERINTENDENT" />} />
@@ -172,6 +175,7 @@ function App() {
                     <Route path="accommodation"     element={<StudentAccommodationPage />} />
                     <Route path="room-applications" element={<RoomApplicationPage />} />
                     <Route path="documents"         element={<DocumentRequestsPage />} />
+                    <Route path="cafeteria"         element={<CafeteriaPage />} />
                     <Route path="notices"       element={<NoticesPage />} />
                     <Route path="notices/:noticeId" element={<NoticesPage />} />
                     <Route path="complaints"    element={<ComplaintsPage />} />

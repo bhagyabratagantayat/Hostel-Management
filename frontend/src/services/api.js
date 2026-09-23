@@ -243,5 +243,17 @@ api.approveAndIssueDocument = (id, remarks = '') => api.put(`/documents/${id}/is
 api.rejectDocumentRequest = (id, rejection_reason = '') => api.put(`/documents/${id}/reject`, { rejection_reason });
 api.cancelDocumentRequest = (id) => api.put(`/documents/${id}/cancel`);
 
+// Phase E — Campus Cafeteria & Food Ordering System API methods
+api.getCafeteriaCategories = () => api.get('/cafeteria/categories');
+api.getCafeteriaStats = () => api.get('/cafeteria/stats');
+api.getCafeteriaMenu = (params = {}) => api.get('/cafeteria/items', { params });
+api.createCafeteriaItem = (data) => api.post('/cafeteria/items', data);
+api.updateCafeteriaItem = (id, data) => api.put(`/cafeteria/items/${id}`, data);
+api.deleteCafeteriaItem = (id) => api.delete(`/cafeteria/items/${id}`);
+api.placeCafeteriaOrder = (data) => api.post('/cafeteria/orders', data);
+api.getCafeteriaOrders = (params = {}) => api.get('/cafeteria/orders', { params });
+api.getCafeteriaOrderById = (id) => api.get(`/cafeteria/orders/${id}`);
+api.updateCafeteriaOrderStatus = (id, status, payment_status = 'PAID') => api.put(`/cafeteria/orders/${id}/status`, { status, payment_status });
+
 export default api;
 

@@ -74,6 +74,7 @@ const gatePassRoutes = require('./routes/gatePassRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
 const roomApplicationRoutes = require('./routes/roomApplicationRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const cafeteriaRoutes = require('./routes/cafeteriaRoutes');
 
 // Mounting API Routes
 app.use('/api/health', healthRoutes);
@@ -100,6 +101,7 @@ app.use('/api/gate-passes', gatePassRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/room-applications', roomApplicationRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/cafeteria', cafeteriaRoutes);
 app.use('/api/master', masterRoutes);
 app.use('/api/data-integrity', masterRoutes);
 app.use('/api', userRoutes);
