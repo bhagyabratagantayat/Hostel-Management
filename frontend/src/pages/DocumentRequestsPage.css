@@ -5,6 +5,7 @@
   max-width: 1400px;
   margin: 0 auto;
   color: #1e293b;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 .doc-header-card {
@@ -71,30 +72,30 @@
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
 
-  .stat-info h3 {
-    font-size: 0.85rem;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.35rem;
-  }
+.doc-stat-card .stat-info h3 {
+  font-size: 0.85rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
 
-  .stat-info .stat-number {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #0f172a;
-  }
+.doc-stat-card .stat-info .stat-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+}
 
-  .stat-icon-wrapper {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.35rem;
-  }
+.doc-stat-card .stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
 }
 
 .doc-stat-card.pending .stat-icon-wrapper {
@@ -135,45 +136,45 @@
   position: relative;
   flex: 1;
   min-width: 260px;
+}
 
-  input {
-    width: 100%;
-    padding: 0.65rem 1rem 0.65rem 2.5rem;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    font-size: 0.9rem;
-    outline: none;
-    transition: border-color 0.2s ease;
-  }
+.doc-search-box input {
+  width: 100%;
+  padding: 0.65rem 1rem 0.65rem 2.5rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
 
-  input:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  }
+.doc-search-box input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
 
-  .search-icon {
-    position: absolute;
-    left: 0.85rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #94a3b8;
-  }
+.doc-search-box .search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
 }
 
 .doc-filter-group {
   display: flex;
   gap: 0.75rem;
+}
 
-  select {
-    padding: 0.65rem 1rem;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    font-size: 0.9rem;
-    background: white;
-    color: #334155;
-    outline: none;
-    cursor: pointer;
-  }
+.doc-filter-group select {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  background: white;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
 }
 
 /* Table Container */
@@ -190,25 +191,25 @@
   border-collapse: collapse;
   text-align: left;
   font-size: 0.9rem;
+}
 
-  th {
-    background: #f8fafc;
-    color: #475569;
-    font-weight: 600;
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid #e2e8f0;
-  }
+.doc-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
 
-  td {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid #f1f5f9;
-    color: #334155;
-    vertical-align: middle;
-  }
+.doc-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
 
-  tr:hover {
-    background: #f8fafc;
-  }
+.doc-table tr:hover {
+  background: #f8fafc;
 }
 
 /* Badges */
@@ -246,7 +247,7 @@
 .doc-type-tag {
   background: #e0e7ff;
   color: #3730a3;
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.64rem;
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
@@ -257,80 +258,82 @@
   font-weight: 700;
   color: #047857;
   background: #ecfdf5;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
   border: 1px solid #a7f3d0;
+  font-size: 0.82rem;
 }
 
 /* Action Buttons */
 .doc-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
 
-  button {
-    padding: 0.45rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
+.doc-actions button {
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .btn-view {
   background: #f1f5f9;
   color: #334155;
+}
 
-  &:hover {
-    background: #e2e8f0;
-  }
+.btn-view:hover {
+  background: #e2e8f0;
 }
 
 .btn-issue {
   background: #16a34a;
   color: white;
+}
 
-  &:hover {
-    background: #15803d;
-  }
+.btn-issue:hover {
+  background: #15803d;
 }
 
 .btn-reject {
   background: #dc2626;
   color: white;
+}
 
-  &:hover {
-    background: #b91c1c;
-  }
+.btn-reject:hover {
+  background: #b91c1c;
 }
 
 .btn-cancel {
   background: #fee2e2;
   color: #991b1b;
+}
 
-  &:hover {
-    background: #fca5a5;
-  }
+.btn-cancel:hover {
+  background: #fca5a5;
 }
 
 .btn-print {
   background: #4f46e5;
   color: white;
+}
 
-  &:hover {
-    background: #4338ca;
-  }
+.btn-print:hover {
+  background: #4338ca;
 }
 
 /* Modals */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -366,25 +369,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #f8fafc;
+}
 
-  h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0;
-  }
+.modal-header h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
 
-  .btn-close {
-    background: transparent;
-    border: none;
-    font-size: 1.25rem;
-    color: #94a3b8;
-    cursor: pointer;
+.modal-header .btn-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
 
-    &:hover {
-      color: #0f172a;
-    }
-  }
+.modal-header .btn-close:hover {
+  color: #0f172a;
 }
 
 .modal-body {
@@ -395,32 +399,33 @@
 
 .form-group {
   margin-bottom: 1.25rem;
+}
 
-  label {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #475569;
-    margin-bottom: 0.4rem;
-  }
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.4rem;
+}
 
-  input,
-  select,
-  textarea {
-    width: 100%;
-    padding: 0.7rem 0.9rem;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    font-size: 0.9rem;
-    outline: none;
-  }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  outline: none;
+  font-family: inherit;
+}
 
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  }
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .modal-footer {
@@ -430,119 +435,215 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-
-  button {
-    padding: 0.65rem 1.25rem;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-  }
-
-  .btn-secondary {
-    background: #e2e8f0;
-    color: #475569;
-  }
-
-  .btn-submit {
-    background: #4f46e5;
-    color: white;
-  }
 }
 
-/* Print Certificate View */
-.certificate-preview-box {
-  border: 4px double #1e293b;
-  padding: 2rem;
+.modal-footer button {
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.modal-footer .btn-secondary {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.modal-footer .btn-submit {
+  background: #4f46e5;
+  color: white;
+}
+
+/* ==========================================================================
+   ELEGANT OFFICIAL CERTIFICATE PRINT SLIP STYLING
+   ========================================================================== */
+
+.cert-document-wrapper {
+  background: #fff;
+  border: 3px double #1e3a8a;
   border-radius: 8px;
-  background: #fffdfa;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  font-family: 'Times New Roman', Times, serif;
+  padding: 2.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  font-family: 'Times New Roman', Georgia, serif;
   color: #0f172a;
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
 }
 
-.cert-header {
-  text-align: center;
-  border-bottom: 2px solid #0f172a;
-  padding-bottom: 1rem;
+/* Watermark background */
+.cert-document-wrapper::before {
+  content: 'BEC HOSTELS';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 5.5rem;
+  font-weight: 900;
+  color: rgba(30, 58, 138, 0.04);
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.1em;
+}
+
+.cert-college-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px dashed #1e3a8a;
+  padding-bottom: 1.25rem;
   margin-bottom: 1.5rem;
-
-  .cert-college {
-    font-size: 1.4rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .cert-sub {
-    font-size: 0.95rem;
-    color: #475569;
-    font-style: italic;
-  }
-
-  .cert-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    text-decoration: underline;
-    margin-top: 1rem;
-    letter-spacing: 0.08em;
-  }
 }
 
-.cert-meta-row {
+.cert-logo-box img {
+  width: 75px;
+  height: auto;
+}
+
+.cert-college-title {
+  text-align: center;
+  flex: 1;
+}
+
+.cert-college-title h2 {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #1e3a8a;
+  margin: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cert-college-title .cert-sub-text {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 0.2rem;
+  font-style: italic;
+}
+
+.cert-college-title .cert-dept {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+}
+
+.cert-meta-bar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-}
-
-.cert-body-text {
-  font-size: 1.05rem;
-  line-height: 1.8;
-  text-align: justify;
+  font-weight: 700;
+  color: #334155;
+  background: #f8fafc;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
   margin-bottom: 2rem;
 }
 
-.cert-footer-row {
+.cert-main-heading {
+  text-align: center;
+  margin: 1.5rem 0 2rem 0;
+}
+
+.cert-main-heading h3 {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  border-bottom: 2px solid #1e3a8a;
+  padding-bottom: 0.25rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cert-body-content {
+  font-size: 1.05rem;
+  line-height: 2;
+  text-align: justify;
+  color: #1e293b;
+  margin-bottom: 2.5rem;
+}
+
+.cert-body-content strong {
+  color: #0f172a;
+  font-weight: 700;
+  border-bottom: 1px dotted #64748b;
+}
+
+.cert-signatures-section {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-top: 3rem;
-
-  .cert-stamp {
-    border: 2px dashed #059669;
-    color: #059669;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-  }
-
-  .cert-signature {
-    text-align: center;
-    border-top: 1px solid #0f172a;
-    padding-top: 0.3rem;
-    width: 200px;
-    font-weight: 700;
-  }
+  padding-top: 1rem;
 }
 
+.cert-stamp-badge {
+  border: 2px solid #047857;
+  background: #ecfdf5;
+  color: #047857;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cert-sign-box {
+  text-align: center;
+  width: 220px;
+}
+
+.cert-sign-line {
+  border-top: 1.5px solid #0f172a;
+  margin-top: 2.5rem;
+  padding-top: 0.35rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.cert-sign-box .sign-sub {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Print Overrides */
 @media print {
   body * {
     visibility: hidden;
   }
-
-  .certificate-preview-box,
-  .certificate-preview-box * {
+  .cert-document-wrapper,
+  .cert-document-wrapper * {
     visibility: visible;
   }
-
-  .certificate-preview-box {
+  .cert-document-wrapper {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+  }
+  .modal-overlay {
+    background: transparent !important;
+    position: static !important;
+  }
+  .modal-content {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .modal-header,
+  .modal-footer {
+    display: none !important;
   }
 }

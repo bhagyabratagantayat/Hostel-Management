@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import becLogo from '../assets/BEC LOGO FINAL.png';
 import './DocumentRequestsPage.css';
 
 const DOC_TYPES = [
-  { value: 'HOSTEL_BONAFIDE', label: 'Hostel Bonafide Certificate' },
+  { value: 'HOSTEL_BONAFIDE', label: 'Hostel Bonafide & Residence Certificate' },
   { value: 'FEE_STRUCTURE', label: 'Hostel Fee Structure Certificate' },
   { value: 'NO_DUES', label: 'No Dues Clearance Certificate' },
   { value: 'HOSTEL_RESIDENCE', label: 'Hostel Residence Proof' },
@@ -11,10 +13,13 @@ const DOC_TYPES = [
 ];
 
 export default function DocumentRequestsPage() {
+  const { user } = useAuth();
+  const userRole = user?.role || 'STUDENT';
+  const isStaff = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'SUPERINTENDENT';
+
   const [requests, setRequests] = useState([]);
   const [stats, setStats] = useState({ pending: 0, issued: 0, rejected: 0, total: 0 });
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState('STUDENT');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -42,16 +47,6 @@ export default function DocumentRequestsPage() {
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    // Determine user role from stored user
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr);
-        setUserRole(u.role || 'STUDENT');
-      } catch (e) {
-        console.error('Error parsing user from localStorage', e);
-      }
-    }
     fetchData();
   }, [statusFilter, typeFilter]);
 
@@ -116,7 +111,7 @@ export default function DocumentRequestsPage() {
 
     try {
       await api.approveAndIssueDocument(selectedDoc.id, issueRemarks);
-      setSuccessMsg(`Certificate ${selectedDoc.request_number} issued successfully!`);
+      setSuccessMsg(`Certificate ${selectedDoc.request_number} approved and issued successfully!`);
       setShowIssueModal(false);
       setSelectedDoc(null);
       setIssueRemarks('');
@@ -161,7 +156,7 @@ export default function DocumentRequestsPage() {
 
   const openIssueModal = (doc) => {
     setSelectedDoc(doc);
-    setIssueRemarks('Verified student records and fee clearance. Digital certificate issued.');
+    setIssueRemarks('Verified active hostel resident, academic roll records, and fee clearance. Digital certificate issued.');
     setShowIssueModal(true);
   };
 
@@ -181,10 +176,10 @@ export default function DocumentRequestsPage() {
       {/* Banner Header */}
       <div className="doc-header-card">
         <div className="doc-header-content">
-          <h1>📄 Certificate & Document Portal</h1>
-          <p>Request official hostel bonafide, fee structure, and residence clearance certificates digitally.</p>
+          <h1>📄 Certificate & Document Management Portal</h1>
+          <p>Request, verify, approve, and download official digital hostel certificates with institution verification seals.</p>
         </div>
-        {userRole === 'STUDENT' && (
+        {!isStaff && (
           <button className="btn-request-primary" onClick={() => setShowApplyModal(true)}>
             ➕ Request New Certificate
           </button>
@@ -309,10 +304,10 @@ export default function DocumentRequestsPage() {
                         👁️ View
                       </button>
 
-                      {userRole !== 'STUDENT' && doc.status === 'PENDING' && (
+                      {isStaff && doc.status === 'PENDING' && (
                         <>
                           <button className="btn-issue" onClick={() => openIssueModal(doc)}>
-                            ✅ Issue
+                            ✅ Issue & Approve
                           </button>
                           <button className="btn-reject" onClick={() => openRejectModal(doc)}>
                             ❌ Reject
@@ -320,7 +315,13 @@ export default function DocumentRequestsPage() {
                         </>
                       )}
 
-                      {userRole === 'STUDENT' && doc.status === 'PENDING' && (
+                      {doc.status === 'ISSUED' && (
+                        <button className="btn-print" onClick={() => openDetailModal(doc)}>
+                          📜 Print / Download
+                        </button>
+                      )}
+
+                      {!isStaff && doc.status === 'PENDING' && (
                         <button className="btn-cancel" onClick={() => handleCancelRequest(doc.id)}>
                           🚫 Cancel
                         </button>
@@ -334,8 +335,8 @@ export default function DocumentRequestsPage() {
         )}
       </div>
 
-      {/* Apply Modal (Student) */}
-      {showApplyModal && (
+      {/* Apply Modal (Student Only) */}
+      {showApplyModal && !isStaff && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
@@ -388,36 +389,39 @@ export default function DocumentRequestsPage() {
         </div>
       )}
 
-      {/* Issue Modal (Admin) */}
-      {showIssueModal && selectedDoc && (
+      {/* Issue / Approval Modal (Staff Only) */}
+      {showIssueModal && selectedDoc && isStaff && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>📜 Approve & Issue Certificate</h2>
+              <h2>📜 Approve & Issue Official Certificate</h2>
               <button className="btn-close" onClick={() => setShowIssueModal(false)}>✕</button>
             </div>
             <form onSubmit={handleIssueSubmit}>
               <div className="modal-body">
-                <p>You are issuing official certificate for <strong>{selectedDoc.student_name}</strong> ({selectedDoc.roll_number}).</p>
-                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '10px', marginBottom: '1rem' }}>
-                  <div><strong>Request No:</strong> {selectedDoc.request_number}</div>
-                  <div><strong>Type:</strong> {DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label}</div>
+                <p style={{ margin: '0 0 1rem 0', color: '#334155' }}>
+                  You are issuing official certificate for student <strong>{selectedDoc.student_name}</strong> (Roll No: <strong>{selectedDoc.roll_number}</strong>).
+                </p>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1rem', borderRadius: '10px', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
+                  <div style={{ marginBottom: '0.35rem' }}><strong>Request No:</strong> {selectedDoc.request_number}</div>
+                  <div style={{ marginBottom: '0.35rem' }}><strong>Document Type:</strong> {DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label}</div>
                   <div><strong>Purpose:</strong> {selectedDoc.purpose}</div>
                 </div>
 
                 <div className="form-group">
-                  <label>Warden Approval Remarks</label>
+                  <label>Approval & Issuance Remarks</label>
                   <textarea
                     rows="3"
                     value={issueRemarks}
                     onChange={(e) => setIssueRemarks(e.target.value)}
+                    placeholder="Enter approval verification details..."
                   ></textarea>
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setShowIssueModal(false)}>Cancel</button>
                 <button type="submit" className="btn-issue" disabled={submitting}>
-                  {submitting ? 'Issuing...' : '✅ Generate & Issue Certificate'}
+                  {submitting ? 'Issuing...' : '✅ Confirm & Issue Certificate'}
                 </button>
               </div>
             </form>
@@ -425,8 +429,8 @@ export default function DocumentRequestsPage() {
         </div>
       )}
 
-      {/* Reject Modal (Admin) */}
-      {showRejectModal && selectedDoc && (
+      {/* Reject Modal (Staff Only) */}
+      {showRejectModal && selectedDoc && isStaff && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
@@ -457,54 +461,66 @@ export default function DocumentRequestsPage() {
         </div>
       )}
 
-      {/* Detail / Official Certificate Print Preview Modal */}
+      {/* Detail / Official Printable Certificate Slip Modal */}
       {showDetailModal && selectedDoc && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '750px' }}>
+          <div className="modal-content" style={{ maxWidth: '800px' }}>
             <div className="modal-header">
-              <h2>📜 Certificate & Request Details</h2>
+              <h2>📜 {selectedDoc.status === 'ISSUED' ? 'Official Certificate Slip' : 'Request Details'}</h2>
               <button className="btn-close" onClick={() => setShowDetailModal(false)}>✕</button>
             </div>
             <div className="modal-body">
               {selectedDoc.status === 'ISSUED' ? (
-                <div className="certificate-preview-box">
-                  <div className="cert-header">
-                    <div className="cert-college">BHUBANESHWAR ENGINEERING COLLEGE (BEC)</div>
-                    <div className="cert-sub">OFFICE OF THE HOSTEL SUPERINTENDENT</div>
-                    <div className="cert-title">
-                      {DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label.toUpperCase()}
+                <div className="cert-document-wrapper">
+                  <div className="cert-college-header">
+                    <div className="cert-logo-box">
+                      <img src={becLogo} alt="BEC Emblem Logo" />
                     </div>
+                    <div className="cert-college-title">
+                      <h2>BHUBANESHWAR ENGINEERING COLLEGE (BEC)</h2>
+                      <div className="cert-sub-text">Approved by AICTE, New Delhi & Affiliated to BPUT, Odisha</div>
+                      <div className="cert-dept">OFFICE OF THE HOSTEL SUPERINTENDENT</div>
+                    </div>
+                    <div style={{ width: '75px' }}></div>
                   </div>
 
-                  <div className="cert-meta-row">
-                    <div>Ref No: {selectedDoc.certificate_number}</div>
-                    <div>Date: {new Date(selectedDoc.issued_at || selectedDoc.updated_at).toLocaleDateString()}</div>
+                  <div className="cert-meta-bar">
+                    <div>Ref No: <strong>{selectedDoc.certificate_number}</strong></div>
+                    <div>Date: <strong>{new Date(selectedDoc.issued_at || selectedDoc.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></div>
+                    <div>Session: <strong>{selectedDoc.academic_session || '2026-2027'}</strong></div>
                   </div>
 
-                  <div className="cert-body-text">
-                    This is to certify that <strong>{selectedDoc.student_name}</strong> (Roll No: <strong>{selectedDoc.roll_number}</strong>), pursuing <strong>{selectedDoc.course || 'B.Tech'} ({selectedDoc.branch || 'Engineering'})</strong>, is a bona-fide resident student of <strong>{selectedDoc.hostel_name || 'BEC Hostel'}</strong>, assigned Room No. <strong>{selectedDoc.room_number || 'N/A'}</strong> (Bed: {selectedDoc.bed_number || 'N/A'}) for the academic session <strong>{selectedDoc.academic_session || '2026-2027'}</strong>.
+                  <div className="cert-main-heading">
+                    <h3>{DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label || selectedDoc.document_type}</h3>
+                  </div>
+
+                  <div className="cert-body-content">
+                    This is to certify that <strong>{selectedDoc.student_name}</strong> (Roll No: <strong>{selectedDoc.roll_number}</strong>) is a regular bonafide resident student of <strong>{selectedDoc.hostel_name || 'BEC Hostel'}</strong>, residing in Room No: <strong>{selectedDoc.room_number || '101'}</strong> (Bed No: <strong>{selectedDoc.bed_number || 'A-1'}</strong>) pursuing <strong>{selectedDoc.course || 'B.Tech'} ({selectedDoc.branch || 'Engineering'})</strong> for the academic session <strong>{selectedDoc.academic_session || '2026-2027'}</strong>.
                     <br /><br />
-                    This certificate is issued upon student's request for the purpose of: <em>"{selectedDoc.purpose}"</em>.
+                    This certificate is issued upon student's request for the official purpose of: <em>"{selectedDoc.purpose}"</em>.
+                    <br /><br />
+                    During his/her stay in the hostel, his/her conduct and moral character have been found to be <strong>GOOD</strong>. He/She has cleared all mandatory hostel mess and accommodation dues up to the current academic term.
                   </div>
 
-                  <div className="cert-footer-row">
-                    <div className="cert-stamp">
-                      ✓ DIGITALLY VERIFIED & ISSUED BY BEC HOSTEL AUTHORITY
+                  <div className="cert-signatures-section">
+                    <div className="cert-stamp-badge">
+                      ✓ OFFICIALLY VERIFIED & DIGITALLY ISSUED BY BEC HOSTEL AUTHORITY
                     </div>
-                    <div className="cert-signature">
-                      Hostel Superintendent / Warden<br />
-                      BEC Bhubaneswar
+                    <div className="cert-sign-box">
+                      <div className="cert-sign-line">Hostel Superintendent</div>
+                      <div className="sign-sub">BEC Bhubaneswar</div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gap: '1rem', fontFit: 'contain' }}>
-                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '12px' }}>
-                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#0f172a' }}>Application Details</h3>
-                    <div><strong>Request Number:</strong> {selectedDoc.request_number}</div>
-                    <div><strong>Document Type:</strong> {DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label}</div>
-                    <div><strong>Purpose:</strong> {selectedDoc.purpose}</div>
-                    <div><strong>Status:</strong> <span className={`badge-status ${selectedDoc.status}`}>{selectedDoc.status}</span></div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <h3 style={{ margin: '0 0 0.75rem 0', color: '#0f172a' }}>Application Details</h3>
+                    <div style={{ marginBottom: '0.4rem' }}><strong>Request Number:</strong> {selectedDoc.request_number}</div>
+                    <div style={{ marginBottom: '0.4rem' }}><strong>Student Name:</strong> {selectedDoc.student_name} ({selectedDoc.roll_number})</div>
+                    <div style={{ marginBottom: '0.4rem' }}><strong>Document Type:</strong> {DOC_TYPES.find(t => t.value === selectedDoc.document_type)?.label}</div>
+                    <div style={{ marginBottom: '0.4rem' }}><strong>Purpose:</strong> {selectedDoc.purpose}</div>
+                    <div style={{ marginBottom: '0.4rem' }}><strong>Status:</strong> <span className={`badge-status ${selectedDoc.status}`}>{selectedDoc.status}</span></div>
                     {selectedDoc.rejection_reason && (
                       <div style={{ color: '#dc2626', marginTop: '0.5rem' }}><strong>Rejection Reason:</strong> {selectedDoc.rejection_reason}</div>
                     )}
