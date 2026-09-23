@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createMaintenanceRequest } from '../../api/operations';
+import { createMaintenanceRequest, checkDuplicateRequests, upvoteMaintenanceRequest } from '../../api/operations';
 import '../../pages/MaintenancePage.css';
 
 const CATEGORIES = [
@@ -27,6 +27,8 @@ export default function MaintenanceFormModal({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [duplicates, setDuplicates] = useState([]);
+  const [upvoteSuccessMsg, setUpvoteSuccessMsg] = useState(null);
 
   useEffect(() => {
     if (prefill) {
@@ -42,7 +44,45 @@ export default function MaintenanceFormModal({
     }
   }, [prefill]);
 
+  // Real-Time Duplicate Check debounce
+  useEffect(() => {
+    if (!isOpen || (!formData.title && !formData.category)) {
+      setDuplicates([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await checkDuplicateRequests({
+          title: formData.title,
+          category: formData.category,
+          room_id: formData.room_id,
+          hostel_id: formData.hostel_id
+        });
+        setDuplicates(res || []);
+      } catch (err) {
+        // Silently handle duplicate check error
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [formData.title, formData.category, formData.room_id, formData.hostel_id, isOpen]);
+
+  const handleUpvoteExisting = async (reqId) => {
+    try {
+      await upvoteMaintenanceRequest(reqId);
+      setUpvoteSuccessMsg('Successfully upvoted existing ticket! Wardens have been notified.');
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError(err.message || 'Failed to upvote ticket.');
+    }
+  };
+
   if (!isOpen) return null;
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,10 +126,54 @@ export default function MaintenanceFormModal({
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
           <div className="modal-body-custom">
+            {upvoteSuccessMsg && (
+              <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', color: '#166534', padding: '12px 16px', borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <i className="fa-solid fa-circle-check text-green-600 text-lg"></i>
+                <div style={{ fontWeight: 600 }}>{upvoteSuccessMsg}</div>
+              </div>
+            )}
+
             {error && (
               <div className="alert-error-custom">
-                <span>️</span>
+                <i className="fa-solid fa-triangle-exclamation"></i>
                 <div>{error}</div>
+              </div>
+            )}
+
+            {/* Real-time Duplicate Banner */}
+            {duplicates.length > 0 && !upvoteSuccessMsg && (
+              <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b45309', fontWeight: 700, fontSize: '0.88rem', marginBottom: '8px' }}>
+                  <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                  Potential Duplicate Ticket(s) Detected in Your Room/Category
+                </div>
+                <p style={{ color: '#92400e', fontSize: '0.82rem', margin: '0 0 10px 0' }}>
+                  Instead of creating a duplicate ticket, you can upvote an open issue below to prioritize its repair:
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {duplicates.map(d => (
+                    <div key={d.id} style={{ background: '#ffffff', border: '1px solid #fef3c7', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>
+                          #{d.id} {d.title}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                          {d.hostel_name} {d.room_number ? `• Room ${d.room_number}` : ''} ({d.category}) • Upvotes: <strong>{d.upvote_count || 0}</strong>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="btn-action-outline"
+                        style={{ borderColor: '#d97706', color: '#b45309', background: '#fef3c7', fontSize: '0.78rem', padding: '4px 10px' }}
+                        onClick={() => handleUpvoteExisting(d.id)}
+                      >
+                        <i className="fa-solid fa-thumbs-up mr-1"></i> Upvote Existing
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

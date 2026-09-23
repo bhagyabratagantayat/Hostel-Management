@@ -648,6 +648,188 @@ async function addMaintenanceUpdate(id, message, actor) {
   return getMaintenanceById(id, actor);
 }
 
+/**
+ * Real-Time Duplicate Request Detection
+ */
+async function checkDuplicateRequests(filtersOrHostelId, roomId, category, title) {
+  let hostel_id, room_id, cat, t;
+  if (typeof filtersOrHostelId === 'object' && filtersOrHostelId !== null) {
+    hostel_id = filtersOrHostelId.hostel_id || filtersOrHostelId.hostelId;
+    room_id = filtersOrHostelId.room_id || filtersOrHostelId.roomId;
+    cat = filtersOrHostelId.category;
+    t = filtersOrHostelId.title;
+  } else {
+    hostel_id = filtersOrHostelId;
+    room_id = roomId;
+    cat = category;
+    t = title;
+  }
+
+  const whereClauses = ["m.status IN ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED')", "m.reported_at >= NOW() - INTERVAL 72 HOUR"];
+  const params = [];
+
+  if (hostel_id) {
+    whereClauses.push('m.hostel_id = ?');
+    params.push(hostel_id);
+  }
+
+  if (room_id) {
+    whereClauses.push('m.room_id = ?');
+    params.push(room_id);
+  }
+
+  if (cat) {
+    whereClauses.push('m.category = ?');
+    params.push(cat);
+  }
+
+  const sql = `
+    SELECT 
+      m.id, m.title, m.category, m.priority, m.status, m.reported_at, m.upvote_count,
+      h.name as hostel_name, r.room_number,
+      t.full_name as technician_name
+    FROM maintenance_requests m
+    LEFT JOIN hostels h ON m.hostel_id = h.id
+    LEFT JOIN rooms r ON m.room_id = r.id
+    LEFT JOIN technicians t ON m.technician_id = t.id
+    WHERE ${whereClauses.join(' AND ')}
+    ORDER BY m.reported_at DESC
+  `;
+
+  const [rows] = await db.pool.query(sql, params);
+  return rows;
+}
+
+
+/**
+ * Upvote an existing maintenance request
+ */
+async function upvoteMaintenanceRequest(user, requestId) {
+  const student = await db.pool.query('SELECT id FROM students WHERE user_id = ?', [user.id]);
+  const studentId = student[0].length > 0 ? student[0][0].id : null;
+
+  if (!studentId) {
+    throw new Error('Only active students can upvote maintenance requests.');
+  }
+
+  const req = await getMaintenanceById(requestId, user);
+  if (!req) {
+    throw new Error('Maintenance request not found.');
+  }
+
+  try {
+    await db.pool.query(
+      `INSERT INTO maintenance_upvotes (maintenance_id, user_id, student_id) VALUES (?, ?, ?)`,
+      [Number(requestId), user.id, studentId]
+    );
+
+    await db.pool.query(
+      `UPDATE maintenance_requests SET upvote_count = COALESCE(upvote_count, 0) + 1 WHERE id = ?`,
+      [Number(requestId)]
+    );
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY' || err.message.includes('Duplicate')) {
+      throw new Error('You have already upvoted this maintenance request.');
+    }
+    throw err;
+  }
+
+  return getMaintenanceById(requestId, user);
+}
+
+/**
+ * Assign a Technician to a Maintenance Request
+ */
+async function assignTechnicianToRequest(user, requestId, technicianId, notes) {
+  if (user.role === 'STUDENT') {
+    throw new Error('Students are not authorized to assign technicians.');
+  }
+
+  const req = await getMaintenanceById(requestId, user);
+  if (!req) throw new Error('Maintenance request not found.');
+
+  const [techs] = await db.pool.query('SELECT * FROM technicians WHERE id = ?', [technicianId]);
+  if (techs.length === 0) throw new Error('Selected technician not found.');
+  const tech = techs[0];
+
+  await db.pool.query(
+    `UPDATE maintenance_requests 
+     SET technician_id = ?, status = 'ASSIGNED', started_at = COALESCE(started_at, NOW())
+     WHERE id = ?`,
+    [technicianId, Number(requestId)]
+  );
+
+  await db.pool.query(
+    `UPDATE technicians SET status = 'ON_JOB', total_jobs_done = total_jobs_done + 1 WHERE id = ?`,
+    [technicianId]
+  );
+
+  const notesMsg = notes ? ` Notes: "${notes.trim()}"` : '';
+  await db.pool.query(
+    `INSERT INTO maintenance_updates (maintenance_id, user_id, message)
+     VALUES (?, ?, ?)`,
+    [Number(requestId), user.id, `Assigned to Technician ${tech.full_name} (${tech.skill_category}, Phone: ${tech.phone}).${notesMsg}`]
+  );
+
+  await activityService.logActivity({
+    actorId: user.id,
+    action: 'ASSIGN_TECHNICIAN',
+    module: 'MAINTENANCE',
+    entityType: 'MAINTENANCE',
+    entityId: Number(requestId),
+    hostelId: req.hostel_id,
+    description: `Assigned Technician ${tech.full_name} to Maintenance Request #${requestId}`
+  });
+
+  return getMaintenanceById(requestId, user);
+}
+
+/**
+ * Advanced Maintenance Analytics: MTTR & Hotspot Rooms
+ */
+async function getMaintenanceAnalytics(user) {
+  const [mttrRows] = await db.pool.query(`
+    SELECT 
+      category,
+      COUNT(*) as total_resolved,
+      ROUND(AVG(TIMESTAMPDIFF(MINUTE, reported_at, resolved_at) / 60.0), 1) as avg_resolution_hours
+    FROM maintenance_requests
+    WHERE status IN ('RESOLVED', 'CLOSED') AND resolved_at IS NOT NULL
+    GROUP BY category
+  `);
+
+  const [hotspotRows] = await db.pool.query(`
+    SELECT 
+      r.id as room_id,
+      r.room_number,
+      h.name as hostel_name,
+      h.code as hostel_code,
+      COUNT(m.id) as total_complaints,
+      GROUP_CONCAT(DISTINCT m.category SEPARATOR ', ') as issue_categories
+    FROM maintenance_requests m
+    JOIN rooms r ON m.room_id = r.id
+    JOIN hostels h ON m.hostel_id = h.id
+    WHERE m.reported_at >= NOW() - INTERVAL 30 DAY
+    GROUP BY r.id, r.room_number, h.name, h.code
+    HAVING COUNT(m.id) >= 2
+    ORDER BY total_complaints DESC
+    LIMIT 10
+  `);
+
+  const [overallMttr] = await db.pool.query(`
+    SELECT 
+      ROUND(AVG(TIMESTAMPDIFF(MINUTE, reported_at, resolved_at) / 60.0), 1) as overall_mttr_hours
+    FROM maintenance_requests
+    WHERE status IN ('RESOLVED', 'CLOSED') AND resolved_at IS NOT NULL
+  `);
+
+  return {
+    mttr_by_category: mttrRows,
+    overall_mttr_hours: overallMttr[0]?.overall_mttr_hours || 0,
+    hotspot_rooms: hotspotRows
+  };
+}
+
 module.exports = {
   createMaintenanceRequest,
   getMaintenanceRequests,
@@ -656,5 +838,9 @@ module.exports = {
   assignMaintenance,
   updateMaintenancePriority,
   addMaintenanceUpdate,
-  validateLocationHierarchy
+  validateLocationHierarchy,
+  checkDuplicateRequests,
+  upvoteMaintenanceRequest,
+  assignTechnicianToRequest,
+  getMaintenanceAnalytics
 };

@@ -62,3 +62,50 @@ export const getOperationsSummary = async () => {
   const res = await api.get('/operations/summary');
   return res.data || res;
 };
+
+// Phase F Advanced Maintenance APIs
+export const checkDuplicateRequests = async (params = {}) => {
+  const res = await api.checkDuplicateRequests(params);
+  return res.data || res;
+};
+
+export const upvoteMaintenanceRequest = async (id) => {
+  const res = await api.upvoteMaintenanceRequest(id);
+  return res.data || res;
+};
+
+export const assignTechnicianToMaintenance = async (id, technician_id) => {
+  const res = await api.assignTechnicianToMaintenance(id, technician_id);
+  return res.data || res;
+};
+
+export const getMaintenanceAnalytics = async (params = {}) => {
+  const res = await api.getMaintenanceAnalytics(params);
+  return res.data || res;
+};
+
+export const getTechnicians = async (params = {}) => {
+  const res = await api.getTechnicians(params);
+  return res.data || res;
+};
+
+export const getTechnicianById = async (id) => {
+  const res = await api.getTechnicianById(id);
+  return res.data || res;
+};
+
+export const createTechnician = async (data) => {
+  const res = await api.createTechnician(data);
+  return res.data || res;
+};
+
+export const updateTechnician = async (id, data) => {
+  const res = await api.updateTechnician(id, data);
+  return res.data || res;
+};
+
+export const deleteTechnician = async (id) => {
+  const res = await api.deleteTechnician(id);
+  return res.data || res;
+};
+

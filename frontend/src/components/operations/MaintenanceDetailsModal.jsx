@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   updateMaintenanceStatus,
   assignMaintenanceStaff,
   updateMaintenancePriority,
-  addMaintenanceUpdate
+  addMaintenanceUpdate,
+  getTechnicians,
+  assignTechnicianToMaintenance,
+  upvoteMaintenanceRequest
 } from '../../api/operations';
 import '../../pages/MaintenancePage.css';
 
@@ -18,9 +21,19 @@ export default function MaintenanceDetailsModal({
   const [newComment, setNewComment] = useState('');
   const [resolutionNote, setResolutionNote] = useState('');
   const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [selectedTechnician, setSelectedTechnician] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
+  const [technicians, setTechnicians] = useState([]);
   const [actionError, setActionError] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && isStaff) {
+      getTechnicians()
+        .then(data => setTechnicians(data || []))
+        .catch(() => {});
+    }
+  }, [isOpen, isStaff]);
 
   if (!isOpen || !request) return null;
 
@@ -53,6 +66,35 @@ export default function MaintenanceDetailsModal({
       onRefresh();
     } catch (err) {
       setActionError(err.message || 'Failed to assign staff.');
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleAssignTechnician = async (e) => {
+    e.preventDefault();
+    if (!selectedTechnician) return;
+    setActionError(null);
+    setLoadingAction(true);
+    try {
+      await assignTechnicianToMaintenance(request.id, selectedTechnician);
+      setSelectedTechnician('');
+      onRefresh();
+    } catch (err) {
+      setActionError(err.message || 'Failed to assign technician.');
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleUpvote = async () => {
+    setActionError(null);
+    setLoadingAction(true);
+    try {
+      await upvoteMaintenanceRequest(request.id);
+      onRefresh();
+    } catch (err) {
+      setActionError(err.message || 'Failed to upvote request.');
     } finally {
       setLoadingAction(false);
     }
@@ -99,6 +141,7 @@ export default function MaintenanceDetailsModal({
     const statusKey = (s || 'OPEN').toLowerCase();
     return <span className={`status-pill status-${statusKey}`}>{(s || 'OPEN').replace('_', ' ')}</span>;
   };
+
 
   return (
     <div className="modal-backdrop-custom" onClick={onClose}>
@@ -181,6 +224,24 @@ export default function MaintenanceDetailsModal({
                   </div>
                 </div>
                 <div>
+                  <div className="meta-field-label">Assigned Technician</div>
+                  <div className="meta-field-value">
+                    {request.technician_name ? (
+                      <span style={{ color: '#0f172a', fontWeight: 700 }}>
+                        👨‍🔧 {request.technician_name} {request.technician_phone ? `(${request.technician_phone})` : ''}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="meta-field-label">Community Upvotes</div>
+                  <div className="meta-field-value" style={{ fontWeight: 700, color: '#d97706' }}>
+                    👍 {request.upvote_count || 0} Upvotes
+                  </div>
+                </div>
+                <div>
                   <div className="meta-field-label">Started At</div>
                   <div className="meta-field-value" style={{ fontWeight: 500 }}>
                     {request.started_at ? new Date(request.started_at).toLocaleString() : 'Not started'}
@@ -210,6 +271,29 @@ export default function MaintenanceDetailsModal({
 
                 {isStaff ? (
                   <>
+                    {/* Technician Skill Assignment */}
+                    <form onSubmit={handleAssignTechnician} className="workflow-inline-form">
+                      <select
+                        value={selectedTechnician}
+                        onChange={(e) => setSelectedTechnician(e.target.value)}
+                      >
+                        <option value="">Select Technician to Assign...</option>
+                        {technicians.map(t => (
+                          <option key={t.id} value={t.id}>
+                            👨‍🔧 {t.full_name} ({t.skill_category} • {t.rating}★ • {t.status})
+                          </option>
+                        ))}
+                      </select>
+                      <button 
+                        type="submit" 
+                        className="btn-action-outline"
+                        style={{ borderColor: '#6366f1', color: '#4f46e5' }}
+                        disabled={loadingAction || !selectedTechnician}
+                      >
+                        Assign Tech
+                      </button>
+                    </form>
+
                     {/* Staff Assignment */}
                     <form onSubmit={handleAssign} className="workflow-inline-form">
                       <select
@@ -305,6 +389,21 @@ export default function MaintenanceDetailsModal({
                   </>
                 ) : (
                   <div>
+                    {request.status !== 'RESOLVED' && request.status !== 'CLOSED' && (
+                      <div style={{ marginBottom: '12px' }}>
+                        <button
+                          type="button"
+                          className="btn-action-outline"
+                          style={{ borderColor: '#d97706', color: '#b45309', background: '#fffbeb', width: '100%', justifyContent: 'center' }}
+                          onClick={handleUpvote}
+                          disabled={loadingAction}
+                        >
+                          <i className="fa-solid fa-thumbs-up mr-1"></i>
+                          Upvote Request ({request.upvote_count || 0} Upvotes)
+                        </button>
+                      </div>
+                    )}
+
                     {request.status === 'RESOLVED' && (
                       <div>
                         <button
@@ -318,14 +417,10 @@ export default function MaintenanceDetailsModal({
                         </button>
                       </div>
                     )}
-                    {request.status !== 'RESOLVED' && (
-                      <p style={{ color: '#64748b', fontSize: '0.86rem', margin: 0 }}>
-                        Status updates are tracked by hostel superintendents and maintenance staff.
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
+
             </div>
 
             {/* Right Column: Updates & Timeline */}

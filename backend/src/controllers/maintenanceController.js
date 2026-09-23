@@ -1,4 +1,5 @@
 const maintenanceService = require('../services/maintenanceService');
+const technicianService = require('../services/technicianService');
 
 const createRequest = async (req, res, next) => {
   try {
@@ -19,6 +20,60 @@ const getRequests = async (req, res, next) => {
     res.json({
       success: true,
       data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const checkDuplicates = async (req, res, next) => {
+  try {
+    const duplicates = await maintenanceService.checkDuplicateRequests(req.query, req.user);
+    res.json({
+      success: true,
+      data: duplicates
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const upvoteRequest = async (req, res, next) => {
+  try {
+    const record = await maintenanceService.upvoteMaintenanceRequest(req.user, req.params.id);
+    res.json({
+      success: true,
+      message: 'Upvoted maintenance request successfully.',
+      data: record
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const assignTechnician = async (req, res, next) => {
+  try {
+    const { technician_id } = req.body;
+    if (!technician_id) {
+      return res.status(400).json({ success: false, message: 'technician_id is required.' });
+    }
+    const record = await maintenanceService.assignTechnicianToRequest(req.user, req.params.id, technician_id);
+    res.json({
+      success: true,
+      message: 'Technician assigned successfully.',
+      data: record
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAnalytics = async (req, res, next) => {
+  try {
+    const analytics = await maintenanceService.getMaintenanceAnalytics(req.query, req.user);
+    res.json({
+      success: true,
+      data: analytics
     });
   } catch (error) {
     next(error);
@@ -105,12 +160,71 @@ const addUpdate = async (req, res, next) => {
   }
 };
 
+// Technician Directory Handlers
+const getTechnicians = async (req, res, next) => {
+  try {
+    const technicians = await technicianService.getTechnicians(req.query);
+    res.json({ success: true, data: technicians });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTechnicianById = async (req, res, next) => {
+  try {
+    const technician = await technicianService.getTechnicianById(req.params.id);
+    if (!technician) {
+      return res.status(404).json({ success: false, message: 'Technician not found.' });
+    }
+    res.json({ success: true, data: technician });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createTechnician = async (req, res, next) => {
+  try {
+    const technician = await technicianService.createTechnician(req.user, req.body);
+    res.status(201).json({ success: true, message: 'Technician created successfully.', data: technician });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateTechnician = async (req, res, next) => {
+  try {
+    const technician = await technicianService.updateTechnician(req.user, req.params.id, req.body);
+    res.json({ success: true, message: 'Technician updated successfully.', data: technician });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteTechnician = async (req, res, next) => {
+  try {
+    const result = await technicianService.deleteTechnician(req.user, req.params.id);
+    res.json({ success: true, message: result.message });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRequest,
   getRequests,
+  checkDuplicates,
+  upvoteRequest,
+  assignTechnician,
+  getAnalytics,
   getRequestById,
   updateStatus,
   assignStaff,
   updatePriority,
-  addUpdate
+  addUpdate,
+  getTechnicians,
+  getTechnicianById,
+  createTechnician,
+  updateTechnician,
+  deleteTechnician
 };
+

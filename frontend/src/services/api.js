@@ -255,5 +255,22 @@ api.getCafeteriaOrders = (params = {}) => api.get('/cafeteria/orders', { params 
 api.getCafeteriaOrderById = (id) => api.get(`/cafeteria/orders/${id}`);
 api.updateCafeteriaOrderStatus = (id, status, payment_status = 'PAID') => api.put(`/cafeteria/orders/${id}/status`, { status, payment_status });
 
+// Phase F — Advanced Maintenance System API methods
+api.getMaintenanceRequests = (params = {}) => api.get('/maintenance', { params });
+api.getMaintenanceById = (id) => api.get(`/maintenance/${id}`);
+api.createMaintenanceRequest = (data) => api.post('/maintenance', data);
+api.updateMaintenanceStatus = (id, status, resolutionNote = '') => api.patch(`/maintenance/${id}/status`, { status, resolutionNote });
+api.checkDuplicateRequests = (params = {}) => api.get('/maintenance/check-duplicates', { params });
+api.upvoteMaintenanceRequest = (id) => api.post(`/maintenance/${id}/upvote`);
+api.assignTechnicianToMaintenance = (id, technician_id) => api.patch(`/maintenance/${id}/assign-technician`, { technician_id });
+api.getMaintenanceAnalytics = (params = {}) => api.get('/maintenance/analytics', { params });
+
+api.getTechnicians = (params = {}) => api.get('/maintenance/technicians', { params });
+api.getTechnicianById = (id) => api.get(`/maintenance/technicians/${id}`);
+api.createTechnician = (data) => api.post('/maintenance/technicians', data);
+api.updateTechnician = (id, data) => api.put(`/maintenance/technicians/${id}`, data);
+api.deleteTechnician = (id) => api.delete(`/maintenance/technicians/${id}`);
+
 export default api;
+
 
